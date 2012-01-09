@@ -1,0 +1,47 @@
+2011-12-17  Frank Scheiner  <frank.scheiner@web.de>
+
+*0.0.7b (gtransfer)
+*0.0.4b (dparam)
+*0.0.4c (dpath)
+
+all:
+Enhanced builtin support for configuration files. The scripts now search for the
+configuration files in three different locations:
+- "/opt/gtransfer/etc/" (default for system install)
+- "/etc/opt/gtransfer/"
+- "$HOME/.gtransfer/" (default for user install)
+
+2011-12-18  Frank Scheiner <frank.scheiner@web.de>
+
+*0.0.7c (gtransfer)
+*0.0.4c (dparam)
+*0.0.4d (dpath)
+
+all:
+Removed describing content about the configuration file contents from the
+scripts. On a specific version of bash (3.1.17(1)) this didn't work and created
+an error message. The following construct was used before:
+"
+VARIABLE=$( cat <<EOF
+[...]
+EOF
+)
+"
+
+Improved infile documentation of "gtransfer.conf". Improved installation 
+documentation in INSTALL and "install.sh" script. The gtransfer tarball should
+now conform to the FHS v2.3 standard.
+
+*0.0.5 (dpath)
+Dpath now supports listing dpaths for both system and user dirs. Listing of
+sources and destinations now also includes data from system dpaths. Adapted help
+output and manpage.
+
+*0.0.5 (dparam)
+Dparam now supports listing dparams for both system and user dirs. Adapted help
+output and manpage.
+
+2012-01-09  Frank Scheiner  <frank.scheiner@web.de>
+
+Minor changes in man pages and modulefile.
+

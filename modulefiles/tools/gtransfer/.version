@@ -1,0 +1,6 @@
+#%Module
+
+# Default version for gtransfer
+
+set ModulesVersion "0.0.7"
+

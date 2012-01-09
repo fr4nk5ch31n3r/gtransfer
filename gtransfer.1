@@ -1,0 +1,159 @@
+.TH GTRANSFER 1 "18 Dec 2011" "version 0.0.7c" "User Commands"
+.SH NAME
+gtransfer \- The GridFTP transfer script
+
+.SH SYNOPSIS
+.B {gtransfer|gt}
+.BI "--source|-s " "sourceUrl"
+.BI "--destination|-d " "destinationUrl"
+.B [--verbose|-v] 
+.B [--metric|-m
+.IB dataPathMetric ]
+.B [--logfile|-l
+.IB logfile ]
+.B [--auto-clean|-a]
+.B [--configfile
+.IB configurationFile ]
+.B [--
+.IB gsiftpParameters ]
+
+.SH DESCRIPTION
+.B gtransfer
+is a wrapper script for
+.B tgftp
+that supports (GridFTP) transfers along predefined
+paths by using transit sites.  Additionally it supports usage of default
+parameters for specific connections. Therefore this tool is also helpful for
+direct transfers.
+
+.SH OPTIONS
+There's bash completion available for gtransfer. This supports completion of
+options and URLs. URL completion also expands (remote) paths. Just hit the <TAB>
+key to see what's possible.
+
+The options are as follows:
+.TP 10
+.BI "--source|-s " "sourceUrl"
+Set the source URL for the transfer.
+
+Possible URL examples:
+
+{[gsi]ftp|http}://FQDN[:PORT]/path/to/file
+
+[file://]/path/to/file
+
+"FQDN" is the fully qualified domain name.
+
+.TP
+.BI "--destination|-d " "destinationUrl"
+Set the destination URL for the transfer.
+
+Possible URL examples:
+
+[gsi]ftp://FQDN[:PORT]/path/to/file
+
+[file://]/path/to/file
+
+"FQDN" is the fully qualified domain name.
+
+.TP
+.B [--verbose|-v]
+Be verbose.
+
+.TP
+.BI "[--metric|-m " "dataPathMetric" "]"
+Set the metric to select the corresponding data path.
+
+.TP
+.BI "[--logfile|-l " "logfile" "]"
+Set the name for the logfile,
+.B tgftp
+will generate for each transfer. If specified with ".log" as extension,
+.B gtransfer
+will insert a "__step_#" string to the name of the logfile ("#" is the number of
+the transfer step performed). If omitted
+.B gtransfer
+will automatically generate a name for the logfile(s).
+
+.TP
+.B [--auto-clean|-a]
+Remove logfiles automatically after the transfer completed.
+
+.TP
+.BI "[--configfile " "configurationFile" "]"
+Set the name of the configuration file for
+.BR "gtransfer" ". If not set, this defaults to:"
+
+.IR "/opt/gtransfer/etc/gtransfer.conf" " or"
+
+.IR "/etc/gtransfer/gtransfer.conf" " or"
+
+.IR "$HOME/.gtransfer/gtransfer.conf" " in this order."
+
+.TP
+.BI "[-- " "gsiftpParameters" "]"
+Set the "globus-url-copy" parameters that should
+be used for all transfer steps. Notice the space between
+"--" and the actual parameters. This overwrites any
+available default parameters and is not recommended for
+regular usage. There exists one exception for "-len" or
+"-partial-length". If one of these is provided, it will
+only be added to the default parameters for a connection
+or - if no default parameters are available - to the
+builtin default parameters.
+
+.B NOTICE:
+If specified, this option must be the last one in a
+.B gtransfer
+command line.
+
+.TP
+.B General options:
+
+.TP
+.B [--help]
+Prints out a help message.
+
+.TP
+.B [--version|-V]
+Prints out version information.
+
+.SH FILES
+.TP 10
+.I [...]/gtransfer.conf
+The
+.B gtransfer
+configuration file.
+
+.TP
+.I /opt/gtransfer/etc/dpaths/
+This directory contains the system's default dpaths usable by
+.BR "gtransfer" " and is configurable."
+
+.TP
+.I /opt/gtransfer/etc/dparams/
+This directory contains the system's default dparams usable by
+.BR "gtransfer" " and is configurable."
+
+.TP
+.I $HOME/.gtransfer/dpaths/
+This directory contains the dpaths usable by
+.BR "gtransfer" ". Can be created with " "dpath" "."
+If existing, dpaths in this directory have precedence.
+
+.TP
+.I $HOME/.gtransfer/dparams/
+This directory contains the dparams usable by
+.BR "gtransfer" ". Can be created with " "dparam" "."
+If existing, dparams in this directory have precedence.
+
+
+.SH AUTHOR
+Frank Scheiner
+
+.SH "SEE ALSO"
+.BR dpath (1),
+.BR dparam (1),
+.BR tgftp (1),
+.BR uberftp (1C)
+

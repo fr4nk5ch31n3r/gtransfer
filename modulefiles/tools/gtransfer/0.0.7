@@ -1,0 +1,61 @@
+#%Module
+
+#  gtransfer/0.0.7 modulefile
+#
+#  2011-08-26  Frank Scheiner  <scheiner@hlrs.de>
+#  2011-12-18  Frank Scheiner
+
+set ModulefileVersion "0.3"
+
+set VERSION [file tail [module-info name]]
+
+
+module-whatis "Set environment variables to enable the usage of the gtransfer $VERSION tools."
+
+
+# Include site local dependencies
+if { [ file exists "$env(MODULEFILES)/sitelocal/tools/gtransfer-$VERSION" ] } {
+   source "$env(MODULEFILES)/sitelocal/tools/gtransfer-$VERSION"
+} else {
+   # Exit with an error if the file containing local dependencies does not exist
+   puts stderr "Required file $env(MODULEFILES)/sitelocal/tools/gtransfer-$VERSION can not be found"
+   break
+}
+
+
+#  preload required modulefiles
+module load globus tgftp
+
+#  gtransfer needs tgftp (and tgftp needs globus)
+prereq tgftp
+
+# This modulefile cannot be loaded if another tgftp++/gtransfer modulefile was previously loaded
+conflict tgftp++
+conflict gtransfer
+
+# Extend the path if necessary to reach the executables
+# -----------------------------------------------------
+prepend-path PATH $GTRANSFER_DIRECTORY_OF_EXECUTABLES
+
+# Extend the manpath if necessary to reach the man pages
+# ------------------------------------------------------
+prepend-path MANPATH $GTRANSFER_DIRECTORY_OF_MANUALS
+
+if { [module-info mode] != "whatis" } {
+   puts stderr "[module-info mode] gtransfer $VERSION (PATH, MANPATH)"
+   puts stderr "In addition to the manual pages (man {gtransfer|gt|dparam|dpath}), there is also a longer README file available (less $GTRANSFER_DIRECTORY_OF_DOCS/README)."
+}
+
+
+# Help procedure: called by "module help gtransfer/0.0.7"
+proc ModulesHelp {} {
+   global VERSION ModulefileVersion
+
+   puts stderr "
+**** Add-on modules ****\n
+modulefile \"[module-info name]\" - Version $ModulefileVersion\n
+Set environment variables to enable the usage of the gtransfer $VERSION tools."
+
+   return 0
+}
+
