@@ -45,3 +45,9 @@ output and manpage.
 
 Minor changes in man pages and modulefile.
 
+2012-01-19  Frank Scheiner  <frank.scheiner@web.de>
+
+*0.0.5a (dpath)
+Corrected a wrong function call. The function name was still using the old
+nomenclature.
+

@@ -5,7 +5,7 @@
 :<<COPYRIGHT
 
 Copyright (C) 2011 Frank Scheiner, HLRS, Universitaet Stuttgart
-Copyright (C) 2011 Frank Scheiner
+Copyright (C) 2011, 2012 Frank Scheiner
 
 The program is distributed under the terms of the GNU General Public License
 
@@ -28,7 +28,7 @@ contract number RI-222919.
 
 COPYRIGHT
 
-version="0.0.5"
+version="0.0.5a"
 
 #  path to configuration file (prefer system paths!)
 if [[ -e "/opt/gtransfer/etc/dpath.conf" ]]; then
@@ -738,7 +738,7 @@ elif [[ "$createDataPathSet" == "0" ]]; then
 	      "$aliasSet" != "0" \
 	]]; then
 		#  no, so output a usage message
-		usage_msg
+		usageMsg
 		exit 1
 	else
 		if [[ "$dataPathsDir" == "" ]]; then
