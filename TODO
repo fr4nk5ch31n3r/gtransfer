@@ -1,0 +1,10 @@
+ToDo:
+
+* completion file for tcsh
+(http://hea-www.harvard.edu/~fine/Tech/tcsh.html; tcsh(1) manpage
+(complete))
+
+* reintegrate reliability options fom older dev version
+
+* integrate more intelligent transfer mechanism for multistep transfers
+
