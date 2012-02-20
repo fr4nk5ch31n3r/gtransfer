@@ -31,16 +31,21 @@ contract number RI-222919.
 
 COPYRIGHT
 
-version="0.0.7c-dev01"
+#  prevent "*" expansion (filename globbing)
+set -f
+
+version="0.0.7c-dev02"
 gsiftpUserParams=""
 
 #  path to configuration file (prefer system paths!)
 if [[ -e "/opt/gtransfer/etc/gtransfer.conf" ]]; then
-	gtransferConfigurationFile="/opt/gtransfer/etc/gtransfer.conf"
+    gtransferConfigurationFile="/opt/gtransfer/etc/gtransfer.conf"
+#sed#elif [[ -e "<PATH_TO_GTRANSFER>/etc/gtransfer.conf" ]]; then
+#sed#    gtransferConfigurationFile="<PATH_TO_GTRANSFER>/etc/gtransfer.conf"
 elif [[ -e "/etc/opt/gtransfer/gtransfer.conf" ]]; then
-	gtransferConfigurationFile="/etc/opt/gtransfer/gtransfer.conf"
+    gtransferConfigurationFile="/etc/opt/gtransfer/gtransfer.conf"
 elif [[ -e "$HOME/.gtransfer/gtransfer.conf" ]]; then
-	gtransferConfigurationFile="$HOME/.gtransfer/gtransfer.conf"
+    gtransferConfigurationFile="$HOME/.gtransfer/gtransfer.conf"
 fi
 
 ################################################################################
@@ -631,6 +636,12 @@ createTgftpTransferCommand()
     #+ a unique name. One could use the transfer id as prefix:
     #+
     #+ 6dd5928ca873099a381e465afecfa9ef22071c8a.$tgftpTransferCommand
+    #+
+    #+ NOTICE:
+    #+ The transfer id should be calculated from the complete source and
+    #+ destination URLs with sha1sum.
+    #+ TODO:
+    #+ Currently this is done differently. Change this.
     local tgftpTransferCommandSuffix="tgftpTransferCommand"
     local tgftpTransferCommand="$transferId.$tgftpTransferCommandSuffix"
 
@@ -675,13 +686,14 @@ createTgftpTransferCommand()
 
 	#  If a transit site is involved as source, the temporary transit
 	#+ directory will be removed after the transfer succeeded.
-	if [[ $transitSite -eq 0 ]]; then
-		tgftpPostCommandParam="--post-command"
-		#  remove the whole temp. transit dir from the transit site
-		tgftpPostCommand="uberftp -rm -r $( getURLWithoutPath $source )$( getPathFromURL $source ) &"
-        #  deactivated because there is no uberftp on home workstation
-        #:
-	fi
+    #  Do this only if uberftp is available!
+    if hash uberftp &>/dev/null; then    
+        if [[ $transitSite -eq 0 ]]; then
+		    tgftpPostCommandParam="--post-command"
+		    #  remove the whole temp. transit dir from the transit site
+		    tgftpPostCommand="uberftp -rm -r $( getURLWithoutPath $source )$( getPathFromURL $source ) &"
+	    fi
+    fi
 
     #  always remove dumpfile if it is empty after a transfer. This is
 	#+ because otherwise guc complains about an empty dumpfile and does
@@ -1301,6 +1313,8 @@ transferData()
 	
     #  if the whole transfer succeeded,
     if [[ "$?" == "0" ]]; then
+        #  reactivate filename globbing for temp file deletion
+        set +f
         #  ...remove temporary files
         #  file with name of transit site temporary dir
         rm -f "$dataPathFilename".transitSiteTempDir &>/dev/null
@@ -1320,6 +1334,39 @@ transferData()
 }
 ################################################################################
 
+#  load plugins
+#
+#  NOTICE:
+#+ This works as follows: If a function with the same name as another function
+#+ is defined after that other function, the last one "wins" and is used in the
+#+ script.
+#+ To ease handling and understanding, one should use the following rules for
+#+ plugins:
+#+
+#+ * use a specific header (including a shabang, so one can test the function
+#+   before including it)
+#+
+#+ * use one function per plugin
+#+
+#+ * name the plugin after the function
+#+
+#+ Currently this only allows to exchange function bodies and one has to make
+#+ sure that the new function uses the same interface as the old function as
+#+ otherwise the whole script could malfunction.
+#+ But one could also think of "real" plugins, that could plug into specific
+#+ functions of gt in order to change functionality or behaviour. The new
+#+ reliability functions could have been integrated with such a functionality,
+#+ for example.
+gtransferPluginDir=$( dirname $gtransferConfigurationFile/plugins )
+for plugin in $(ls -1 $gtransferPluginDir ); do
+	#  plugins are activated by making them readable AND executable!
+	if [[ -r "$gtransferPluginDir/$plugin" && -x "$gtransferPluginDir/$plugin" ]]; then
+		. "$gtransferPluginDir/$plugin"
+	fi
+done
+
+################################################################################
+
 #$1 $2 $3 $4
 
 #exit 1
@@ -1327,7 +1374,7 @@ transferData()
 #MAIN###########################################################################
 
 #  check that all required tools are available
-use cat grep sed cut sleep tgftp telnet uberftp
+use cat grep sed cut sleep tgftp telnet #uberftp
 
 dataPathMetricSet="1"
 tgftpLogfileNameSet="1"
