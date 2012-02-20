@@ -28,13 +28,13 @@ contract number RI-222919.
 
 COPYRIGHT
 
-version="0.0.5a-dev01"
+version="0.0.5a-dev01a"
 
 #  path to configuration file (prefer system paths!)
 if [[ -e "/opt/gtransfer/etc/dpath.conf" ]]; then
 	dpathConfigurationFile="/opt/gtransfer/etc/dpath.conf"
-#sed#elif [[ -e "<PATH_TO_GTRANSFER>/etc/gtransfer.conf" ]]; then
-#sed#    dpathConfigurationFile="<PATH_TO_GTRANSFER>/etc/gtransfer.conf"
+#sed#elif [[ -e "<PATH_TO_GTRANSFER>/etc/dpath.conf" ]]; then
+#sed#    dpathConfigurationFile="<PATH_TO_GTRANSFER>/etc/dpath.conf"
 elif [[ -e "/etc/opt/gtransfer/dpath.conf" ]]; then
 	dpathConfigurationFile="/etc/opt/gtransfer/dpath.conf"
 elif [[ -e "$HOME/.gtransfer/dpath.conf" ]]; then
