@@ -33,7 +33,7 @@ the following binaries/scripts in $PATH for operation:
 "tgftp" additionally needs "globus-url-copy" with "-list" function (>= Globus
 Toolkit 4.2.0) and is available from:
 
-<GITHUB_URL>
+<https://github.com/fr4nk5ch31n3r/tgftp/>
 
 
 (2) Installation:

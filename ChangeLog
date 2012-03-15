@@ -51,3 +51,31 @@ Minor changes in man pages and modulefile.
 Corrected a wrong function call. The function name was still using the old
 nomenclature.
 
+2012-02-03 Frank Scheiner <frank.scheiner@web.de>
+
+gtransfer distribution v0.0.7d:
+Introduced own version number for gtransfer distribution. The version number of
+the dist. is no longer determined by gtransfer itself, as updates to dpath and
+dparam would not justify a new version number for gtransfer.
+
+2012-03-15  Frank Scheiner  <frank.scheiner@web.de>
+
+gtransfer distribution v0.0.7e:
+
+Added PDF versions of the manual pages to the repo.
+
+*0.0.7d (gtransfer)
+Corrected a bug in the getPathFromURL() function that showed wrong behaviour for
+URLs with files in the root directory ("/"). Example:
+
+gsiftp://host.domain:2811/file.txt
+
+This was parsed as follows:
+
+protocol spec: gsiftp://
+URL without path: gsiftp://host.domain:2811
+path: "" (!) (=> should be "/")
+file: file.txt
+
+Thanks to Giacomo Mariani (CINECA) for detecting this bug.
+

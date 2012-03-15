@@ -8,7 +8,7 @@
 :<<COPYRIGHT
 
 Copyright (C) 2010, 2011 Frank Scheiner, HLRS, Universitaet Stuttgart
-Copyright (C) 2011 Frank Scheiner
+Copyright (C) 2011, 2012 Frank Scheiner
 
 The program is distributed under the terms of the GNU General Public License
 
@@ -31,7 +31,7 @@ contract number RI-222919.
 
 COPYRIGHT
 
-version="0.0.7c"
+version="0.0.7d"
 gsiftpUserParams=""
 
 #  path to configuration file (prefer system paths!)
@@ -453,22 +453,57 @@ getPathFromURL()
 
 	local URL="$1"
 
-	#local path=$(echo "$URL" | sed -e "s|$( getURLWithoutPath $URL )||")
 	#  local path?
 	if echo $URL | grep "^.*://" &>/dev/null; then
-		#  no
+                #  no
+                #  gsiftp://venus.milkyway.universe:2811/path/to/file
+		#  gsiftp://venus.milkyway.universe:2811/file
+		#  strip protocol spec, domain name and port
+		#  path/to/file
+		#  file
 		local tmp=$( echo "$URL" | cut -d '/' -f '4-' )
+
 		#  add leading '/'
+		#  /path/to/file
+		#  /file
 		tmp="/$tmp"
+
+		#  strip file portion from it
+                #  /path/to
+		#  ""
+		tmp=${tmp%\/*}
+
+                #  add slashes if needed
+                if [[ "$tmp" == "" ]]; then
+                        #  /
+                        tmp="/"
+                else
+                        #  /path/to/
+                        tmp="$tmp/"
+                fi
 	else
-		#  yes
-		tmp=$URL
+       		#  yes
+                #  /path/to/file
+                #  not allowed: file !
+		
+                #  so strip only the file portion from it
+                tmp=${URL%\/*}
+
+                #  add slashes if needed
+                if [[ "$tmp" == "" ]]; then
+                        #  /
+                        tmp="/"
+                else
+                        #  /path/to/
+                        tmp="$tmp/"
+                fi
 	fi
 
-	#  strip any file portion from path
-	path=$(echo $tmp | grep -o '/.*/')	
+	path="$tmp"	
 
 	echo "$path"
+
+        return
 }
 
 getFilenameFromURL()
@@ -607,9 +642,10 @@ createTgftpTransferCommand()
 	#  If a transit site is involved as source, the temporary transit
 	#+ directory will be removed after the transfer succeeded.
 	if [[ $transitSite -eq 0 ]]; then
-		tgftpPostCommandParam="--post-command"
+		#tgftpPostCommandParam="--post-command"
 		#  remove the whole temp. transit dir from the transit site
-		tgftpPostCommand="uberftp -rm -r $( getURLWithoutPath $source )$( getPathFromURL $source ) &"
+		#tgftpPostCommand="uberftp -rm -r $( getURLWithoutPath $source )$( getPathFromURL $source ) &"
+		:
 	fi
 
 	#echo "$@"
@@ -1149,15 +1185,17 @@ transferData()
 
 }
 
-
-#$1 $2 $3 $4
-
+#  For testing internal functions:
+#function="$1"
+#shift 1
+#$function $@
+#
 #exit 1
 
 #MAIN###########################################################################
 
 #  check that all required tools are available
-use cat grep sed cut sleep tgftp telnet uberftp
+use cat grep sed cut sleep tgftp telnet #uberftp
 
 dataPathMetricSet="1"
 tgftpLogfileNameSet="1"
