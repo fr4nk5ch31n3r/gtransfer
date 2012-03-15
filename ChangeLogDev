@@ -121,3 +121,24 @@ Corrected wrong conffile name for reconfiguration by installer script.
 *0.0.5-dev01a (dparam):
 Corrected wrong conffile name for reconfiguration by installer script.
 
+2012-03-15  Frank Scheiner  <frank.scheiner@web.de>
+
+gtransfer distribution v0.0.7d_dev02a:
+
+Added PDF versions of the manual pages to the repo.
+
+*0.0.7c-dev02a (gtransfer)
+Corrected a bug in the getPathFromURL() function that showed wrong behaviour for
+URLs with files in the root directory ("/"). Example:
+
+gsiftp://host.domain:2811/file.txt
+
+This was parsed as follows:
+
+protocol spec: gsiftp://
+URL without path: gsiftp://host.domain:2811
+path: "" (!) (=> should be "/")
+file: file.txt
+
+Thanks to Giacomo Mariani (CINECA) for detecting this bug.
+

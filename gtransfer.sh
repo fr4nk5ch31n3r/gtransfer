@@ -34,7 +34,7 @@ COPYRIGHT
 #  prevent "*" expansion (filename globbing)
 set -f
 
-version="0.0.7c-dev02"
+version="0.0.7c-dev02a"
 gsiftpUserParams=""
 
 #  path to configuration file (prefer system paths!)
@@ -474,22 +474,57 @@ getPathFromURL()
 
 	local URL="$1"
 
-	#local path=$(echo "$URL" | sed -e "s|$( getURLWithoutPath $URL )||")
 	#  local path?
 	if echo $URL | grep "^.*://" &>/dev/null; then
-		#  no
+                #  no
+                #  gsiftp://venus.milkyway.universe:2811/path/to/file
+		#  gsiftp://venus.milkyway.universe:2811/file
+		#  strip protocol spec, domain name and port
+		#  path/to/file
+		#  file
 		local tmp=$( echo "$URL" | cut -d '/' -f '4-' )
+
 		#  add leading '/'
+		#  /path/to/file
+		#  /file
 		tmp="/$tmp"
+
+		#  strip file portion from it
+                #  /path/to
+		#  ""
+		tmp=${tmp%\/*}
+
+                #  add slashes if needed
+                if [[ "$tmp" == "" ]]; then
+                        #  /
+                        tmp="/"
+                else
+                        #  /path/to/
+                        tmp="$tmp/"
+                fi
 	else
-		#  yes
-		tmp=$URL
+       		#  yes
+                #  /path/to/file
+                #  not allowed: file !
+		
+                #  so strip only the file portion from it
+                tmp=${URL%\/*}
+
+                #  add slashes if needed
+                if [[ "$tmp" == "" ]]; then
+                        #  /
+                        tmp="/"
+                else
+                        #  /path/to/
+                        tmp="$tmp/"
+                fi
 	fi
 
-	#  strip any file portion from path
-	path=$(echo $tmp | grep -o '/.*/')	
+	path="$tmp"	
 
 	echo "$path"
+
+        return
 }
 
 getFilenameFromURL()
@@ -1367,8 +1402,11 @@ done
 
 ################################################################################
 
-#$1 $2 $3 $4
-
+#  For testing internal functions:
+#function="$1"
+#shift 1
+#$function $@
+#
 #exit 1
 
 #MAIN###########################################################################
