@@ -642,10 +642,10 @@ createTgftpTransferCommand()
 	#  If a transit site is involved as source, the temporary transit
 	#+ directory will be removed after the transfer succeeded.
 	if [[ $transitSite -eq 0 ]]; then
-		#tgftpPostCommandParam="--post-command"
+		tgftpPostCommandParam="--post-command"
 		#  remove the whole temp. transit dir from the transit site
-		#tgftpPostCommand="uberftp -rm -r $( getURLWithoutPath $source )$( getPathFromURL $source ) &"
-		:
+		tgftpPostCommand="uberftp -rm -r $( getURLWithoutPath $source )$( getPathFromURL $source ) &"
+		#:
 	fi
 
 	#echo "$@"
@@ -1195,7 +1195,7 @@ transferData()
 #MAIN###########################################################################
 
 #  check that all required tools are available
-use cat grep sed cut sleep tgftp telnet #uberftp
+use cat grep sed cut sleep tgftp telnet uberftp
 
 dataPathMetricSet="1"
 tgftpLogfileNameSet="1"
