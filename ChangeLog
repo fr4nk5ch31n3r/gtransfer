@@ -79,3 +79,21 @@ file: file.txt
 
 Thanks to Giacomo Mariani (CINECA) for detecting this bug.
 
+2012-05-11  Frank Scheiner  <frank.scheiner@web.de>
+
+gtransfer distribution v0.0.8:
+
+*0.0.8 (gtransfer)
+Added workaround for guc limitation. guc creates dirs with group and world r-x
+permissions set. Because of this, temp dirs on transit sites were readable by
+others than the owner during a transfer from source to transit site, transit
+site to transit site and transit site to destination site.
+The workaround now uses a tgftp pre-command to create the dir and then make it
+only accessible by the owner (chmod 0700). This is done with two calls to
+uberftp in the cases described above.
+
+!IMPORTANT!
+Additionally internal logic changes were introduced, that require a change in
+the gtransfer configuration file. "verboseExec" is now activated when set to "1"
+instead of "0". PLEASE CHANGE THIS IN YOUR CONF FILES!
+

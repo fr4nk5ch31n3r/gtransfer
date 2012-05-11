@@ -31,7 +31,7 @@ contract number RI-222919.
 
 COPYRIGHT
 
-version="0.0.7d"
+version="0.0.8"
 gsiftpUserParams=""
 
 #  path to configuration file (prefer system paths!)
@@ -593,7 +593,8 @@ hashSourceDestination()
 
 echoIfVerbose()
 {
-	if [[ $verboseExec == 0 ]]; then
+        #  1 true, 0 false
+	if [[ $verboseExec == 1 ]]; then
 		echo $@
 	fi
 
@@ -627,58 +628,170 @@ createTgftpTransferCommand()
 	#+                            gsiftpParams \
 	#+                            tgftpTransferCommand \
 	#+                            logfileName \
-	#+                            transitSite
+	#+                            fromTransitSite \
+        #+                            toTransitSite \
+        #+                            transitDirUrl
 
 	local source="$1"
 	local destination="$2"
 	local gsiftpParams="$3"
 	local tgftpTransferCommand="$4"
 	local logfileName="$5"
-	local transitSite="$6"
+	local fromTransitSite="$6"
+        local toTransitSite="$7"
+        local transitDirUrl="$8"
 
 	local tgftpPostCommandParam=""
 	local tgftpPostCommand=""
 
 	#  If a transit site is involved as source, the temporary transit
 	#+ directory will be removed after the transfer succeeded.
-	if [[ $transitSite -eq 0 ]]; then
+	if [[ $fromTransitSite -eq 1 ]]; then
 		tgftpPostCommandParam="--post-command"
 		#  remove the whole temp. transit dir from the transit site
 		tgftpPostCommand="uberftp -rm -r $( getURLWithoutPath $source )$( getPathFromURL $source ) &"
 		#:
 	fi
 
-	#echo "$@"
+        #  workaround a guc limitation: guc by default creates dirs group and
+        #+ world r-x, this makes sure, that the transit dir is only accessible
+        #+ by the owner (create and chmod happen prior to the transfer).
+        #
+        #  NOTICE:
+        #+ This was tested on Louhi (with GT5.0.3). There needs to be a short
+        #+ sleep between dir creation and chmod, as otherwise the chmod fails.
+        #+
+        #+ $ uberftp -mkdir gsiftp://p6012-deisa.huygens.sara.nl:2812/scratch/shared/prace/gridftp/transitSiteTempDir.rQoM5180 && uberftp -chmod 0700 gsiftp://p6012-deisa.huygens.sara.nl:2812/scratch/shared/prace/gridftp/transitSiteTempDir.rQoM5180
+        #+ Failed to connect to 145.100.18.152 port 2812: Cannot assign requested address 
+        #+
+        #+ $ uberftp -mkdir gsiftp://p6012-deisa.huygens.sara.nl:2812/scratch/shared/prace/gridftp/transitSiteTempDir.rQoM5180 && sleep 0.5 &&  uberftp -chmod 0700 gsiftp://p6012-deisa.huygens.sara.nl:2812/scratch/shared/prace/gridftp/transitSiteTempDir.rQoM5180
+        
+        if [[ $toTransitSite -eq 1 ]]; then
+                tgftpPreCommandParam="--pre-command"
+                tgftpPreCommand="uberftp -mkdir $transitDirUrl && sleep 0.5 && uberftp -chmod 0700 $transitDirUrl"
+        fi
+	
+        ########################################################################
 
-	#echo "tgftpTransferCommand: $tgftpTransferCommand $4"
+        #  new
 
-	if [[ $verboseExec -eq 0 && $transitSite -eq 1 ]]; then
+        #  case
+        #  |
+        #  |  verbose (0 false, 1 true)
+        #  |  |
+        #  |  | fromTransitSite (0 false, 1 true)
+        #  |  | |
+        #  |  | | toTransitSite (0 false, 1 true)
+        #  |  | | |
+        #  4  1 0 0 source -> dest
+        #  5  1 0 1 source -> transit
+        #  8  1 1 1 transit -> transit
+        #  6  1 1 0 transit -> dest
+        #
+        #  0  0 0 0 source -> dest
+        #  1  0 0 1 source -> transit
+        #  3  0 1 1 transit -> transit
+        #  2  0 1 0 transit -> dest
+
+        #  case 4
+        if [[ $verboseExec -eq 1 && \
+              $fromTransitSite -eq 0 && \
+              $toTransitSite -eq 0 \
+        ]]; then
 		echo "tgftp" \
                      "--source \"$source\"" \
                      "--target \"$destination\"" \
 		     "--log-filename \"$logfileName\"" \
                      "-- \"$gsiftpParams\"" | tee "$tgftpTransferCommand"
-	elif [[ $verboseExec -eq 0 && $transitSite -eq 0 ]]; then
-		echo "tgftp" \
+
+        #  case 5
+        elif [[ $verboseExec -eq 1 && \
+                $fromTransitSite -eq 0 && \
+                $toTransitSite -eq 1 \
+        ]]; then
+                echo "tgftp" \
                      "--source \"$source\"" \
                      "--target \"$destination\"" \
 		     "--log-filename \"$logfileName\"" \
-		     "$tgftpPostCommandParam" \"$tgftpPostCommand\" \
+                     "$tgftpPreCommandParam" \"$tgftpPreCommand\" \
                      "-- \"$gsiftpParams\"" | tee "$tgftpTransferCommand"
-	elif [[ $verboseExec -eq 1 && $transitSite -eq 0 ]]; then
+
+        #  case 8
+        elif [[ $verboseExec -eq 1 && \
+                $fromTransitSite -eq 1 && \
+                $toTransitSite -eq 1 \
+        ]]; then
+                echo "tgftp" \
+                     "--source \"$source\"" \
+                     "--target \"$destination\"" \
+		     "--log-filename \"$logfileName\"" \
+                     "$tgftpPreCommandParam" \"$tgftpPreCommand\" \
+                     "$tgftpPostCommandParam" \"$tgftpPostCommand\" \
+                     "-- \"$gsiftpParams\"" | tee "$tgftpTransferCommand"
+
+        #  case 6
+        elif [[ $verboseExec -eq 1 && \
+                $fromTransitSite -eq 1 && \
+                $toTransitSite -eq 0 \
+        ]]; then
+                echo "tgftp" \
+                     "--source \"$source\"" \
+                     "--target \"$destination\"" \
+		     "--log-filename \"$logfileName\"" \
+                     "$tgftpPostCommandParam" \"$tgftpPostCommand\" \
+                     "-- \"$gsiftpParams\"" | tee "$tgftpTransferCommand"
+
+        #  case 0
+        elif [[ $verboseExec -eq 0 && \
+              $fromTransitSite -eq 0 && \
+              $toTransitSite -eq 0 \
+        ]]; then
 		echo "tgftp" \
                      "--source \"$source\"" \
                      "--target \"$destination\"" \
 		     "--log-filename \"$logfileName\"" \
-		     "$tgftpPostCommandParam" \"$tgftpPostCommand\" \
                      "-- \"$gsiftpParams\"" > "$tgftpTransferCommand"
-	else
-		echo "tgftp" \
+
+        #  case 1
+        elif [[ $verboseExec -eq 0 && \
+                $fromTransitSite -eq 0 && \
+                $toTransitSite -eq 1 \
+        ]]; then
+                echo "tgftp" \
                      "--source \"$source\"" \
                      "--target \"$destination\"" \
 		     "--log-filename \"$logfileName\"" \
+                     "$tgftpPreCommandParam" \"$tgftpPreCommand\" \
                      "-- \"$gsiftpParams\"" > "$tgftpTransferCommand"
-	fi
+
+        #  case 3
+        elif [[ $verboseExec -eq 0 && \
+                $fromTransitSite -eq 1 && \
+                $toTransitSite -eq 1 \
+        ]]; then
+                echo "tgftp" \
+                     "--source \"$source\"" \
+                     "--target \"$destination\"" \
+		     "--log-filename \"$logfileName\"" \
+                     "$tgftpPreCommandParam" \"$tgftpPreCommand\" \
+                     "$tgftpPostCommandParam" \"$tgftpPostCommand\" \
+                     "-- \"$gsiftpParams\"" > "$tgftpTransferCommand"
+
+        #  case 2
+        elif [[ $verboseExec -eq 0 && \
+                $fromTransitSite -eq 1 && \
+                $toTransitSite -eq 0 \
+        ]]; then
+                echo "tgftp" \
+                     "--source \"$source\"" \
+                     "--target \"$destination\"" \
+		     "--log-filename \"$logfileName\"" \
+                     "$tgftpPostCommandParam" \"$tgftpPostCommand\" \
+                     "-- \"$gsiftpParams\"" > "$tgftpTransferCommand"
+
+        fi
+
+        ########################################################################
 
 	if [[ $? -eq 0 ]]; then
 		return 0
@@ -926,7 +1039,9 @@ transferData()
                                  "$transferStepDefaultParams" \
                                  "$tgftpTransferCommand" \
 				 "$tgftpLogfileName" \
-				 "1"
+				 "0" \
+                                 "0" \
+                                 ""
 
 				#simulateTransfer
 
@@ -958,7 +1073,9 @@ transferData()
                                  "$transferStepDefaultParams" \
                                  "$tgftpTransferCommand" \
 				 "$tgftpLogfileName" \
-				 "1"
+				 "0" \
+                                 "1" \
+                                 "${transferStepDestination}${transitSiteTempDir}"
 
 				#simulateTransfer
 				#simulateError
@@ -985,7 +1102,9 @@ transferData()
                                  "$transferStepDefaultParams" \
                                  "$tgftpTransferCommand" \
 				 "$tgftpLogfileName" \
-				 "0"
+				 "1" \
+                                 "1" \
+                                 "${transferStepDestination}${transitSiteTempDir}"
 
 				#simulateTransfer
 
@@ -1014,7 +1133,9 @@ transferData()
                                  "$transferStepDefaultParams" \
                                  "$tgftpTransferCommand" \
 				 "$tgftpLogfileName" \
-				 "0"
+				 "1" \
+                                 "0" \
+                                 ""
 
 				#simulateTransfer
 				#simulateError
@@ -1177,7 +1298,7 @@ transferData()
 
 	fi
 
-	if [[ $verboseExec == 0 ]]; then
+	if [[ $verboseExec == 1 ]]; then
 		echoIfVerbose -e "INFO: The transfer succeeded!"
 	else
 		echo ""
@@ -1354,7 +1475,8 @@ fi
 
 #  verbose execution needed due to options?
 if [[ $verboseExecSet == 0 ]]; then
-	verboseExec=0
+        #  1 true, 0 false
+	verboseExec=1
 fi
 
 #  all mandatory params present?
