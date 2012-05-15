@@ -97,3 +97,18 @@ Additionally internal logic changes were introduced, that require a change in
 the gtransfer configuration file. "verboseExec" is now activated when set to "1"
 instead of "0". PLEASE CHANGE THIS IN YOUR CONF FILES!
 
+
+2012-05-15  Frank Scheiner  <frank.scheiner@web.de>
+
+gtransfer distribution v0.0.9:
+
+*0.0.9 (gtransfer)
+Added a workaround for a uberftp "anomaly". Two or more subsequent calls to
+uberftp don't work if the time frame in between is too short. The second call to
+uberftp then fails and emits "Failed to connect to <IP_ADDRESS> port
+<PORT_NUMBER>: Cannot assign requested address". The current workaround should
+work for multi-step transfers that are not too short. If they're too short, the
+post-command that removes the transit directory might be executed too early
+after the pre-command that creates the transit directory and chmods it to 0700
+was executed.
+

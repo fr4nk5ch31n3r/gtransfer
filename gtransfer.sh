@@ -31,7 +31,7 @@ contract number RI-222919.
 
 COPYRIGHT
 
-version="0.0.8"
+version="0.0.9"
 gsiftpUserParams=""
 
 #  path to configuration file (prefer system paths!)
@@ -339,6 +339,44 @@ getProtocolSpecifier()
 		echo "$protocolSpecifier"
 		return 0
 	fi
+}
+
+getPortNumberFromURL()
+{
+        #  get the port number from a URL
+        #
+        #  usage:
+        #+ getPortNumberFromUrl url
+
+        local _url="$1"
+
+        local _portNumber=$( echo "$_url" | cut -d ':' -f 3 | cut -d '/' -f 1 )
+
+        if [[ "$_portNumber" != "" ]]; then
+                echo "$_portNumber"
+                return
+        else
+                return 1
+        fi
+}
+
+getFQDNFromURL()
+{
+        #  get the Fully Qualified Domain Name from a URL
+        #
+        #  usage:
+        #+ getFQDNFromURL url
+
+        local _url="$1"
+
+        local _fqdn=$( getURLWithoutPath "$_url" | cut -d '/' -f 3 | cut -d ':' -f 1)
+
+        if [[ "$_fqdn" != "" ]]; then
+                echo "$_fqdn"
+                return
+        else
+                return 1
+        fi
 }
 
 getURLWithoutPath()
@@ -665,10 +703,17 @@ createTgftpTransferCommand()
         #+ Failed to connect to 145.100.18.152 port 2812: Cannot assign requested address 
         #+
         #+ $ uberftp -mkdir gsiftp://p6012-deisa.huygens.sara.nl:2812/scratch/shared/prace/gridftp/transitSiteTempDir.rQoM5180 && sleep 0.5 &&  uberftp -chmod 0700 gsiftp://p6012-deisa.huygens.sara.nl:2812/scratch/shared/prace/gridftp/transitSiteTempDir.rQoM5180
-        
         if [[ $toTransitSite -eq 1 ]]; then
+                #  get FQDN and port number from destination URL
+                local _fqdn=$( getFQDNFromURL "$destination" )
+                local _portNumber=$( getPortNumberFromURL "$destination" )
+                local _transitDir=$( getPathFromURL "$transitDirUrl" )
+
                 tgftpPreCommandParam="--pre-command"
-                tgftpPreCommand="uberftp -mkdir $transitDirUrl && sleep 0.5 && uberftp -chmod 0700 $transitDirUrl"
+                #tgftpPreCommand="uberftp -mkdir $transitDirUrl && sleep 0.5 && uberftp -chmod 0700 $transitDirUrl"
+                #  Alternative to the commands above which works around the issue mentioned above. Which wasn't really
+                #+ solved with the short sleep.
+                tgftpPreCommand="echo 'mkdir $_transitDir; chmod 0700 $_transitDir; bye' | uberftp -P $_portNumber $_fqdn"
         fi
 	
         ########################################################################
@@ -1075,7 +1120,7 @@ transferData()
 				 "$tgftpLogfileName" \
 				 "0" \
                                  "1" \
-                                 "${transferStepDestination}${transitSiteTempDir}"
+                                 "${transferStepDestination}${transitSiteTempDir}/"
 
 				#simulateTransfer
 				#simulateError
@@ -1104,7 +1149,7 @@ transferData()
 				 "$tgftpLogfileName" \
 				 "1" \
                                  "1" \
-                                 "${transferStepDestination}${transitSiteTempDir}"
+                                 "${transferStepDestination}${transitSiteTempDir}/"
 
 				#simulateTransfer
 
