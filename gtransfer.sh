@@ -34,22 +34,34 @@ COPYRIGHT
 #  prevent "*" expansion (filename globbing)
 set -f
 
-version="0.0.7c-dev04"
+version="0.0.7c-dev05"
 gsiftpUserParams=""
 
 #  path to configuration file (prefer system paths!)
 if [[ -e "/opt/gtransfer/etc/gtransfer.conf" ]]; then
-    gtransferConfigurationFile="/opt/gtransfer/etc/gtransfer.conf"
+        gtransferConfigurationFile="/opt/gtransfer/etc/gtransfer.conf"
 #sed#elif [[ -e "<PATH_TO_GTRANSFER>/etc/gtransfer.conf" ]]; then
 #sed#    gtransferConfigurationFile="<PATH_TO_GTRANSFER>/etc/gtransfer.conf"
 elif [[ -e "/etc/opt/gtransfer/gtransfer.conf" ]]; then
-    gtransferConfigurationFile="/etc/opt/gtransfer/gtransfer.conf"
+        gtransferConfigurationFile="/etc/opt/gtransfer/gtransfer.conf"
 elif [[ -e "$HOME/.gtransfer/gtransfer.conf" ]]; then
-    gtransferConfigurationFile="$HOME/.gtransfer/gtransfer.conf"
+        gtransferConfigurationFile="$HOME/.gtransfer/gtransfer.conf"
 fi
 
+_GTRANSFER_LOCATION="$HOME/opt/gtransfer"
+_LIB="$_GTRANSFER_LOCATION/lib"
+
 ################################################################################
-#  FUNCTIONS  ##################################################################
+#  INCLUDE LIBRARY FUNCTIONS
+################################################################################
+
+. "$_LIB"/listTransfer.bashlib
+
+################################################################################
+
+
+################################################################################
+#  FUNCTIONS
 ################################################################################
 
 #USAGE##########################################################################
@@ -104,7 +116,7 @@ key to see what's possible.
 
 The options are as follows:
 
---source|-s sourceUrl   Determine the source URL for the transfer.
+[--source|-s sourceUrl] Determine the source URL for the transfer.
 
                         Possible URL examples:
 
@@ -113,7 +125,7 @@ The options are as follows:
 
                         "FQDN" is the fully qualified domain name.
 
---destination|-d destinationUrl
+[--destination|-d destinationUrl]
                         Determine the destination URL for the transfer.
 
                         Possible URL examples:
@@ -122,6 +134,12 @@ The options are as follows:
                         [file://]/path/to/file
 
                         "FQDN" is the fully qualified domain name.
+
+[--transfer-list transferList]
+                        As alternative to providing source and destination URLs
+                        on the commandline one can also provide a list of source
+                        and destination URLs. See the gt manual page for more
+                        details.
 
 [--verbose|-v]          Be verbose.
 
@@ -164,6 +182,10 @@ The options are as follows:
                         three times or fail. Alternatively this option can also
                         be set through the environment variable
                         "GT_MAX_RETRIES".
+
+[--gt-progress-indicator indicatorCharacter]
+                        Set the character to use for the progress indicator of
+                        gtransfer. By default this is a ".".
 
 [-- gsiftpParameters]   Determine the "globus-url-copy" parameters that should
                         be used for all transfer steps. Notice the space between
@@ -276,7 +298,10 @@ scanPort()
 	local targetSiteHostname="$1"
 	local targetPort="$2"
 
-	echo "open $targetSiteHostname $targetPort" | telnet 2>/dev/null 1> .scanResult &
+        #  included for thread safety
+        local _scanResult=$( mktemp .scanResult_XXXXXX )
+
+	echo "open $targetSiteHostname $targetPort" | telnet 2>/dev/null 1> $_scanResult &
 
 	scanCommandPid="$!"
 
@@ -284,11 +309,11 @@ scanPort()
 
 	wait $scanCommandPid &>/dev/null
 
-	if cat ".scanResult" | grep "Connected" &>/dev/null; then
-		rm ".scanResult"
+	if cat "$_scanResult" | grep "Connected" &>/dev/null; then
+		rm "$_scanResult" &>/dev/null
 		return 0
 	else
-		rm ".scanResult"
+		rm "$_scanResult" &>/dev/null
 		return 1
 	fi
 }
@@ -407,6 +432,9 @@ getURLWithoutPath()
 	#
 	#  (gsiftp://venus.milkyway.universe:2811)/path/to/file
 	#  (file://)/path/to/local/file
+        #  (gsiftp://user@host.domain:2811)/path/to/file
+        #
+        #  conserves any existing username portions
 	#
 	#  usage:
 	#+ getURLWithoutPath "URL"
@@ -732,18 +760,7 @@ createTgftpTransferCommand()
 
         #  This should create a unique filename correspondent to this specifc tgftp
         #+ command.
-        #
-        #  TODO:
-        #+ In the near future tgftp will also support guc compatible transfer files.
-        #+ More details at <http://www.globus.org/toolkit/docs/5.0/5.0.4/data/gridftp/user/#globus-url-copy>.
-        #+ Look for option "-f filename"
-        #if echo $gsiftpParams | grep '\-f' &>/dev/null; then
-        #    #  hash transferfile
-        #    local dumpfileName="hash of transfer file"
-        #else
-        #    #  hash source and destination
         local dumpfileName="${transferId}.dumpfile"
-        #fi
 
         #  add additional guc parameters
         #
@@ -964,6 +981,7 @@ simulateTransfer()
 	echo "sleep 10" > $tgftpTransferCommand
 }
 
+
 simulateError()
 {
 	#  creates a specific tgftpTransferCommand that only blocks for 10 secs
@@ -1035,14 +1053,14 @@ doTransferStep()
         #+                destinationUsernamePortion \
         #+                transferId
 
-	local transferStepSource="$1"
+        local transferStepSource="$1"
         local transferStepDestination="$2"
-	local transferStepNumber="$3"
+        local transferStepNumber="$3"
 
-	local transitSiteTempDir="$4"
+        local transitSiteTempDir="$4"
 
-	local sourcePath="$5"
-	local destinationPath="$6"
+        local sourcePath="$5"
+        local destinationPath="$6"
 
         local sourceFile="$7"
         if [[ "$sourceFile" == " " ]]; then
@@ -1087,16 +1105,13 @@ doTransferStep()
 	fi
 
 	#  (0) construct names for logfile and dumpfile
+        ########################################################################
         local tgftpLogfileName="${tgftpTempLogfileName/%.log/__step_${transferStepNumber}.log}"
-        #  construct name of dumpfile in createTgftpTransferCommand()
-        #local dumpfileName=""
-
-	#tgftpLogfileName="${defaultTgftpLogfileNamePrefix}__step_${transferStepNumber}.log"
 
 	#  get default params for the transfer step
 	#+ (1) get filename for default params
+        ########################################################################
         local transferStepDefaultParamsFilename="$(hashSourceDestination $( echo $transferStepSourceWithoutPath | sed -e 's/:\/\/.*@/:\/\//' ) $( echo $transferStepDestinationWithoutPath | sed -e 's/:\/\/.*@/:\/\//' ) )"
-	#transferStepDefaultParamsFile="$ttgftpDefaultParamsDirectory/$(hashSourceTarget $transferStepSourceWithoutPath $transferStepTargetWithoutPath)"
 
         #  if existing prefer user's dparam
 	if [[ -e "$gtransferDefaultParamsDirectory/$transferStepDefaultParamsFilename" ]]; then
@@ -1110,6 +1125,7 @@ doTransferStep()
 	fi
 
 	#  (2) get default params
+        ########################################################################
 	if [[ -e "$transferStepDefaultParamsFile" && \
 	      -z "$gsiftpUserParams" \
 	]]; then
@@ -1121,8 +1137,11 @@ doTransferStep()
 	elif [[ -e "$transferStepDefaultParamsFile" && \
 	        -n "$gsiftpUserParams" \
 	]]; then
+                #  user params specified
 		transferStepDefaultParams="$(xtractXMLAttributeValue "gsiftp_params" $transferStepDefaultParamsFile)"
 
+                #  if user only provided "-len|-partial-length [...]", then just add it to the default gsiftp params,
+                #+ if not only use the user provided params.
 		grepMatch=$( echo "$gsiftpUserParams" | egrep -o "\-len [[:alnum:]]*|\-partial-length [[:alnum:]]*" )
 		if [[ "$grepMatch" == "$gsiftpUserParams" ]]; then
 			transferStepDefaultParams="$transferStepDefaultParams $gsiftpUserParams"
@@ -1153,19 +1172,10 @@ doTransferStep()
 	#destinationUsernamePortion
 
 	#  (3) transfer data (various steps possible!)
-	
-	#  TODO:
-	#
-	#  There's also a fourth possible step, where source and
-	#+ target URLs don't have a path (direct connection
-	#+ possible).
-	#
-	#  DONE:
-	#+ implementation:
-	#
+        ########################################################################
 	#  direct transfer
 	if [[ "$transferStepSource" == "$(getURLWithoutPath $transferStepSource)" && \
-      	  "$transferStepDestination" == "$(getURLWithoutPath $transferStepDestination)" \
+      	      "$transferStepDestination" == "$(getURLWithoutPath $transferStepDestination)" \
 	]]; then
 		#  handle usernames in URLs
 		transferStepSourceProtoSpec=$( getProtocolSpecifier $transferStepSource )
@@ -1199,7 +1209,7 @@ doTransferStep()
 
 		bash $tgftpTransferCommand &>"${tgftpTransferCommand}Output" &
 		
-	#  initial transfer step
+	#  initial transfer step of a multi-step transfer (source to transit site)
 	#
 	#  The initial transfer step can be detected as follows:
 	#+ The source portion has no path added to the URL.
@@ -1235,7 +1245,7 @@ doTransferStep()
 
 		bash $tgftpTransferCommand &>"${tgftpTransferCommand}Output" &
 
-	#  transfer from transit site to transit site
+	#  transfer (transit site to transit site)
 	#
 	#  A transfer from transit site to transit site can be
 	#+ detected as follows:
@@ -1260,7 +1270,7 @@ doTransferStep()
 
 		bash $tgftpTransferCommand &>${tgftpTransferCommand}Output &
 
-	#  last step
+	#  last step (transit site to final destination)
 	#
 	#  The last step is identified by the transfer step
 	#+ target being identical to the target of the data
@@ -1300,7 +1310,7 @@ doTransferStep()
 
 	#  indicate progress
 	while ps -p$tgftpTransferCommandPid &>/dev/null; do
-		echo -n "."
+		echo -n "$gtProgressIndicator"
 		sleep 2
 	done
 
@@ -1414,7 +1424,7 @@ transferData()
 
 	#  temporary dir on transit site. This is the same for all transit sites.
         #+ To finish a failed transfer its name is also stored in a file until the
-        #+ whole transfer finished.
+        #+ whole transfer is finished.
 	#
 	#  NOTICE:
 	#+ This contains no leading/trailing "/"!
@@ -1538,9 +1548,9 @@ transferData()
                 #rm -f *."$tgftpTransferCommand"* &>/dev/null
         fi
 
-	if [[ $verboseExec == 1 ]]; then
-		echoIfVerbose -e "INFO: The transfer succeeded!"
-	else
+	echoIfVerbose -e "INFO: The transfer succeeded!"
+
+	if [[ $gtProgressIndicatorSet != 0 ]]; then
 		echo ""
 	fi
 
@@ -1597,6 +1607,7 @@ tgftpLogfileNameSet="1"
 
 gtMaxRetries="3"
 gucMaxRetries="1"
+gtProgressIndicator="."
 
 #  correct number of params?
 if [[ "$#" -lt "1" ]]; then
@@ -1622,9 +1633,10 @@ while [[ "$1" != "" ]]; do
 		"$1" != "--auto-clean" && "$1" != "-a" && \
 		"$1" != "--logfile" && "$1" != "-l" && \
 		"$1" != "--configfile" && \
-        "$1" != "--guc-max-retries" && \
-        "$1" != "--gt-max-retries" && \
-        "$1" != "-f" && \
+                "$1" != "--guc-max-retries" && \
+                "$1" != "--gt-max-retries" && \
+                "$1" != "--transfer-list" && "$1" != "-f" && \
+                "$1" != "--gt-progress-indicator" && \
 		"$1" != "--" \
 	]]; then
 		#  no, so output a usage message
@@ -1679,16 +1691,16 @@ while [[ "$1" != "" ]]; do
 			exit 1
 		fi
 
-        #  "--transfer-file|-f transferFile"
-	elif [[ "$1" == "--transfer" || "$1" == "-f" ]]; then
-		if [[ "$gsiftpTransferFileSet" != "0" ]]; then
+        #  "--transfer-list|-f transferList"
+	elif [[ "$1" == "--transfer-list" || "$1" == "-f" ]]; then
+		if [[ "$gsiftpTransferListSet" != "0" ]]; then
 			shift 1
-			gsiftpTransferFile="$1"
-			gsiftpTransferFileSet="0"
+			gsiftpTransferList="$1"
+			gsiftpTransferListSet="0"
 			shift 1
 		else
 			#  duplicate usage of this parameter
-			echo "ERROR: The parameter \"--transfer-file|-f\" cannot be used multiple times!"
+			echo "ERROR: The parameter \"--transfer-list|-f\" cannot be used multiple times!"
 			exit 1
 		fi
 
@@ -1715,6 +1727,19 @@ while [[ "$1" != "" ]]; do
 		else
 			#  duplicate usage of this parameter
 			echo "ERROR: The parameter \"--gt-max-retries\" cannot be used multiple times!"
+			exit 1
+		fi
+
+        #  "--gt-progress-indicator indicatorCharacter"
+        elif [[ "$1" == "--gt-progress-indicator" ]]; then
+		if [[ "$gtProgressIndicatorSet" != "0" ]]; then
+			shift 1
+			gtProgressIndicator="$1"
+			gtProgressIndicatorSet="0"
+			shift 1
+		else
+			#  duplicate usage of this parameter
+			echo "ERROR: The parameter \"--gt-progress-indicator\" cannot be used multiple times!"
 			exit 1
 		fi
 
@@ -1797,21 +1822,6 @@ if [[ $verboseExecSet == 0 ]]; then
 	verboseExec=1
 fi
 
-#  all mandatory params present?
-if [[ "$gsiftpSourceUrl" == "" || \
-      "$gsiftpDestinationUrl" == "" \
-]]; then
-        if [[ "$gsiftpTransferFileSet" == "0" ]]; then
-            : #  continue
-            #  TODO:
-            #+ Processing is different for transfers that are submitted by file.
-        else
-            #  no, so output a usage message
-            usageMsg
-            exit 1
-        fi
-fi
-
 #  set dpath metric
 if [[ "$dataPathMetricSet" != "0" ]]; then
 	dataPathMetric="$defaultDataPathMetric"
@@ -1822,7 +1832,22 @@ if [[ "$tgftpLogfileNameSet" != "0" ]]; then
 	tgftpLogfileName="$defaultTgftpLogfileName"
 fi
 
-transferData "$gsiftpSourceUrl" "$gsiftpDestinationUrl" "$dataPathMetric" "$tgftpLogfileName"
+#  all mandatory params present?
+if [[ "$gsiftpSourceUrl" == "" || \
+      "$gsiftpDestinationUrl" == "" \
+]]; then
+        if [[ "$gsiftpTransferListSet" == "0" ]]; then
+                listTransfer/transferData "$gsiftpTransferList" "$dataPathMetric" "$tgftpLogfileName"
+        else
+                #  no, so output a usage message
+                usageMsg
+                exit 1
+        fi
+else
+        transferData "$gsiftpSourceUrl" "$gsiftpDestinationUrl" "$dataPathMetric" "$tgftpLogfileName"
+fi
+
+#transferData "$gsiftpSourceUrl" "$gsiftpDestinationUrl" "$dataPathMetric" "$tgftpLogfileName"
 transferDataReturnValue="$?"
 
 #  automatically remove logfiles if needed

@@ -1,0 +1,1065 @@
+#  listTransfer.bashlib - library functions for transferring lists
+
+:<<COPYRIGHT
+
+Copyright (C) 2012 Frank Scheiner
+
+The program is distributed under the terms of the GNU General Public License
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+COPYRIGHT
+
+################################################################################
+#  INCLUDES
+################################################################################
+
+:<<INCLUDE
+INCLUDE
+
+################################################################################
+#  VARIABLES
+################################################################################
+
+readonly _listTransfer_Version="0.1.0"
+
+################################################################################
+#  FUNCTIONS
+################################################################################
+
+:<<FUNCTIONS
+listTransfer/transferData
+listTransfer/doTransferStep
+listTransfer/createTgftpTransferCommand
+listTransfer/createTransferList
+listTransfer/getDestinationFromTransferList
+listTransfer/getSourceFromTransferList
+listTransfer/getTransferIdForTransferList
+listTransfer/getTransferSizeFromTransferList
+FUNCTIONS
+
+
+listTransfer/transferData()
+{
+	#  transfers data from source to target (newest version!)
+	#
+	#  usage:
+	#+ transferData transferList metric tmpLogfileName
+
+        set -f
+
+        local _transferList="$1"
+	local dataPathMetric="$2"
+	local tgftpTempLogfileName="$3"
+
+	local tgftpLogfileName=""
+
+        #  max number of retries gtransfer will do
+        local maxRetries="${GT_MAX_RETRIES:-$gtMaxRetries}"
+        local retries=0
+
+        #  get source and destination URLs from transfer list
+        #
+        #  NOTICE:
+        #+ All URLs contained in a transfer list need to have the same source
+        #+ and destination hosts!
+        local source=$( listTransfer/getSourceFromTransferList "$_transferList" )
+        local destination=$( listTransfer/getDestinationFromTransferList "$_transferList" )
+        #  for future functionality
+        #local transferSize=$( listTransfer/getTransferSizeFromTransferList "$_transferList" )
+
+	local sourceWithoutPath=$(getURLWithoutPath "$source")
+	local destinationWithoutPath=$(getURLWithoutPath "$destination")
+
+        #  not useful for a transfer list
+	local sourcePath=$(getPathFromURL "$source")
+	local destinationPath=$(getPathFromURL "$destination")
+
+	local sourceFile=$(getFilenameFromURL "$source")
+	local destinationFile=$(getFilenameFromURL "$destination")
+        #  ^
+
+        local sourceUsernamePortion=$( echo $sourceWithoutPath | grep -o "://.*@" | sed -e 's/:\/\///' )
+	local destinationUsernamePortion=$( echo $destinationWithoutPath | grep -o "://.*@" | sed -e 's/:\/\///' )
+
+	local memToMem=1
+
+	#  is this a memory to memory transfer?
+	if [[ "${sourcePath}${sourceFile}" == "/dev/zero" && \
+	      "${destinationPath}${destinationFile}" == "/dev/null" \
+	]]; then
+		memToMem=0
+	fi
+
+        #echo "($$) DEBUG: source=\"$source\""
+        #echo "($$) DEBUG: destination=\"$destination\""
+        #echo "($$) DEBUG: sourceWithoutPath=\"$sourceWithoutPath\""
+        #echo "($$) DEBUG: destinationWithoutPath=\"$destinationWithoutPath\""
+        #echo "($$) DEBUG: sourcePath=\"$sourcePath\""
+        #echo "($$) DEBUG: destinationPath=\"$destinationPath\""
+        #echo "($$) DEBUG: sourceFile=\"$sourceFile\""
+        #echo "($$) DEBUG: destinationFile=\"$destinationFile\""
+        #echo "($$) DEBUG: sourceUsernamePortion=\"$sourceUsernamePortion\""
+        #echo "($$) DEBUG: destinationUsernamePortion=\"$destinationUsernamePortion\""
+        #exit 1
+
+	#  get corresponding data path (and remove any "username@" portions in
+	#+ the URL before hashing).
+	local dataPathFilename=$( hashSourceDestination $( echo $sourceWithoutPath | sed -e 's/:\/\/.*@/:\/\//' ) $( echo $destinationWithoutPath | sed -e 's/:\/\/.*@/:\/\//' ) )
+
+	if [[ -e "$gtransferDataPathDirectory/$dataPathFilename" ]]; then
+		local dataPathFile="$gtransferDataPathDirectory/$dataPathFilename"
+	elif [[ -e "$gtransferSystemDataPathDirectory/$dataPathFilename" ]]; then
+		local dataPathFile="$gtransferSystemDataPathDirectory/$dataPathFilename"
+	fi
+
+	#  temporary dir on transit site. This is the same for all transit sites.
+        #+ To finish a failed transfer the name of the temp. dir is also stored
+        #+ in a file until the whole transfer is finished.
+        #
+        #  NOTICE:
+        #+ This contains no leading/trailing "/"!
+        if [[ -e "$dataPathFilename".transitSiteTempDir ]]; then
+                local transitSiteTempDir=$( cat "$dataPathFilename".transitSiteTempDir )
+        else
+                local transitSiteTempDir=$( mktemp -u "transitSiteTempDir.XXXXXXXX" )
+                echo "$transitSiteTempDir" > "$dataPathFilename".transitSiteTempDir
+        fi
+
+	#  data path file existing?
+	if [[ -e "$dataPathFile" && \
+	      $memToMem != 0 \
+	]]; then
+		#  yes, initiate transfers along the path
+
+		echoIfVerbose -e "Data path used:\n$dataPathFile"
+
+		local transferStepNumber=0
+
+		local -a transferStepArray=( $(xtractXMLAttributeValue "path metric=\"$dataPathMetric\"" $dataPathFile) )
+
+		local maxTransferStepNumber=${#transferStepArray[@]}
+
+        else
+
+                #  no, try a direct transfer.
+                local transferStepNumber=0
+
+                local -a transferStepArray[0]="$sourceWithoutPath;$destinationWithoutPath"
+
+                local maxTransferStepNumber=1
+
+        fi        
+
+        #echo "($$) DEBUG: retries=\"$retries\" maxRetries=\"$maxRetries\""
+        #exit
+
+	while [[ 1 ]]; do
+
+                if [[ $transferStepNumber -ge $maxTransferStepNumber ]]; then
+		        break
+	        fi
+
+                local transferStep=${transferStepArray[$transferStepNumber]}
+
+               	#  source and destination for transfer step
+               	local transferStepSource=${transferStep%%;*}
+            	local transferStepDestination=${transferStep##*;}
+
+                #echo "($$) DEBUG: transferStepSource=\"$transferStepSource\""
+                #echo "($$) DEBUG: transferStepDestination=\"$transferStepDestination\""
+                #exit 1
+
+                local transferId=$( listTransfer/getTransferIdForTransferList "$_transferList" )
+
+                #  if the current transfer step is/was already finished, skip it.
+                #if [[ -e "$transferId.finished" ]]; then
+                #        echoIfVerbose "Transfer step: $transferStepNumber"
+                #        echoIfVerbose "Skipped because already finished!"
+                #        transferStepNumber=$(( $transferStepNumber + 1 ))
+                #        continue
+                #else
+           	echoIfVerbose "Transfer step: $transferStepNumber"
+                listTransfer/doTransferStep $transferStepSource \
+                                            $transferStepDestination \
+                                            $transferStepNumber \
+                                            $transitSiteTempDir \
+                                            $sourcePath \
+                                            $destinationPath \
+                                            ${sourceFile:-" "} \
+                                            ${destinationFile:-" "} \
+                                            "$sourceUsernamePortion" \
+                                            "$destinationUsernamePortion" \
+                                            "$transferId" \
+                                            "$_transferList"
+                #fi
+
+                local RETURN="$?"
+
+                #  did the current transfer step work?
+                if [[ $RETURN -eq 4 ]]; then
+                        #  already finished, can be skipped
+                        echoIfVerbose "Skipped because already finished!"
+                        transferStepNumber=$(( $transferStepNumber + 1 ))
+                        continue
+
+                elif [[ $RETURN == 2 ]]; then
+	                #  no, it failed completely
+                        echoIfVerbose ""
+	                echoIfVerbose "ERROR: Transfer step #$transferStepNumber failed!" #\
+                                 #"Please see \"${tgftpTransferCommand}Output\" for details!"
+	                exit 1
+
+                elif [[ $RETURN -ne 0 && "$retries" -lt "$maxRetries" ]]; then
+                        retries=$(( $retries + 1 ))
+	                #  no
+	                echoIfVerbose ""
+	                echoIfVerbose "ERROR: Transfer step #$transferStepNumber failed! Retrying!" #\
+                                 #"Please see \"${tgftpTransferCommand}Output\" for details!"
+
+                elif [[ $RETURN -eq 0 ]]; then
+	                #  yes
+                        retries="0"
+                        touch "${transferId}.step_${transferStepNumber}.finished"
+
+	                transferStepNumber=$(( $transferStepNumber + 1 ))
+
+                elif [[ "$retries" -eq "$maxRetries" ]]; then
+                        echo ""
+                        echo "ERROR: Transfer step #$transferStepNumber failed after $retries retries! Exiting."
+                        exit 1
+
+	        fi
+
+	done
+	
+        #  if the whole transfer succeeded,
+        if [[ "$?" == "0" ]]; then
+                #  reactivate filename globbing for temp file deletion
+                set +f
+                #  ...remove temporary files
+                #  file with name of transit site temporary dir
+                rm -f "$dataPathFilename".transitSiteTempDir &>/dev/null
+                #  any finished transfer step markers
+                rm -f *.finished &>/dev/null
+                #  temporary file(s) containing the running tgftp transfer command(s)
+                #+ and its output.
+                rm -f *."$tgftpTransferCommand"* &>/dev/null
+                #  temporary transfer lists
+                rm -f *.transferList &>/dev/null
+        fi
+
+	echoIfVerbose -e "INFO: The transfer succeeded!"
+	
+        if [[ $gtProgressIndicatorSet != 0 ]]; then
+		echo ""
+	fi
+
+}
+
+
+listTransfer/doTransferStep()
+{
+        #  performs the actual transfer step
+        #
+        #  usage:
+        #+ listTransfer/doTransferStep transferStepSource\
+        #+                             transferStepDestination \
+        #+                             transferStepNumber \
+        #+                             transitSiteTempDir \
+        #+                             sourcePath \
+        #+                             destinationPath \
+        #+                             sourceFile \
+        #+                             destinationFile \
+        #+                             sourceUsernamePortion \
+        #+                             destinationUsernamePortion \
+        #+                             transferId \
+        #+                             transferList
+
+        local transferStepSource="$1"
+        local transferStepDestination="$2"
+        local transferStepNumber="$3"
+
+        local transitSiteTempDir="$4"
+
+        local sourcePath="$5"
+        local destinationPath="$6"
+
+        local sourceFile="$7"
+        if [[ "$sourceFile" == " " ]]; then
+                sourceFile=""
+        fi
+        local destinationFile="$8"
+        if [[ "$destinationFile" == " " ]]; then
+                destinationFile=""
+        fi
+
+        local sourceUsernamePortion="$9"
+        local destinationUsernamePortion="${10}"
+
+        local transferId="${11}"
+
+        local transferList="${12}"
+
+        #echo "($$) DEBUG: transferStepSource=\"$transferStepSource\""
+        #echo "($$) DEBUG: transferStepDestination=\"$transferStepDestination\""
+        #echo "($$) DEBUG: transferStepNumber=\"$transferStepNumber\""
+        #echo "($$) DEBUG: transitSiteTempDir=\"$transitSiteTempDir\""
+        #echo "($$) DEBUG: sourcePath=\"$sourcePath\""
+        #echo "($$) DEBUG: destinationPath=\"$destinationPath\""
+        #echo "($$) DEBUG: sourceFile=\"$sourceFile\""
+        #echo "($$) DEBUG: destinationFile=\"$destinationFile\""
+        #echo "($$) DEBUG: sourceUsernamePortion=\"$sourceUsernamePortion\""
+        #echo "($$) DEBUG: destinationUsernamePortion=\"$destinationUsernamePortion\""
+        #echo "($$) DEBUG: transferId=\"$transferId\""
+        #exit 1
+
+        local transferStepSourceWithoutPath=$(getURLWithoutPath "$transferStepSource")
+        local transferStepDestinationWithoutPath=$(getURLWithoutPath "$transferStepDestination")
+
+        #  check if connection to source and destination is possible
+	if ! checkConnection "$transferStepSourceWithoutPath" && ! checkConnection "$transferStepDestinationWithoutPath"; then
+		echo "ERROR: Cannot connect to neither \"$transferStepSourceWithoutPath\" nor \"$transferStepDestinationWithoutPath\"!"
+		return 2
+	elif ! checkConnection "$transferStepSourceWithoutPath"; then
+		echo "ERROR: Cannot connect to \"$transferStepSourceWithoutPath\"!"
+		return 2
+	elif ! checkConnection "$transferStepDestinationWithoutPath"; then
+		echo "ERROR: Cannot connect to \"$transferStepDestinationWithoutPath\"!"
+		return 2
+	fi
+
+	#  (0) construct names for logfile and dumpfile
+        ########################################################################
+        local tgftpLogfileName="${tgftpTempLogfileName/%.log/__step_${transferStepNumber}.log}"
+
+	#  get default params for the transfer step
+	#+ (1) get filename for default params
+        ########################################################################
+        local transferStepDefaultParamsFilename="$(hashSourceDestination $( echo $transferStepSourceWithoutPath | sed -e 's/:\/\/.*@/:\/\//' ) $( echo $transferStepDestinationWithoutPath | sed -e 's/:\/\/.*@/:\/\//' ) )"
+
+        #  if existing prefer user's dparam
+	if [[ -e "$gtransferDefaultParamsDirectory/$transferStepDefaultParamsFilename" ]]; then
+		local transferStepDefaultParamsFile="$gtransferDefaultParamsDirectory/$transferStepDefaultParamsFilename"
+	#  if no user's dparam exists, try the system's one instead
+	elif [[ -e "$gtransferSystemDefaultParamsDirectory/$transferStepDefaultParamsFilename" ]]; then
+		local transferStepDefaultParamsFile="$gtransferSystemDefaultParamsDirectory/$transferStepDefaultParamsFilename"
+	#  if dparam does not exist, the $transferStepDefaultParamsFile variable must be set anyhow.
+	else
+		local transferStepDefaultParamsFile="$gtransferDefaultParamsDirectory/$transferStepDefaultParamsFilename"
+	fi
+
+	#  (2) get default params
+        ########################################################################
+	if [[ -e "$transferStepDefaultParamsFile" && \
+	      -z "$gsiftpUserParams" \
+	]]; then
+		#  default params file available, no user params
+		#+ specified
+		transferStepDefaultParams="$(xtractXMLAttributeValue "gsiftp_params" $transferStepDefaultParamsFile)"
+		echoIfVerbose -e "Default params used:\n$transferStepDefaultParamsFile"
+
+	elif [[ -e "$transferStepDefaultParamsFile" && \
+	        -n "$gsiftpUserParams" \
+	]]; then
+                #  user params specified
+		transferStepDefaultParams="$(xtractXMLAttributeValue "gsiftp_params" $transferStepDefaultParamsFile)"
+
+                #  if user only provided "-len|-partial-length [...]", then just add it to the default gsiftp params,
+                #+ if not only use the user provided params.
+		grepMatch=$( echo "$gsiftpUserParams" | egrep -o "\-len [[:alnum:]]*|\-partial-length [[:alnum:]]*" )
+		if [[ "$grepMatch" == "$gsiftpUserParams" ]]; then
+			transferStepDefaultParams="$transferStepDefaultParams $gsiftpUserParams"
+		else
+			transferStepDefaultParams="$gsiftpUserParams"
+		fi
+	
+	elif [[ -n "$gsiftpUserParams" ]]; then
+		#  no default params available, use parameters
+		#+ supplied by user or a combination of builtin
+		#+ parameters and "-len"
+		grepMatch=$( echo "$gsiftpUserParams" | egrep -o "\-len [[:alnum:]]*|\-partial-length [[:alnum:]]*" )
+		if [[ "$grepMatch" == "$gsiftpUserParams" ]]; then
+			transferStepDefaultParams="$gsiftpDefaultParams $gsiftpUserParams"
+		else
+			transferStepDefaultParams="$gsiftpUserParams"
+		fi
+
+	else
+		#  no default params available and no params specified by the user, use builtin
+		#+ default parameters
+		transferStepDefaultParams="$gsiftpDefaultParams"
+	fi
+
+        #  TODO:
+        #  build temp transfer list by exchanging source and
+        #+ destination.
+
+        #  make temporary copy from the orginal transfer list and use
+        #+ own PID as part of the name.
+        local _tempTransferList=$( mktemp transferList.XXXXX )
+        cp "$_transferList" "$_tempTransferList" || return 3
+
+        local _source=$( listTransfer/getSourceFromTransferList "$_transferList" )
+        local _destination=$( listTransfer/getDestinationFromTransferList "$_transferList" )              
+
+	local _sourceWithoutPath=$(getURLWithoutPath "$source")
+	local _destinationWithoutPath=$(getURLWithoutPath "$destination")
+
+        local _sourcePath=$( getPathFromURL "$_source" )
+        local _destinationPath=$( getPathFromURL "$_destination" )
+	
+	#  (3) transfer data (various steps possible!)
+	########################################################################
+	#  direct transfer
+	if [[ "$transferStepSource" == "$(getURLWithoutPath $transferStepSource)" && \
+      	      "$transferStepDestination" == "$(getURLWithoutPath $transferStepDestination)" \
+	]]; then
+		#  handle usernames in URLs
+		transferStepSourceProtoSpec=$( getProtocolSpecifier $transferStepSource )
+		transferStepDestinationProtoSpec=$( getProtocolSpecifier $transferStepDestination )
+		#  replace protocol spec with proto. spec and username (don't forget "@" at the end)
+		#  NOTICE:
+		#+ Please be aware of the fact, that the shell expands the variables in the sed scripts before actually running the sed scripts.
+		#+ As the proto. spec contains "/"es. they must be either escaped (hard!) or one just changes the "/"es of the "s///" command to
+		#+ "|"s, as done in the following.
+		transferStepSource=$( echo $transferStepSource | sed -e "s|${transferStepSourceProtoSpec}|${transferStepSourceProtoSpec}${sourceUsernamePortion}|" )
+		transferStepDestination=$( echo $transferStepDestination | sed -e "s|${transferStepDestinationProtoSpec}|${transferStepDestinationProtoSpec}${destinationUsernamePortion}|" )
+
+                #  this is a direct transfer, so we can just use transfer list unchanged
+                local transferId=$( listTransfer/getTransferIdForTransferList "$_tempTransferList" )
+                
+                #  if this transferStep was already finished,
+                if [[ -e "${transferId}.finished" ]]; then
+                        #  ...just return "4" (SKIP_TRANSFER_STEP),
+                        return 4
+                else
+                        # ...if not, rename temporary copy
+                        mv "$_tempTransferList" "${transferId}.transferList"
+
+		        local tgftpTransferCommand=$( listTransfer/createTgftpTransferCommand \
+                                                      "${transferStepSource}${sourcePath}${sourceFile}" \
+                                                      "${transferStepDestination}${destinationPath}${destinationFile}" \
+                                                      "$transferStepDefaultParams" \
+                                                      "$tgftpLogfileName" \
+                                                      "$transferId" \
+                                                      "0" \
+                                                      "0" \
+                                                      "${transferId}.transferList" \
+                                                      "" )
+
+		        #simulateTransfer
+
+		        if [[ $? != 0 ]]; then
+			        echo "ERROR: tgftp transfer command couldn't be created!"
+			        exit 1
+		        fi
+
+                        catIfVerbose "$tgftpTransferCommand"
+
+		        bash $tgftpTransferCommand &>"${tgftpTransferCommand}Output" &
+                        #true &
+		fi
+
+	#  initial transfer step of a multi-step transfer (source to transit site)
+	#
+	#  The initial transfer step can be detected as follows:
+	#+ The source portion has no path added to the URL.
+	elif [[ "$transferStepSource" == "$(getURLWithoutPath $transferStepSource)" ]]; then
+		#  handle usernames in URLs
+		transferStepSourceProtoSpec=$( getProtocolSpecifier $transferStepSource )
+		#  replace protocol spec with proto. spec and username (don't forget "@" at the end)
+		#  NOTICE:
+		#+ Please be aware of the fact, that the shell expands the variables in the sed scripts before actually running the sed scripts.
+		#+ As the proto. spec contains "/"es. they must be either escaped (hard!) or one just changes the "/"es of the "s///" command to
+		#+ "|"s, as done in the following.
+		transferStepSource=$( echo $transferStepSource | sed -e "s|${transferStepSourceProtoSpec}|${transferStepSourceProtoSpec}${sourceUsernamePortion}|" )
+
+                #  source can stay as it is (the username portion is contained in
+                #+ the transfer list), destination needs to be echanged
+                sed -e "s|$_destinationWithoutPath|${transferStepDestination}/${transitSiteTempDir}/|g" -i "$_tempTransferList"
+
+                local transferId=$( listTransfer/getTransferIdForTransferList "$_tempTransferList" )
+                
+                #  if this transferStep was already finished,
+                if [[ -e "${transferId}.finished" ]]; then
+                        #  ...just return "4" (SKIP_TRANSFER_STEP),
+                        return 4
+                else
+                        # ...if not, rename temporary copy
+                        mv "$_tempTransferList" "${transferId}.transferList"
+
+		        local tgftpTransferCommand=$( listTransfer/createTgftpTransferCommand \
+                                                      "${transferStepSource}${sourcePath}${sourceFile}" \
+                                                      "${transferStepDestination}${transitSiteTempDir}/" \
+                                                      "$transferStepDefaultParams" \
+                                                      "$tgftpLogfileName" \
+                                                      "$transferId" \
+                                                      "0" \
+                                                      "1" \
+                                                      "${transferId}.transferList" \
+                                                      "${transferStepDestination}${transitSiteTempDir}/" )
+                
+		        #simulateTransfer
+		        #simulateError
+
+		        if [[ $? != 0 ]]; then
+			        echo "ERROR: tgftp transfer command couldn't be created!"
+			        exit 1
+		        fi
+
+                        catIfVerbose "$tgftpTransferCommand"
+
+		        bash $tgftpTransferCommand &>"${tgftpTransferCommand}Output" &
+                        #true &
+                fi
+
+	#  transfer (transit site to transit site)
+	#
+	#  A transfer from transit site to transit site can be
+	#+ detected as follows:
+	#+ A transit address has a temp path added to the URL
+	#+ and therefore should differ from the string printed
+	#+ by getURLWithoutPath().
+        #
+        #  TODO:
+        #+ Perhaps it would be better to check for both requirements (source and
+        #+ destination are transit sites)
+	elif [[ "$transferStepDestination" != "$(getURLWithoutPath $transferStepDestination)" ]]; then
+                #  source and destination needs to be changed to the transit
+                #+ sites URLs with path
+                sed -e "s|${_sourceWithoutPath}|${transferStepSource}/${transitSiteTempDir}/|g" \
+                    -e "s|${_destinationWithoutPath}|${transferStepDestination}/${transitSiteTempDir}/|g" \
+                    -i "$_tempTransferList"
+
+                local transferId=$( listTransfer/getTransferIdForTransferList "$_tempTransferList" )
+                
+                #  if this transferStep was already finished,
+                if [[ -e "${transferId}.finished" ]]; then
+                        #  ...just return "4" (SKIP_TRANSFER_STEP),
+                        return 4
+                else
+                        # ...if not, rename temporary copy
+                        mv "$_tempTransferList" "${transferId}.transferList"
+
+		        local tgftpTransferCommand=$( listTransfer/createTgftpTransferCommand \
+                                                      "${transferStepSource}${transitSiteTempDir}/${sourceFile}" \
+                                                      "${transferStepDestination}${transitSiteTempDir}/" \
+                                                      "$transferStepDefaultParams" \
+                                                      "$tgftpLogfileName" \
+                                                      "$transferId" \
+                                                      "1" \
+                                                      "1" \
+                                                      "${transferId}.transferList" \
+                                                      "${transferStepDestination}${transitSiteTempDir}/" )
+
+		        #simulateTransfer
+
+                        catIfVerbose "$tgftpTransferCommand"
+
+		        bash $tgftpTransferCommand &>${tgftpTransferCommand}Output &
+                        #true &
+                fi
+
+	#  last step (transit site to final destination)
+	#
+	#  The last step is identified by the transfer step
+	#+ target being identical to the target of the data
+	#+ path, which itself is identical to the target without
+	#+ path portion.
+	elif [[ "$transferStepDestination" == "$(getURLWithoutPath $transferStepDestination)" ]]; then
+		#  only source needs to be changed to the transit site URL
+                sed -e "s|$_sourceWithoutPath$_sourcePath|${transferStepSource}/${transitSiteTempDir}/${_destinationPath}|g" \
+                    -i "$_tempTransferList"
+
+                local transferId=$( listTransfer/getTransferIdForTransferList "$_tempTransferList" )
+
+		#  handle usernames in URLs
+		transferStepDestinationProtoSpec=$( getProtocolSpecifier $transferStepDestination )
+		#  replace protocol spec with proto. spec and username (don't forget "@" at the end)
+		#  NOTICE:
+		#+ Please be aware of the fact, that the shell expands the variables in the sed scripts before actually running the sed scripts.
+		#+ As the proto. spec contains "/"es. they must be either escaped (hard!) or one just changes the "/"es of the "s///" command to
+		#+ "|"s.
+		transferStepDestination=$( echo $transferStepDestination | sed -e "s|${transferStepDestinationProtoSpec}|${transferStepDestinationProtoSpec}${destinationUsernamePortion}|" )
+
+                #  if this transferStep was already finished,
+                if [[ -e "${transferId}.finished" ]]; then
+                        #  ...just return "4" (SKIP_TRANSFER_STEP),
+                        return 4
+                else
+                        # ...if not, rename temporary copy
+                        mv "$_tempTransferList" "${transferId}.transferList"
+
+		        local tgftpTransferCommand=$( listTransfer/createTgftpTransferCommand \
+                                                      "${transferStepSource}${transitSiteTempDir}/${sourceFile}" \
+                                                      "${transferStepDestination}${destinationPath}${destinationFile}" \
+                                                      "$transferStepDefaultParams" \
+                                                      "$tgftpLogfileName" \
+                                                      "$transferId" \
+                                                      "1" \
+                                                      "0" \
+                                                      "${transferId}.transferList" \
+                                                      "" )
+
+                        catIfVerbose "$tgftpTransferCommand"
+
+		        #simulateTransfer
+		        #simulateError
+
+		        bash $tgftpTransferCommand &>${tgftpTransferCommand}Output &
+                        #true &
+                fi
+
+	fi
+
+	tgftpTransferCommandPid="$!"
+
+	#  indicate progress
+	while kill -0 $tgftpTransferCommandPid &>/dev/null; do
+		echo -n "$gtProgressIndicator"
+		sleep 2
+	done
+
+	echoIfVerbose ""
+
+	wait $tgftpTransferCommandPid
+
+	local RETURN="$?"
+
+        #  save finished state, just in case another step fails and gtransfer exits
+        #+ and is then restarted by the user. This way, finished steps aren't
+        #+ repeated. If all steps finish/succeed, the finished state files can be
+        #+ removed by gtransfer.
+        #
+        #  transferId is either the SHA1 hash of source;destination, or the hash of
+        #+ the used transfers file.
+        if [[ "$RETURN" == "0" ]]; then
+                touch "${transferId}.finished"
+                rm -f "$tgftpTransferCommand" &>/dev/null
+                rm -f "${tgftpTransferCommand}Output" &>/dev/null
+        else
+                #  if transfer step failed print the output of the tgftp command
+                cat ${tgftpTransferCommand}Output
+        fi
+
+	#echo "Returned $RETURN"
+
+	return $RETURN
+}
+
+
+listTransfer/createTgftpTransferCommand()
+{
+	#  creates the tgftp transfer command and puts it in a file
+	#
+	#  usage:
+	#+ listTransfer/createTgftpTransferCommand source \
+	#+                                         destination \
+	#+                                         gsiftpParams \
+	#+                                         logfileName \
+	#+                                         transitSite \
+        #+                                         transferId \
+        #+                                         fromTransitSite \
+        #+                                         toTransitSite \
+        #+                                         transferList \
+        #+                                         transitDirUrl
+
+	local source="$1"
+	local destination="$2"
+	local gsiftpParams="$3"
+	local logfileName="$4"
+        local transferId="$5"
+        #  transfer from transit site? yes (1) / no (0)
+	local fromTransitSite="$6"
+        #  transfer to transit site? yes (1) / no (0)
+        local toTransitSite="$7"
+        local _transferList="$8"
+        local transitDirUrl="$9"
+
+        #+ To support multiple concurrent transfers, "$tgftpTransferCommand" must be
+        #+ a unique name. One could use the transfer id as prefix:
+        #+
+        #+ 6dd5928ca873099a381e465afecfa9ef22071c8a.$tgftpTransferCommand
+        local tgftpTransferCommandSuffix="tgftpTransferCommand"
+        local tgftpTransferCommand="$transferId.$tgftpTransferCommandSuffix"
+
+	local tgftpPostCommandParam=""
+	local tgftpPostCommand=""
+
+        local gucMaxRetries="${GUC_MAX_RETRIES:-$gucMaxRetries}"
+
+        #  This should create a unique filename correspondent to this specifc tgftp
+        #+ command.
+        local dumpfileName="${transferId}.dumpfile"
+
+        #  add additional guc parameters
+        #
+        #  This will enable:
+        #+ * restart functionality of guc
+        #+ * restart exactly one times
+        #+ * create a dumpfile which will contain files that failed to transfer
+        #+ * consider 30 seconds without transferred data as stall (meaning: after
+        #+   30 secs of time without data transferred, the transfer (of a file) is
+        #+   restarted)
+        #
+        #  NOTICE:
+        #+ There is a difference between a dumpfile created by an URL transfer
+        #+ and a dumpfile created by a list transfer. A dumpfile created by an
+        #+ URL transfer contains the same information as a dumpfile created by
+        #+ guc with the "-do|-dump-only" option:
+        #+ * source URL
+        #+ * destination URL
+        #+ * offset
+        #+ * size
+        #+ * modify timestamp
+        #+ * permissions
+        #+
+        #+ A dumpfile created by a list transfer only contains:
+        #+ * source URL
+        #+ * destination URL
+        #+ * offset
+	local addGsiftpParams="-restart -rst-retries $gucMaxRetries -dumpfile $dumpfileName -stall-timeout 30"
+
+        #+ Filter "-pp" from "gsiftpParams", as pipelining and reliability don't
+        #+ work well in conjunction.
+        #
+        #  Just remove the "-pp" param, because this will leave two spaces at the
+        #+ position where "-pp" was removed. This way one can detect that a param
+        #+ was removed by gt.
+        gsiftpParams=$( echo "$gsiftpParams" | sed -e 's/-pp//' )
+
+	#  Do this only if uberftp is available!
+        if hash uberftp &>/dev/null; then
+                #  If a transit site is involved as source, the temporary transit
+        	#+ directory will be removed after the transfer succeeded.
+                if [[ $fromTransitSite -eq 1 ]]; then
+                        tgftpPostCommandParam="--post-command"
+                        #  remove the whole temp. transit dir from the transit site
+                        tgftpPostCommand="uberftp -rm -r $( getURLWithoutPath $source )$( getPathFromURL $source ) &"
+	        fi
+                #  workaround a guc limitation: guc by default creates dirs group and
+                #+ world r-x, this makes sure, that the transit dir is only accessible
+                #+ by the owner (create and chmod happen prior to the transfer).
+                #
+                #  NOTICE:
+                #+ This was tested on Louhi (with GT5.0.3). There needs to be a short
+                #+ sleep between dir creation and chmod, as otherwise the chmod fails.
+                #+
+                #+ $ uberftp -mkdir gsiftp://p6012-deisa.huygens.sara.nl:2812/scratch/shared/prace/gridftp/transitSiteTempDir.rQoM5180 && uberftp -chmod 0700 gsiftp://p6012-deisa.huygens.sara.nl:2812/scratch/shared/prace/gridftp/transitSiteTempDir.rQoM5180
+                #+ Failed to connect to 145.100.18.152 port 2812: Cannot assign requested address 
+                #+
+                #+ $ uberftp -mkdir gsiftp://p6012-deisa.huygens.sara.nl:2812/scratch/shared/prace/gridftp/transitSiteTempDir.rQoM5180 && sleep 0.5 &&  uberftp -chmod 0700 gsiftp://p6012-deisa.huygens.sara.nl:2812/scratch/shared/prace/gridftp/transitSiteTempDir.rQoM5180
+                if [[ $toTransitSite -eq 1 ]]; then                     
+                        #  get FQDN and port number from destination URL
+                        local _fqdn=$( getFQDNFromURL "$destination" )
+                        local _portNumber=$( getPortNumberFromURL "$destination" )
+                        local _transitDir=$( getPathFromURL "$transitDirUrl" )
+
+                        tgftpPreCommandParam="--pre-command"
+                        #tgftpPreCommand="uberftp -mkdir $transitDirUrl && sleep 0.5 && uberftp -chmod 0700 $transitDirUrl"
+                        #  Alternative to the commands above which works around the issue mentioned above. Which wasn't really
+                        #+ solved with the short sleep.
+                        tgftpPreCommand="echo 'mkdir $_transitDir; chmod 0700 $_transitDir; bye' | uberftp -P $_portNumber $_fqdn"
+                fi
+        fi
+
+        #  always remove dumpfile if it is empty after a transfer. This is
+	#+ because otherwise guc complains about an empty dumpfile and does
+	#+ not make a transfer using the commandline arguments.
+	if [[ ! -z $tgftpPostCommand ]]; then
+		tgftpPostCommand="$tgftpPostCommand if [[ ! -s $dumpfileName ]]; then rm $dumpfileName; fi"
+	else
+                tgftpPostCommandParam="--post-command"
+		tgftpPostCommand="if [[ ! -s $dumpfileName ]]; then rm $dumpfileName; fi"
+	fi
+
+        ########################################################################
+
+        #  new
+
+        #  case
+        #  |
+        #  |  verbose (0 false, 1 true)
+        #  |  |
+        #  |  | fromTransitSite (0 false, 1 true)
+        #  |  | |
+        #  |  | | toTransitSite (0 false, 1 true)
+        #  |  | | |
+        #  4  1 0 0 source -> dest
+        #  5  1 0 1 source -> transit
+        #  8  1 1 1 transit -> transit
+        #  6  1 1 0 transit -> dest
+        #
+        #  0  0 0 0 source -> dest
+        #  1  0 0 1 source -> transit
+        #  3  0 1 1 transit -> transit
+        #  2  0 1 0 transit -> dest
+
+        #  case 4
+        if [[ $verboseExec -eq 1 && \
+              $fromTransitSite -eq 0 && \
+              $toTransitSite -eq 0 \
+        ]]; then
+		echo "tgftp" \
+		     "--log-filename \"$logfileName\"" \
+                     "--force-log-overwrite" \
+                     "$tgftpPostCommandParam" \"$tgftpPostCommand\" \
+                     "-- -dbg $gsiftpParams $addGsiftpParams -f $_transferList" > "$tgftpTransferCommand"
+
+        #  case 5
+        elif [[ $verboseExec -eq 1 && \
+                $fromTransitSite -eq 0 && \
+                $toTransitSite -eq 1 \
+        ]]; then
+                echo "tgftp" \
+		     "--log-filename \"$logfileName\"" \
+                     "--force-log-overwrite" \
+                     "$tgftpPreCommandParam" \"$tgftpPreCommand\" \
+                     "$tgftpPostCommandParam" \"$tgftpPostCommand\" \
+                     "-- -dbg $gsiftpParams $addGsiftpParams -f $_transferList" > "$tgftpTransferCommand"
+
+        #  case 8
+        elif [[ $verboseExec -eq 1 && \
+                $fromTransitSite -eq 1 && \
+                $toTransitSite -eq 1 \
+        ]]; then
+                echo "tgftp" \
+		     "--log-filename \"$logfileName\"" \
+                     "--force-log-overwrite" \
+                     "$tgftpPreCommandParam" \"$tgftpPreCommand\" \
+                     "$tgftpPostCommandParam" \"$tgftpPostCommand\" \
+                     "-- -dbg $gsiftpParams $addGsiftpParams -f $_transferList" > "$tgftpTransferCommand"
+
+        #  case 6
+        elif [[ $verboseExec -eq 1 && \
+                $fromTransitSite -eq 1 && \
+                $toTransitSite -eq 0 \
+        ]]; then
+                echo "tgftp" \
+		     "--log-filename \"$logfileName\"" \
+                     "--force-log-overwrite" \
+                     "$tgftpPostCommandParam" \"$tgftpPostCommand\" \
+                     "-- -dbg $gsiftpParams $addGsiftpParams -f $_transferList" > "$tgftpTransferCommand"
+
+        #  case 0
+        elif [[ $verboseExec -eq 0 && \
+                $fromTransitSite -eq 0 && \
+                $toTransitSite -eq 0 \
+        ]]; then
+		echo "tgftp" \
+		     "--log-filename \"$logfileName\"" \
+                     "--force-log-overwrite" \
+                     "$tgftpPostCommandParam" \"$tgftpPostCommand\" \
+                     "-- $gsiftpParams $addGsiftpParams -f $_transferList" > "$tgftpTransferCommand"
+
+        #  case 1
+        elif [[ $verboseExec -eq 0 && \
+                $fromTransitSite -eq 0 && \
+                $toTransitSite -eq 1 \
+        ]]; then
+                echo "tgftp" \
+		     "--log-filename \"$logfileName\"" \
+                     "--force-log-overwrite" \
+                     "$tgftpPreCommandParam" \"$tgftpPreCommand\" \
+                     "$tgftpPostCommandParam" \"$tgftpPostCommand\" \
+                     "-- $gsiftpParams $addGsiftpParams -f $_transferList" > "$tgftpTransferCommand"
+
+        #  case 3
+        elif [[ $verboseExec -eq 0 && \
+                $fromTransitSite -eq 1 && \
+                $toTransitSite -eq 1 \
+        ]]; then
+                echo "tgftp" \
+		     "--log-filename \"$logfileName\"" \
+                     "--force-log-overwrite" \
+                     "$tgftpPreCommandParam" \"$tgftpPreCommand\" \
+                     "$tgftpPostCommandParam" \"$tgftpPostCommand\" \
+                     "-- $gsiftpParams $addGsiftpParams -f $_transferList" > "$tgftpTransferCommand"
+
+        #  case 2
+        elif [[ $verboseExec -eq 0 && \
+                $fromTransitSite -eq 1 && \
+                $toTransitSite -eq 0 \
+        ]]; then
+                echo "tgftp" \
+		     "--log-filename \"$logfileName\"" \
+                     "--force-log-overwrite" \
+                     "$tgftpPostCommandParam" \"$tgftpPostCommand\" \
+                     "-- $gsiftpParams $addGsiftpParams -f $_transferList" > "$tgftpTransferCommand"
+
+        fi
+
+        ########################################################################
+
+	if [[ $? -eq 0 ]]; then
+                echo "$tgftpTransferCommand"
+		return 0
+	else
+		return 1
+	fi
+}
+
+
+listTransfer/createTransferList() {
+        #  create transfer list from source and destination URLs
+        #
+        #  usage:
+        #+ listTransfer/createTransferList gsiftpSourceUrl gsiftpDestinationUrl
+        #
+        #  prints the transfer list filename to stdout
+        #
+        #  returns:
+        #+ 0 if everything is allright
+        #+ 1 otherwise
+
+        local _source="$1"
+        local _destination="$2"
+
+        #  Check if valid URLs are provided
+	if ! isValidUrl $_source; then
+		echo "ERROR: Protocol specifier missing in \"$_source\" and no local path specified!"
+		return 1
+	elif ! isValidUrl $_destination; then
+		echo "ERROR: Protocol specifier missing in \"$_destination\" and no local path specified!"
+		return 1
+	#  check if target URL is a "http://" URL
+	elif [[ "$( getProtocolSpecifier $_destination )" == "http://" || \
+	        "$( getProtocolSpecifier $_destination )" == "https://" \
+	]]; then
+		echo "ERROR: Target URL cannot be a \"http[s]://\" URL!"
+		return 1
+	fi
+        
+        #  to get the transfer list we use guc with "-do" option
+        globus-url-copy -do "$$_transferList" "$_source" "$_destination"
+
+        if [[ "$?" == "0" && -e "$$_transferList" ]]; then
+                echo "$$_transferList"
+                return 0
+        else
+                return 1
+        fi
+}
+
+
+listTransfer/getDestinationFromTransferList() {
+        #  gets the complete destination URL from a transfer list
+        #
+        #  usage:
+        #+ listTransfer/getDestinationFromTransferList transferList
+
+        local _transferList="$1"
+
+        #  format of transfer list (guc v8.2):
+        #                                                                                                        offset
+        #  source                                             destination                                        |    size, modify timestamp and permissions
+        #  |                                                  |                                                  |    |
+        #  "ftp://vserver1.asc:2811/~/files/test4/file.00355" "ftp://vserver2.asc:2811/~/files/test4/file.00355" 0,-1 size=0;modify=1328981550;mode=0644;
+
+        #  we require that all URLs in a transfer list have the same source and
+        #+ destination hosts, hence we just pick the first line and extract the
+        #+ destination
+        local _destination=$( head -1 "$_transferList" | cut -d ' ' -f 2 | sed -e 's/"//g' )
+
+        if [[ "$?" == "0" ]]; then
+                echo "$_destination"
+                return 0
+        else
+                return 1
+        fi
+}
+
+
+listTransfer/getSourceFromTransferList() {
+        #  gets the complete source URL from a transfer list
+        #
+        #  usage:
+        #+ listTransfer/getSourceFromTransferList transferList
+
+        local _transferList="$1"
+
+        #  format of transfer list (guc v8.2):
+        #                                                                                                        offset
+        #  source                                             destination                                        |    size, modify timestamp and permissions
+        #  |                                                  |                                                  |    |
+        #  "ftp://vserver1.asc:2811/~/files/test4/file.00355" "ftp://vserver2.asc:2811/~/files/test4/file.00355" 0,-1 size=0;modify=1328981550;mode=0644;
+
+        #  we require that all URLs in a transfer list have the same source and
+        #+ destination hosts, hence we just pick the first line and extract the
+        #+ source
+        local _source=$( head -1 "$_transferList" | cut -d ' ' -f 1 | sed -e 's/"//g' )
+
+        if [[ "$?" == "0" ]]; then
+                echo "$_source"
+                return 0
+        else
+                return 1
+        fi
+}
+
+
+listTransfer/getTransferIdForTransferList() {
+        #  get the transfer id for the given transfer list
+        #
+        #  usage:
+        #+ listTransfer/getTransferIdForTransferList transferList
+
+        local _transferList="$1"
+
+        local _transferId=$( sha1sum "$_transferList" | cut -d ' ' -f 1 )
+
+        if [[ "$?" == "0" ]]; then
+                echo "$_transferId"
+                return 0
+        else
+                return 1
+        fi
+}
+
+
+listTransfer/getTransferSizeFromTransferList() {
+        #  gets the complete size of all data transferred with the provided
+        #+ transfer list
+        #
+        #  usage:
+        #+ listTransfer/getTransferSizeFromTransferList transferList
+        
+        local _transferList="$1"
+
+        #  format of transfer list (guc v8.2):
+        #                                                                                                        unknown yet
+        #  source                                             destination                                        |    size, modify timestamp and permissions
+        #  |                                                  |                                                  |    |
+        #  "ftp://vserver1.asc:2811/~/files/test4/file.00355" "ftp://vserver2.asc:2811/~/files/test4/file.00355" 0,-1 size=0;modify=1328981550;mode=0644;
+
+        #  get all file sizes of the transfer list, one each line
+        local _fileSizes=$( cut -d ' ' -f 4 "$_transferList" | cut -d ';' -f 1 | cut -d '=' -f 2 )
+
+        #  now sum up all file sizes
+        for _size in $( echo $_fileSizes ); do
+                _sum=$(( $_sum + $_size ))
+                if [[ "$?" != "0" ]]; then
+                        break
+                fi
+        done
+
+        if [[ "$?" == "0" ]]; then
+                echo "$_sum"
+                return 0
+        else
+                return 1
+        fi
+}
+
