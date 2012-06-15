@@ -48,7 +48,7 @@ elif [[ -e "$HOME/.gtransfer/gtransfer.conf" ]]; then
         gtransferConfigurationFile="$HOME/.gtransfer/gtransfer.conf"
 fi
 
-_GTRANSFER_LOCATION="$HOME/opt/gtransfer"
+_GTRANSFER_LOCATION="$( dirname $gtransferConfigurationFile )/../"
 _LIB="$_GTRANSFER_LOCATION/lib"
 
 ################################################################################
