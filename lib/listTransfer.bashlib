@@ -26,7 +26,10 @@ COPYRIGHT
 ################################################################################
 
 :<<INCLUDE
+exitCodes.bashlib
 INCLUDE
+
+. "$_LIB"/exitCodes.bashlib
 
 ################################################################################
 #  VARIABLES
@@ -214,12 +217,13 @@ listTransfer/transferData()
                         transferStepNumber=$(( $transferStepNumber + 1 ))
                         continue
 
-                elif [[ $RETURN == 2 ]]; then
-	                #  no, it failed completely
+                elif [[ $RETURN == $_gtransfer_exit_tempfail ]]; then
+	                #  no, it failed completely (e.g. hosts couldn't be
+                        #+ reached)
                         echoIfVerbose ""
 	                echoIfVerbose "ERROR: Transfer step #$transferStepNumber failed!" #\
                                  #"Please see \"${tgftpTransferCommand}Output\" for details!"
-	                exit 1
+	                exit $_gtransfer_exit_tempfail
 
                 elif [[ $RETURN -ne 0 && "$retries" -lt "$maxRetries" ]]; then
                         retries=$(( $retries + 1 ))
@@ -238,7 +242,7 @@ listTransfer/transferData()
                 elif [[ "$retries" -eq "$maxRetries" ]]; then
                         echo ""
                         echo "ERROR: Transfer step #$transferStepNumber failed after $retries retries! Exiting."
-                        exit 1
+                        exit $_gtransfer_exit_tempfail
 
 	        fi
 
@@ -266,6 +270,7 @@ listTransfer/transferData()
 		echo ""
 	fi
 
+        return $_gtransfer_exit_ok
 }
 
 
@@ -330,14 +335,20 @@ listTransfer/doTransferStep()
 
         #  check if connection to source and destination is possible
 	if ! checkConnection "$transferStepSourceWithoutPath" && ! checkConnection "$transferStepDestinationWithoutPath"; then
-		echo "ERROR: Cannot connect to neither \"$transferStepSourceWithoutPath\" nor \"$transferStepDestinationWithoutPath\"!"
-		return 2
+		echo "ERROR: Cannot connect to neither \"$transferStepSourceWithoutPath\" nor \"$transferStepDestinationWithoutPath\"! Either try again or correct your input!"
+                #  we assume that source and destination strings are correct,
+                #+ and they're just unavailable currently. If the user just used
+                #+ a nonexistent host, he can detect this by reading the error
+                #+ message
+		return $_gtransfer_exit_tempfail
 	elif ! checkConnection "$transferStepSourceWithoutPath"; then
-		echo "ERROR: Cannot connect to \"$transferStepSourceWithoutPath\"!"
-		return 2
+		echo "ERROR: Cannot connect to \"$transferStepSourceWithoutPath\"! Either try again or correct your input!"
+                #  same as above
+		return $_gtransfer_exit_tempfail
 	elif ! checkConnection "$transferStepDestinationWithoutPath"; then
-		echo "ERROR: Cannot connect to \"$transferStepDestinationWithoutPath\"!"
-		return 2
+		echo "ERROR: Cannot connect to \"$transferStepDestinationWithoutPath\"! Either try again or correct your input!"
+                #  same as above
+		return $_gtransfer_exit_tempfail
 	fi
 
 	#  (0) construct names for logfile and dumpfile
@@ -463,7 +474,7 @@ listTransfer/doTransferStep()
 
 		        if [[ $? != 0 ]]; then
 			        echo "ERROR: tgftp transfer command couldn't be created!"
-			        exit 1
+			        exit $_gtransfer_exit_software
 		        fi
 
                         catIfVerbose "$tgftpTransferCommand"
@@ -516,7 +527,7 @@ listTransfer/doTransferStep()
 
 		        if [[ $? != 0 ]]; then
 			        echo "ERROR: tgftp transfer command couldn't be created!"
-			        exit 1
+			        exit $_gtransfer_exit_software
 		        fi
 
                         catIfVerbose "$tgftpTransferCommand"
@@ -566,6 +577,11 @@ listTransfer/doTransferStep()
 
 		        #simulateTransfer
 
+                        if [[ $? != 0 ]]; then
+			        echo "ERROR: tgftp transfer command couldn't be created!"
+			        exit $_gtransfer_exit_software
+		        fi
+
                         catIfVerbose "$tgftpTransferCommand"
 
 		        bash $tgftpTransferCommand &>${tgftpTransferCommand}Output &
@@ -613,10 +629,15 @@ listTransfer/doTransferStep()
                                                       "${transferId}.transferList" \
                                                       "" )
 
-                        catIfVerbose "$tgftpTransferCommand"
+                        #simulateTransfer
+                        #simulateError
 
-		        #simulateTransfer
-		        #simulateError
+                        if [[ $? != 0 ]]; then
+			        echo "ERROR: tgftp transfer command couldn't be created!"
+			        exit $_gtransfer_exit_software
+		        fi
+
+                        catIfVerbose "$tgftpTransferCommand"
 
 		        bash $tgftpTransferCommand &>${tgftpTransferCommand}Output &
                         #true &
@@ -1039,7 +1060,7 @@ listTransfer/getTransferSizeFromTransferList() {
         local _transferList="$1"
 
         #  format of transfer list (guc v8.2):
-        #                                                                                                        unknown yet
+        #                                                                                                        offset
         #  source                                             destination                                        |    size, modify timestamp and permissions
         #  |                                                  |                                                  |    |
         #  "ftp://vserver1.asc:2811/~/files/test4/file.00355" "ftp://vserver2.asc:2811/~/files/test4/file.00355" 0,-1 size=0;modify=1328981550;mode=0644;

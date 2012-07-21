@@ -55,6 +55,7 @@ _LIB="$_GTRANSFER_LOCATION/lib"
 #  INCLUDE LIBRARY FUNCTIONS
 ################################################################################
 
+. "$_LIB"/exitCodes.bashlib
 . "$_LIB"/listTransfer.bashlib
 
 ################################################################################
@@ -1613,7 +1614,7 @@ gtProgressIndicator="."
 if [[ "$#" -lt "1" ]]; then
    # no, so output a usage message
    usageMsg
-   exit 1
+   exit $_gtransfer_exit_usage
 fi
 
 # read in all parameters
@@ -1641,7 +1642,7 @@ while [[ "$1" != "" ]]; do
 	]]; then
 		#  no, so output a usage message
 		usageMsg
-		exit 1   
+		exit $_gtransfer_exit_usage
 	fi
 
 	#  "--"
@@ -1658,12 +1659,12 @@ while [[ "$1" != "" ]]; do
 	#  "--help"
 	elif [[ "$1" == "--help" ]]; then
 		helpMsg
-		exit 0
+		exit $_gtransfer_exit_ok
 
 	#  "--version|-V"
 	elif [[ "$1" == "--version" || "$1" == "-V" ]]; then
 		versionMsg
-		exit 0
+		exit $_gtransfer_exit_ok
 
 	#  "--source|-s gsiftpSourceUrl"
 	elif [[ "$1" == "--source" || "$1" == "-s" ]]; then
@@ -1675,7 +1676,7 @@ while [[ "$1" != "" ]]; do
 		else
 			#  duplicate usage of this parameter
 			echo "ERROR: The parameter \"--source|-s\" cannot be used multiple times!"
-			exit 1
+			exit $_gtransfer_exit_usage
 		fi
 
 	#  "--destination|-d gsiftpDestinationUrl"
@@ -1688,7 +1689,7 @@ while [[ "$1" != "" ]]; do
 		else
 			#  duplicate usage of this parameter
 			echo "ERROR: The parameter \"--destination|-d\" cannot be used multiple times!"
-			exit 1
+			exit $_gtransfer_exit_usage
 		fi
 
         #  "--transfer-list|-f transferList"
@@ -1701,7 +1702,7 @@ while [[ "$1" != "" ]]; do
 		else
 			#  duplicate usage of this parameter
 			echo "ERROR: The parameter \"--transfer-list|-f\" cannot be used multiple times!"
-			exit 1
+			exit $_gtransfer_exit_usage
 		fi
 
         #  "--guc-max-retries gucMaxRetries"
@@ -1714,7 +1715,7 @@ while [[ "$1" != "" ]]; do
 		else
 			#  duplicate usage of this parameter
 			echo "ERROR: The parameter \"--guc-max-retries\" cannot be used multiple times!"
-			exit 1
+			exit $_gtransfer_exit_usage
 		fi
 
         #  "--gt-max-retries gtMaxRetries"
@@ -1727,7 +1728,7 @@ while [[ "$1" != "" ]]; do
 		else
 			#  duplicate usage of this parameter
 			echo "ERROR: The parameter \"--gt-max-retries\" cannot be used multiple times!"
-			exit 1
+			exit $_gtransfer_exit_usage
 		fi
 
         #  "--gt-progress-indicator indicatorCharacter"
@@ -1740,7 +1741,7 @@ while [[ "$1" != "" ]]; do
 		else
 			#  duplicate usage of this parameter
 			echo "ERROR: The parameter \"--gt-progress-indicator\" cannot be used multiple times!"
-			exit 1
+			exit $_gtransfer_exit_usage
 		fi
 
 	#  "--metric|-m dataPathMetric"
@@ -1753,7 +1754,7 @@ while [[ "$1" != "" ]]; do
 		else
 			#  duplicate usage of this parameter
 			echo "ERROR: The parameter \"--metric|-m\" cannot be used multiple times!"
-			exit 1
+			exit $_gtransfer_exit_usage
 		fi
 
 	#  "--verbose|-v"
@@ -1764,7 +1765,7 @@ while [[ "$1" != "" ]]; do
 		else
 			#  duplicate usage of this parameter
 			echo "ERROR: The parameter \"--verbose|-v\" cannot be used multiple times!"
-			exit 1
+			exit $_gtransfer_exit_usage
 		fi
 
 	#  "--auto-clean|-a"
@@ -1776,7 +1777,7 @@ while [[ "$1" != "" ]]; do
 		else
 			#  duplicate usage of this parameter
 			echo "ERROR: The parameter \"--auto-clean|-a\" cannot be used multiple times!"
-			exit 1
+			exit $_gtransfer_exit_usage
 		fi
 
 	#  "--logfile|-l"
@@ -1789,7 +1790,7 @@ while [[ "$1" != "" ]]; do
 		else
 			#  duplicate usage of this parameter
 			echo "ERROR: The parameter \"--logfile|-l\" cannot be used multiple times!"
-			exit 1
+			exit $_gtransfer_exit_usage
 		fi
 
 	#  "--configfile"
@@ -1802,7 +1803,7 @@ while [[ "$1" != "" ]]; do
 		else
 			#  duplicate usage of this parameter
 			echo "ERROR: The parameter \"--configfile\" cannot be used multiple times!"
-			exit 1
+			exit $_gtransfer_exit_usage
 		fi
 
 	fi
@@ -1814,7 +1815,7 @@ if [[ -e "$gtransferConfigurationFile" ]]; then
 	. "$gtransferConfigurationFile"
 else
 	echo "ERROR: gtransfer configuration file missing!"
-	exit 1
+	exit $_gtransfer_exit_software
 fi
 
 #  verbose execution needed due to options?
@@ -1841,7 +1842,7 @@ if [[ "$gsiftpSourceUrl" == "" || \
         else
                 #  no, so output a usage message
                 usageMsg
-                exit 1
+                exit $_gtransfer_exit_usage
         fi
 else
         transferData "$gsiftpSourceUrl" "$gsiftpDestinationUrl" "$dataPathMetric" "$tgftpLogfileName"
