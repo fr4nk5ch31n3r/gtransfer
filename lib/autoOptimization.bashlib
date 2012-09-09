@@ -1,0 +1,382 @@
+#  autoOptimization.bashlib - library functions for automatic optimization of
+#+ transfers
+
+:<<COPYRIGHT
+
+Copyright (C) 2012 Frank Scheiner
+
+The program is distributed under the terms of the GNU General Public License
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+COPYRIGHT
+
+################################################################################
+#  INCLUDES
+################################################################################
+
+:<<INCLUDE
+exitCodes.bashlib
+listTransfer.bashlib
+INCLUDE
+
+#  TO BE REMOVED V
+#_LIB='.'
+#  TO BE REMOVED ^
+
+#  only source if not already sourced
+if [[ -z "$_exitCodes_Version" ]]; then
+	. "$_LIB"/exitCodes.bashlib
+fi
+
+if [[ -z "$_listTransfer_Version" ]]; then
+	. "$_LIB"/listTransfer.bashlib
+fi
+
+#  TO BE REMOVED V
+#  TO BE REMOVED ^
+
+################################################################################
+#  VARIABLES
+################################################################################
+
+readonly _autoOptimization_Version="0.1.0"
+
+################################################################################
+#  FUNCTIONS
+################################################################################
+
+:<<FUNCTIONS
+FUNCTIONS
+
+
+#  Automatic optimization (procedure):
+################################################################################
+#  Sort list by the size of files
+#  Used/needed functions:
+
+#  listTransfer/sortTransferList (NEW!)
+
+#  Devide list in different chunks. Chunk borders are given by a configuration
+#+ file.
+#  Used/needed functions:
+
+#  autoOptimization/devideTransferList (NEW)
+#  => <MAX_SIZE_IN_MB>_
+
+#  The following configuration file would devide the file list into three
+#+ chunks:
+#+ The first chunk contains only files smaller or equal 50 MB.
+#+ The second chunk contains only files bigger than 50 MB but smaller or equal
+#+ than 250 MB.
+#+ The last chunk contains all other files.
+:<<CHUNK_CONFIG
+#  MIN_SIZE_IN_MB;MAX_SIZE_IN_MB;GUC_PARAMETERS
+min;50;-pp -cc 4 -p 2
+50;250;-pp -cc 2 -p 4
+250;max;-pp -p 8
+CHUNK_CONFIG
+
+#  Transfer lists with corresponding parameters in a configurable fashion:
+#+ a) Transfer chunks in parallel.
+#+ b) Transfer chunks in sequential order.
+
+################################################################################
+
+
+#  createChunk() - create chunk of given transfer list depending on given
+#+ parameters
+#+ @sortedtransferList: sorted (min to max) transfer list (file name)
+#+ @minFileSize:  minimum file size in MiB (not included!), use "min" for
+#+                minimum file size in transfer list.
+#+ @maxFileSize:  maximum file size in MiB (included!), use "max" for maximum
+#+                file size in transfer list.
+#
+#  Writes chunk data to file and prints name of that file.
+autoOptimization/createChunk()
+{
+	local _sortedTransferList="$1"
+	local _minFileSize=$2
+	local _maxFileSize=$3
+	
+	local _minFileSizeInBytes=$(( $_minFileSize * 1024 * 1024 ))
+	local _maxFileSizeInBytes=$(( $_maxFileSize * 1024 * 1024 ))
+	
+	local _transferListfileSizes="$$_transferList_sorted_fileSizes.tmp"
+	
+	#  A line in a transfer list looks like that:
+	#													 offset
+	#  source					      destination					 |    size, modify timestamp and permissions
+	#  |						      |						         |    |
+	#  "ftp://vserver1.asc:2811/~/files/test4/file.00355" "ftp://vserver2.asc:2811/~/files/test4/file.00355" 0,-1 size=0;modify=1328981550;mode=0644;
+
+	#  If file with file sizes already exists from a previous call to this
+	#+ function, don't recreate it.
+	if [[ ! -e "$$_transferList_sorted_fileSizes.tmp" ]]; then
+		cat "$_sortedTransferList" | cut -d ' ' -f 4 | cut -d ';' -f 1 | cut -d '=' -f 2 > "$_transferListfileSizes"
+	fi
+
+	local _chunkStartLineNo=""
+	local _chunkEndLineNo=""
+	
+	#  handle specific strings
+	if [[ "$_minFileSize" == "min" ]]; then
+		_minFileSizeInBytes=$( head -1 "$_transferListfileSizes" )
+		#  optimization
+		_chunkStartLineNo=1
+	fi
+	if [[ "$_maxFileSize" == "max" ]]; then
+		_maxFileSizeInBytes=$( tail -1 "$_transferListfileSizes" )
+		#  optimization
+		_chunkEndLineNo=$( wc -l "$_sortedTransferList" | cut -d ' ' -f 1 )
+	fi	
+	
+	local _transferListChunk="$$_transferList_chunk_${_minFileSize}MB_to_${_maxFileSize}MB"
+
+	if [[ "$_minFileSize" == "min" && \
+	      "$_maxFileSize" == "max" ]]; then
+		#  just make a copy
+		cat "$_sortedTransferList" > "$_transferListChunk"
+	else
+		#  get line number with size bigger than $_minFileSize (=> _chunkStartLineNo)
+		#  get line number with size smaller or equal than $_maxFileSize (=>
+		#+ _chunkEndLineNo)
+		local _lineNumber=1
+		while read _line; do
+		
+			if [[ ! -z "$_chunkStartLineNo" && \
+			      ! -z "$_chunkEndLineNo" ]]; then
+			      
+				break
+			
+			elif [[ $_line -ge $_minFileSizeInBytes && $_chunkStartLineNo == "" ]]; then
+			
+				_chunkStartLineNo=$_lineNumber
+				#echo "DEBUG: _chunkStartLineNo=\"$_chunkStartLineNo\""
+			
+			elif [[ $_line -gt $_maxFileSizeInBytes && $_chunkEndLineNo == "" ]]; then
+			
+				_chunkEndLineNo=$(( $_lineNumber - 1 ))
+				#echo "DEBUG: _chunkEndLineNo=\"$_chunkEndLineNo\""
+				break
+			#else
+			#	#  for biggest file
+			#	_chunkEndLineNo=$_lineNumber
+			fi
+			_lineNumber=$(( $_lineNumber + 1 ))
+			
+		done < "$_transferListfileSizes"
+
+		#  select part ($_lineMin to $_lineMax) of sorted transfer list
+		sed -n "$_chunkStartLineNo,${_chunkEndLineNo}p;${_chunkEndLineNo}q;" "$_sortedTransferList" > "$_transferListChunk"
+	fi
+	
+	echo "$_transferListChunk"
+	
+	return
+}
+
+
+#  prepareTransferLists() - devide given transfer list depending on the chunk
+#+ configuration file
+#+ @transferList:       (unsorted) transfer list (file name)
+#+ @chunkConfiguration: chunk configuration file
+#
+#  Prepares distinct transfer lists (chunks) and collects the file names in a
+#+ file. Prints the file name of that file.
+autoOptimization/prepareTransferLists()
+{
+	local _transferList="$1"
+	local _chunkConfiguration="$2"
+	
+	#  1. sort transfer list from min file size to max file size
+	local _sortedTransferList=$( listTransfer/sortTransferList "$_transferList" "min-to-max" )
+	
+	#+ 2. create as many chunks as needed (depends on the configuration
+	#+ file)
+	#+ example content:
+	:<<-CHUNK_CONFIG
+	#  MIN_SIZE_IN_MB;MAX_SIZE_IN_MB;GUC_PARAMETERS
+	min;50;-pp -cc 4 -p 2
+	50;250;-pp -cc 2 -p 4
+	250;max;-pp -p 8
+CHUNK_CONFIG
+
+	local _transferListsFile="$$_transferLists"
+
+	local _ifsBackup="$IFS"
+	IFS=";"
+	
+	while read -a _lineArray; do
+	
+		#  ignore comments
+		if [[ "${_lineArray[0]:0:1}" == "#" ]]; then
+			continue
+		fi
+	
+		local _minFileSize=${_lineArray[0]}
+		local _maxFileSize=${_lineArray[1]}
+		
+		autoOptimization/createChunk "$_sortedTransferList" "$_minFileSize" "$_maxFileSize" >> "$_transferListsFile"
+		
+	done < "$_chunkConfiguration"
+	
+	IFS="$_ifsBackup"
+	
+	echo "$_transferListsFile"
+}
+
+
+#  prepareParameters() - collect parameters from chunk configuration file
+#+ @chunkConfiguration: chunk configuration file
+autoOptimization/prepareParameters()
+{
+	local _chunkConfiguration="$1"
+	
+	local _gucParametersFile="$$_gucParameters"
+	
+	local _ifsBackup="$IFS"
+	IFS=";"
+	
+	while read -a _lineArray; do
+	
+		#  ignore comments
+		if [[ "${_lineArray[0]:0:1}" == "#" ]]; then
+			continue
+		fi
+
+		local _gucParameters=${_lineArray[2]}
+		
+		echo "$_gucParameters" >> "$_gucParametersFile"
+		
+	done < "$_chunkConfiguration"
+	
+	IFS="$_ifsBackup"
+	
+	echo "$_gucParametersFile"
+}
+
+
+#  performTransfer() - transfer data with automatic optimizations depending on
+#+ the size of files
+#+ @transferList:        unsorted transfer list (file name)
+#+ @metric:              the metric to use
+#+ @tmpTgftpLogFileName: file name for tgftp log
+#+ @chunkConfigration:   chunk configuration file
+#+ @transferMode:        either "par[allel]" or "seq[uential]"
+autoOptimization/performTransfer()
+{
+	echo "START: $(date)" 1>&2
+
+	local _transferList="$1"
+	local _metric="$2"
+	local _tmpTgftpLogFileName="$3"
+	local _chunkConfiguation="$4"
+	local _transferMode="$5"
+	
+	#  prepare distinct transfer lists
+	local _transferListsFile=$( autoOptimization/prepareTransferLists "$_transferList" "$_chunkConfiguation" )
+	local _gucParametersFile=$( autoOptimization/prepareParameters "$_chunkConfiguation" )
+
+	#  TODO:
+	#  Get all transfer ids and prepare transit site temp dirs for each
+	#+ transfer id. Instead of named after the corresponding dpath the
+	#+ files containing the dir name should be named after the transfer id.
+	#+ => new implementation for listTransfer/getTransitSiteTempDir()
+	#+ needed.
+	#+ => impl. done. New function: helperFunctions/getTransitSiteTempDir()
+	#+ with transfer id as argument.
+	
+	_transferListSource=$( listTransfer/getSourceFromTransferList "$_transferList" )
+	_transferListDestination=$( listTransfer/getDestinationFromTransferList "$_transferList" )
+	
+	#  prepare dpathArray (this is identical for all chunks!)
+	local -a _dpathArray=( $( listTransfer/getDpathData "$_transferListSource" "$_transferListDestination" "$_metric" ) )
+
+	local -a _gucParametersArray
+	
+	local _chunkCount=0
+	#  store guc parameters in an array (one line per parameter set)
+	while read _gucParameterSet; do
+		_gucParametersArray[$_chunkCount]="$_gucParameterSet"
+		_chunkCount=$(( $_chunkCount + 1 ))
+	done < "$_gucParametersFile"	
+	
+	#  determine the temporary dir on a transit site (this is empty if a
+	#+ direct transfer is done!)
+	#local _transitSiteTempDir
+	#_transitSiteTempDir=$( listTransfer/getTransitSiteTempDir "$_transferListSource" "$_transferListDestination" )
+	#  TODO:
+	#  Produce two additional arrays containing the transfer ids of the
+	#+ chunks and the corresponding transit site temp dirs. Use transfer id
+	#+ and transit site temp dir array elements as arguments to
+	#+ listTransfer/transferData().
+
+
+	echo "perform transfers: $(date)" 1>&2
+	#  perform transfers
+	if [[ "$_transferMode" == "par" || "$_transferMode" == "parallel" ]]; then
+		_chunkCount=0
+		while read _chunkTransferList; do
+			
+			echo listTransfer/transferData "$_chunkTransferList" \
+						  "$_metric" \
+						  "$_tmpTgftpLogFileName" \
+						  "${_dpathArray[*]}" \
+						  "${_gucParametersArray[$_chunkCount]}" 1>&2
+						  
+			listTransfer/transferData "$_chunkTransferList" \
+						  "$_metric" \
+						  "$_tmpTgftpLogFileName" \
+						  "${_dpathArray[*]}" \
+						  "${_gucParametersArray[$_chunkCount]}" &
+			                          
+			_chunkCount=$(( $_chunkCount + 1 ))
+			
+		done < "$_transferListsFile"
+		
+		wait
+		
+		echo "END: $(date)" 1>&2
+		return
+	
+	elif [[ "$_transferMode" == "seq" || "$_transferMode" == "sequential" ]]; then
+		_chunkCount=0
+		while read _chunkTransferList; do
+		
+			echo listTransfer/transferData "$_chunkTransferList" \
+						  "$_metric" \
+						  "$_tmpTgftpLogFileName" \
+						  "${_dpathArray[*]}" \
+						  "${_gucParametersArray[$_chunkCount]}" 1>&2
+						  
+			listTransfer/transferData "$_chunkTransferList" \
+						  "$_metric" \
+						  "$_tmpTgftpLogFileName" \
+						  "${_dpathArray[*]}" \
+						  "${_gucParametersArray[$_chunkCount]}"
+
+			
+			_chunkCount=$(( $_chunkCount + 1 ))
+			
+		done < "$_transferListsFile"
+		
+		echo "END: $(date)" 1>&2
+		return
+	else
+		echo "END: $(date)" 1>&2
+		return 1
+	fi
+}
+

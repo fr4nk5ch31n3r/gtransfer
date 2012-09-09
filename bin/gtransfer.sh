@@ -34,7 +34,7 @@ COPYRIGHT
 #  prevent "*" expansion (filename globbing)
 set -f
 
-version="0.0.7c-dev05"
+version="0.0.7c-dev06"
 gsiftpUserParams=""
 
 #  path to configuration file (prefer system paths!)
@@ -48,7 +48,8 @@ elif [[ -e "$HOME/.gtransfer/gtransfer.conf" ]]; then
         gtransferConfigurationFile="$HOME/.gtransfer/gtransfer.conf"
 fi
 
-_GTRANSFER_LOCATION="$( dirname $gtransferConfigurationFile )/../"
+_GTRANSFER_LOCATION="$( dirname $gtransferConfigurationFile )"
+chunkConfig="$_GTRANSFER_LOCATION/chunkConfig"
 _LIB="$_GTRANSFER_LOCATION/lib"
 
 ################################################################################
@@ -57,6 +58,7 @@ _LIB="$_GTRANSFER_LOCATION/lib"
 
 . "$_LIB"/exitCodes.bashlib
 . "$_LIB"/listTransfer.bashlib
+. "$_LIB"/autoOptimization.bashlib
 
 ################################################################################
 
@@ -141,6 +143,12 @@ The options are as follows:
                         on the commandline one can also provide a list of source
                         and destination URLs. See the gt manual page for more
                         details.
+                        
+[--auto-optimize|-o transferMode]
+			Activates automatic optimization of transfers
+			depending on the size of files. The transferMode
+			controls how files of different size classes are
+			transferred. Currently only "seq[uential]" is possible.
 
 [--verbose|-v]          Be verbose.
 
@@ -1638,6 +1646,7 @@ while [[ "$1" != "" ]]; do
                 "$1" != "--gt-max-retries" && \
                 "$1" != "--transfer-list" && "$1" != "-f" && \
                 "$1" != "--gt-progress-indicator" && \
+                "$1" != "--auto-optimize" && "$1" != "-o" && \
 		"$1" != "--" \
 	]]; then
 		#  no, so output a usage message
@@ -1702,6 +1711,19 @@ while [[ "$1" != "" ]]; do
 		else
 			#  duplicate usage of this parameter
 			echo "ERROR: The parameter \"--transfer-list|-f\" cannot be used multiple times!"
+			exit $_gtransfer_exit_usage
+		fi
+		
+	#  "--auto-optimize|-o transferMode"
+	elif [[ "$1" == "--auto-optimize" || "$1" == "-o" ]]; then
+		if [[ "$autoOptimizeSet" != "0" ]]; then
+			shift 1
+			transferMode="$1"
+			autoOptimizeSet="0"
+			shift 1
+		else
+			#  duplicate usage of this parameter
+			echo "ERROR: The parameter \"--auto-optimization|-o\" cannot be used multiple times!"
 			exit $_gtransfer_exit_usage
 		fi
 
@@ -1823,6 +1845,11 @@ if [[ $verboseExecSet == 0 ]]; then
 	verboseExec=1
 fi
 
+#  auto optimization requested?
+if [[ $autoOptimizeSet == 0 ]]; then
+	autoOptimize=1 # 1 on, 0 off
+fi
+
 #  set dpath metric
 if [[ "$dataPathMetricSet" != "0" ]]; then
 	dataPathMetric="$defaultDataPathMetric"
@@ -1838,14 +1865,27 @@ if [[ "$gsiftpSourceUrl" == "" || \
       "$gsiftpDestinationUrl" == "" \
 ]]; then
         if [[ "$gsiftpTransferListSet" == "0" ]]; then
-                listTransfer/transferData "$gsiftpTransferList" "$dataPathMetric" "$tgftpLogfileName"
+        	#  TODO:
+        	#  Use temporary dir for temp files (.gtransfer/<transferID>)
+        	#  1. Determine transfer id for original transfer list
+        	#  2. Create temp dir and store path in global var
+        	if [[ "$autoOptimize" -eq 1 ]]; then
+        		autoOptimization/performTransfer "$gsiftpTransferList"  "$dataPathMetric" "$tgftpLogfileName" "$chunkConfig" "$transferMode"
+        	else
+                	listTransfer/transferData "$gsiftpTransferList" "$dataPathMetric" "$tgftpLogfileName"
+                fi
         else
                 #  no, so output a usage message
                 usageMsg
                 exit $_gtransfer_exit_usage
         fi
 else
-        transferData "$gsiftpSourceUrl" "$gsiftpDestinationUrl" "$dataPathMetric" "$tgftpLogfileName"
+	if [[ "$autoOptimize" -eq 1 ]]; then
+		gsiftpTransferList=$( listTransfer/createTransferList "$gsiftpSourceUrl" "$gsiftpDestinationUrl" )
+		autoOptimization/performTransfer "$gsiftpTransferList"  "$dataPathMetric" "$tgftpLogfileName" "$chunkConfig" "$transferMode"
+	else
+        	transferData "$gsiftpSourceUrl" "$gsiftpDestinationUrl" "$dataPathMetric" "$tgftpLogfileName"
+        fi
 fi
 
 #transferData "$gsiftpSourceUrl" "$gsiftpDestinationUrl" "$dataPathMetric" "$tgftpLogfileName"
