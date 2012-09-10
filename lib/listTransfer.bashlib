@@ -30,6 +30,8 @@ exitCodes.bashlib
 helperFunctions.bashlib
 INCLUDE
 
+#. /opt/gtransfer/etc/gtransfer.conf
+
 #_LIB='.'
 
 #  only source if not already sourced
@@ -224,22 +226,86 @@ listTransfer/getTransitSiteTempDir()
 
 #  getTransferParameters() - get transfer parameters with one line per transfer
 #+ step
-#+ @dpathArray: Dpath data with one line per step (= output of
+#+ @dpathArray: Dpath data with one field per step (= output of
 #+              listTransfer/getDpathData())
+#+
+#+ @CALL:       getTransferParameters "${_dpathArray[*]}"
 #
 #  Ouput depends on the number of transfer steps. Hence the dpath data must have
 #+ been determined prior to the parameters.
+#
+#  NOTE: Spaces in the parameters are exchanged by '#'.
 listTransfer/getTransferParameters()
 {
-	local _dpathArray="$1"
+	local -a _dpathArray=($1)
 
+	for _sourceDestination in ${_dpathArray[@]}; do
+		
+		local _source="${_sourceDestination%%;*}"
+		local _destination="${_sourceDestination##*;}"
+		
+		local _dparamFile
+		_dparamFile=$( listTransfer/dparamAvailable "$_source" "$_destination" )
+		
+		local _functionReturnValue=$?
+	
+		if [[ $_functionReturnValue -eq 0 ]]; then
+			_unescapedTransferParameters=$( helperFunctions/xtractXMLAttributeValue "gsiftp_params" $_dparamFile )
+			echo "${_unescapedTransferParameters// /#}"
+		else
+			#  if no dparam available use builtin defaults (for now!)
+			echo "${gsiftpDefaultParams// /#}"
+		fi		
+	done
+
+	return
 }
 
 
-
+#  performTransfer() - transfer given list of files
+#+ @transferList:     (possibly unsorted) transfer list (file name)
+#+ @metric:           the metric to use to choose a path
+#+ @tgftpLogFileName: file name for tgftp log
 listTransfer/performTransfer()
 {
-	:
+	local _transferList="$1"
+	local _metric="$2"
+	local _tgftpLogFileName="$3"
+	
+	#  usage:
+	#+ transferData transferList \
+	#+              metric \
+	#+              tmpLogfileName \
+	#+              dpathArray \
+	#+              dparamsArray
+	
+	local _transferListSource=$( listTransfer/getDestinationFromTransferList "$_transferList" )
+	local _transferListDestination=$( listTransfer/getSourceFromTransferList "$_transferList" )
+	
+	#  get dpath array
+	local -a _dpathArray=( $( listTransfer/getDpathData "$_transferListSource" "$_transferListDestination" "$_metric" ) )
+	
+	#  get dparams array
+	local -a _dparamsArray=( $( listTransfer/getTransferParameters "${_dpathArray[*]}" ) )
+	
+	#echo "DEBUG: ${_dpathArray[0]}"
+	#echo "DEBUG: ${_dpathArray[1]}"
+	
+	#echo "DEBUG: ----"
+	
+	#echo "DEBUG: ${_dparamsArray[0]}"
+	#echo "DEBUG: ${_dparamsArray[1]}"
+	
+	#return
+	
+	listTransfer/transferData "$_transferList" \
+	                          "$_metric" \
+	                          "$_tgftpLogFileName" \
+	                          "${_dpathArray[*]}" \
+	                          "${_dparamsArray[*]}"
+
+	return
+		
 }
 
 
@@ -277,56 +343,6 @@ listTransfer/dparamAvailable()
 }
 
 
-doSomething()
-{
-
-	#NEW#v##########################################################
-	    	
-
-	#  (2) get default params
-	########################################################################
-	if [[ -e "$transferStepDefaultParamsFile" && \
-	      -z "$gsiftpUserParams" \
-	]]; then
-		#  default params file available, no user params
-		#+ specified
-		transferStepDefaultParams="$(xtractXMLAttributeValue "gsiftp_params" $transferStepDefaultParamsFile)"
-		echoIfVerbose -e "Default params used:\n$transferStepDefaultParamsFile"
-
-	elif [[ -e "$transferStepDefaultParamsFile" && \
-		-n "$gsiftpUserParams" \
-	]]; then
-		#  user params specified
-		transferStepDefaultParams="$(xtractXMLAttributeValue "gsiftp_params" $transferStepDefaultParamsFile)"
-
-		#  if user only provided "-len|-partial-length [...]", then just add it to the default gsiftp params,
-		#+ if not only use the user provided params.
-		grepMatch=$( echo "$gsiftpUserParams" | egrep -o "\-len [[:alnum:]]*|\-partial-length [[:alnum:]]*" )
-		if [[ "$grepMatch" == "$gsiftpUserParams" ]]; then
-			transferStepDefaultParams="$transferStepDefaultParams $gsiftpUserParams"
-		else
-			transferStepDefaultParams="$gsiftpUserParams"
-		fi
-
-	elif [[ -n "$gsiftpUserParams" ]]; then
-		#  no default params available, use parameters
-		#+ supplied by user or a combination of builtin
-		#+ parameters and "-len"
-		grepMatch=$( echo "$gsiftpUserParams" | egrep -o "\-len [[:alnum:]]*|\-partial-length [[:alnum:]]*" )
-		if [[ "$grepMatch" == "$gsiftpUserParams" ]]; then
-			transferStepDefaultParams="$gsiftpDefaultParams $gsiftpUserParams"
-		else
-			transferStepDefaultParams="$gsiftpUserParams"
-		fi
-
-	else
-		#  no default params available and no params specified by the user, use builtin
-		#+ default parameters
-		transferStepDefaultParams="$gsiftpDefaultParams"
-	fi
-	
-	#NEW#^##########################################################
-}
 
 
 
@@ -352,7 +368,7 @@ listTransfer/transferData()
 	local tgftpTempLogfileName="$3"
 	
 	local -a _dpathArray=($4)
-	local -a _dparamsArray=("$5")
+	local -a _dparamsArray=($5)
 
 	#echo ${_dpathArray[0]}
 	#echo ${_dpathArray[1]}
@@ -434,17 +450,19 @@ listTransfer/transferData()
 	       	#  source and destination for transfer step
 	       	local transferStepSource=${transferStep%%;*}
 	    	local transferStepDestination=${transferStep##*;}
-	    	
+
+		local _escapedTransferParameters=""	    	
 	    	local _transferParameters=""
 	    	
 	    	#  if the dparamsArray contains only one element (=simple
 	    	#+ string), then use these parameters for all steps
 	    	if [[ ${#_dparamsArray[*]} -eq 1 ]]; then
-	    		_transferParameters=${_dparamsArray[0]}
+	    		_escapedTransferParameters=${_dparamsArray[0]}
 	    	else
-	    		_transferParameters=${_dparamsArray[$transferStepNumber]}
+	    		_escapedTransferParameters=${_dparamsArray[$transferStepNumber]}
 		fi
-		
+
+    		_transferParameters="${_escapedTransferParameters//#/ }"
 		#echo "($$) DEBUG: transferStepSource=\"$transferStepSource\""
 		#echo "($$) DEBUG: transferStepDestination=\"$transferStepDestination\""
 		#exit 1

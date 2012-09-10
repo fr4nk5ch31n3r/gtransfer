@@ -32,6 +32,7 @@ listTransfer.bashlib
 INCLUDE
 
 #  TO BE REMOVED V
+#. /opt/gtransfer/etc/gtransfer.conf
 #_LIB='.'
 #  TO BE REMOVED ^
 
@@ -271,7 +272,7 @@ autoOptimization/prepareParameters()
 #  performTransfer() - transfer data with automatic optimizations depending on
 #+ the size of files
 #+ @transferList:        unsorted transfer list (file name)
-#+ @metric:              the metric to use
+#+ @metric:              the metric to use to choose a path
 #+ @tmpTgftpLogFileName: file name for tgftp log
 #+ @chunkConfigration:   chunk configuration file
 #+ @transferMode:        either "par[allel]" or "seq[uential]"
@@ -309,21 +310,11 @@ autoOptimization/performTransfer()
 	local _chunkCount=0
 	#  store guc parameters in an array (one line per parameter set)
 	while read _gucParameterSet; do
-		_gucParametersArray[$_chunkCount]="$_gucParameterSet"
+		#  escape guc parameter set
+		_gucParametersArray[$_chunkCount]="${_gucParameterSet// /#}"
 		_chunkCount=$(( $_chunkCount + 1 ))
 	done < "$_gucParametersFile"	
 	
-	#  determine the temporary dir on a transit site (this is empty if a
-	#+ direct transfer is done!)
-	#local _transitSiteTempDir
-	#_transitSiteTempDir=$( listTransfer/getTransitSiteTempDir "$_transferListSource" "$_transferListDestination" )
-	#  TODO:
-	#  Produce two additional arrays containing the transfer ids of the
-	#+ chunks and the corresponding transit site temp dirs. Use transfer id
-	#+ and transit site temp dir array elements as arguments to
-	#+ listTransfer/transferData().
-
-
 	echo "perform transfers: $(date)" 1>&2
 	#  perform transfers
 	if [[ "$_transferMode" == "par" || "$_transferMode" == "parallel" ]]; then

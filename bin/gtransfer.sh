@@ -34,7 +34,7 @@ COPYRIGHT
 #  prevent "*" expansion (filename globbing)
 set -f
 
-version="0.0.7c-dev06"
+version="0.0.7c-dev07"
 gsiftpUserParams=""
 
 #  path to configuration file (prefer system paths!)
@@ -1872,7 +1872,7 @@ if [[ "$gsiftpSourceUrl" == "" || \
         	if [[ "$autoOptimize" -eq 1 ]]; then
         		autoOptimization/performTransfer "$gsiftpTransferList"  "$dataPathMetric" "$tgftpLogfileName" "$chunkConfig" "$transferMode"
         	else
-                	listTransfer/transferData "$gsiftpTransferList" "$dataPathMetric" "$tgftpLogfileName"
+                	listTransfer/performTransfer "$gsiftpTransferList" "$dataPathMetric" "$tgftpLogfileName"
                 fi
         else
                 #  no, so output a usage message
