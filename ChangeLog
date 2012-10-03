@@ -112,3 +112,15 @@ post-command that removes the transit directory might be executed too early
 after the pre-command that creates the transit directory and chmods it to 0700
 was executed.
 
+2012-10-03  Frank Scheiner  <frank.scheiner@web.de>
+
+gtransfer dist v0.0.9a:
+
+*0.0.9a (gtransfer), 0.0.5b (dpath), 0.0.5a (dparam)
+Added "/etc/gtransfer" search path for gtransfer configuration files to support
+native OS packages. Removed non-standard "/opt/gtransfer/etc" search path
+(although the FHS 2.3 is not fully clear on this). Adapted installer script and
+tools to automatically add a config file search path for the gtransfer
+installation dir structure. Updated man pages. Filename globbing is deactivated
+inside of gtransfer.
+

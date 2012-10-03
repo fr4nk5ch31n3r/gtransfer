@@ -28,17 +28,32 @@ contract number RI-222919.
 
 COPYRIGHT
 
-version="0.0.5a"
+version="0.0.5b"
 
-#  path to configuration file (prefer system paths!)
-if [[ -e "/opt/gtransfer/etc/dpath.conf" ]]; then
-	dpathConfigurationFile="/opt/gtransfer/etc/dpath.conf"
-elif [[ -e "/etc/opt/gtransfer/dpath.conf" ]]; then
-	dpathConfigurationFile="/etc/opt/gtransfer/dpath.conf"
-elif [[ -e "$HOME/.gtransfer/dpath.conf" ]]; then
-	dpathConfigurationFile="$HOME/.gtransfer/dpath.conf"
+#  path to configuration files (prefer system paths!)
+#  For native OS packages:
+if [[ -e "/etc/gtransfer" ]]; then
+        dpathConfigurationFilesPath="/etc/gtransfer"
+
+#  For installation with "install.sh".
+#sed#elif [[ -e "<PATH_TO_GTRANSFER>/etc" ]]; then
+#sed#	dpathConfigurationFilesPath="<PATH_TO_GTRANSFER>/etc"
+
+#  According to FHS 2.3, configuration files for packages located in "/opt" have
+#+ to be placed here (if you use a provider super dir below "/opt" for the
+#+ gtransfer files, please also use the same provider super dir below
+#+ "/etc/opt").
+#elif [[ -e "/etc/opt/<PROVIDER>/gtransfer" ]]; then
+#	dpathConfigurationFilesPath="/etc/opt/<PROVIDER>/gtransfer"
+elif [[ -e "/etc/opt/gtransfer" ]]; then
+        dpathConfigurationFilesPath="/etc/opt/gtransfer"
+
+#  For user install in $HOME:
+elif [[ -e "$HOME/.gtransfer" ]]; then
+        dpathConfigurationFilesPath="$HOME/.gtransfer"
 fi
 
+dpathConfigurationFile="$dpathConfigurationFilesPath/dpath.conf"
 
 #USAGE##########################################################################
 usageMsg()

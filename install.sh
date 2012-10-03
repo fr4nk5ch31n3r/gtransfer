@@ -45,6 +45,15 @@ if [[ "$(basename $0)" == "install.sh" ]]; then
 	cp ./gtransfer.sh "$prefixDir/gtransfer/bin"
 	cp ./datapath.sh "$prefixDir/gtransfer/bin"
 	cp ./defaultparam.sh "$prefixDir/gtransfer/bin"
+	
+	#  reconfigure paths inside of the scripts
+	#        + reconfigure path to configuration files
+	#        |
+	#        |                                                 + remove (special) comments
+	#        |                                                 |
+	sed -e "s|<PATH_TO_GTRANSFER>|$prefixDir/gtransfer|g" -e 's/#sed#//g' -i "$prefixDir/gtransfer/bin/gtransfer.sh"
+	sed -e "s|<PATH_TO_GTRANSFER>|$prefixDir/gtransfer|g" -e 's/#sed#//g' -i "$prefixDir/gtransfer/bin/datapath.sh"
+	sed -e "s|<PATH_TO_GTRANSFER>|$prefixDir/gtransfer|g" -e 's/#sed#//g' -i "$prefixDir/gtransfer/bin/defaultparam.sh"
 
 	#  ...make links...
 	if [[ $UserInstall -eq 1 ]]; then

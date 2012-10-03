@@ -31,17 +31,36 @@ contract number RI-222919.
 
 COPYRIGHT
 
-version="0.0.9"
+#  prevent "*" expansion (filename globbing)
+set -f
+
+version="0.0.9a"
 gsiftpUserParams=""
 
-#  path to configuration file (prefer system paths!)
-if [[ -e "/opt/gtransfer/etc/gtransfer.conf" ]]; then
-	gtransferConfigurationFile="/opt/gtransfer/etc/gtransfer.conf"
-elif [[ -e "/etc/opt/gtransfer/gtransfer.conf" ]]; then
-	gtransferConfigurationFile="/etc/opt/gtransfer/gtransfer.conf"
-elif [[ -e "$HOME/.gtransfer/gtransfer.conf" ]]; then
-	gtransferConfigurationFile="$HOME/.gtransfer/gtransfer.conf"
+#  path to configuration files (prefer system paths!)
+#  For native OS packages:
+if [[ -e "/etc/gtransfer" ]]; then
+        gtransferConfigurationFilesPath="/etc/gtransfer"
+
+#  For installation with "install.sh".
+#sed#elif [[ -e "<PATH_TO_GTRANSFER>/etc" ]]; then
+#sed#	gtransferConfigurationFilesPath="<PATH_TO_GTRANSFER>/etc"
+
+#  According to FHS 2.3, configuration files for packages located in "/opt" have
+#+ to be placed here (if you use a provider super dir below "/opt" for the
+#+ gtransfer files, please also use the same provider super dir below
+#+ "/etc/opt").
+#elif [[ -e "/etc/opt/<PROVIDER>/gtransfer" ]]; then
+#	gtransferConfigurationFilesPath="/etc/opt/<PROVIDER>/gtransfer"
+elif [[ -e "/etc/opt/gtransfer" ]]; then
+        gtransferConfigurationFilesPath="/etc/opt/gtransfer"
+
+#  For user install in $HOME:
+elif [[ -e "$HOME/.gtransfer" ]]; then
+        gtransferConfigurationFilesPath="$HOME/.gtransfer"
 fi
+
+gtransferConfigurationFile="$gtransferConfigurationFilesPath/gtransfer.conf"
 
 ################################################################################
 #  FUNCTIONS  ##################################################################
