@@ -336,20 +336,22 @@ use()
 
 	local tools=$@
 
-	local requiredToolNotAvailable=1
+	local requiredToolNotAvailable=0
 
 	for tool in $tools; do
 		#echo "$tool"
 		if ! which $tool &>/dev/null; then
-			requiredToolNotAvailable=0
+			requiredToolNotAvailable=1
 			echo "ERROR: Required tool \"$tool\" not available!"
 		fi
 	done
 
-	if [[ $requiredToolNotAvailable == 0 ]]; then
-		echo "       Cannot run without required tools! Exiting now!"
-		exit 1
+	if [[ $requiredToolNotAvailable -eq 1 ]]; then
+		echo "       Cannot run without required tools!"
+		return 1
 	fi
+	
+	return 0
 }
 
 isValidUrl()
@@ -1376,16 +1378,16 @@ transferData()
 	#  Check if valid URLs are provided
 	if ! isValidUrl $source; then
 		echo "ERROR: Protocol specifier missing in \"$source\" and no local path specified!"
-		exit 1
+		exit "$_gtransfer_exit_usage"
 	elif ! isValidUrl $destination; then
 		echo "ERROR: Protocol specifier missing in \"$destination\" and no local path specified!"
-		exit 1
+		exit "$_gtransfer_exit_usage"
 	#  check if target URL is a "http://" URL
 	elif [[ "$( getProtocolSpecifier $destination )" == "http://" || \
 	        "$( getProtocolSpecifier $destination )" == "https://" \
 	]]; then
 		echo "ERROR: Target URL cannot be a \"http[s]://\" URL!"
-		exit 1
+		exit "$_gtransfer_exit_usage"
 	fi
 
 	local sourceWithoutPath=$(getURLWithoutPath "$source")
@@ -1609,7 +1611,7 @@ done
 #MAIN###########################################################################
 
 #  check that all required tools are available
-use cat grep sed cut sleep tgftp telnet #uberftp
+use cat grep sed cut sleep tgftp telnet || exit "$_gtransfer_exit_software" #uberftp
 
 dataPathMetricSet="1"
 tgftpLogfileNameSet="1"
