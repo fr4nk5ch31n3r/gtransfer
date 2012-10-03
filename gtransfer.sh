@@ -34,7 +34,7 @@ COPYRIGHT
 #  prevent "*" expansion (filename globbing)
 set -f
 
-version="0.0.9a"
+version="0.0.9b"
 gsiftpUserParams=""
 
 #  path to configuration files (prefer system paths!)
@@ -1329,7 +1329,9 @@ transferData()
                  "$transferStepDefaultParams" \
                  "$tgftpTransferCommand" \
 		 "$tgftpLogfileName" \
-		 "1"
+		 "0" \
+                 "0" \
+                 ""
 
 		#simulateTransfer
 

@@ -124,3 +124,14 @@ tools to automatically add a config file search path for the gtransfer
 installation dir structure. Updated man pages. Filename globbing is deactivated
 inside of gtransfer.
 
+2012-10-03  Frank Scheiner  <frank.scheiner@web.de>
+
+gtransfer dist v0.0.9b:
+
+*0.0.9b (gtransfer):
+Hotfix for a serious bug. Due to an unmodified call to an internal function,
+which got a new interface in v0.0.8, v0.0.8 to v0.0.9a versions remove the
+source directory after transferring the data (in a single step transfer) to the
+destination directory if no dpath exists for the current source destination
+combination. This is now fixed.
+
