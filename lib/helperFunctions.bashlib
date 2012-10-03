@@ -26,8 +26,13 @@ COPYRIGHT
 ################################################################################
 
 :<<INCLUDE
+exitCodes.bashlib
 INCLUDE
 
+#  only source if not already sourced
+if [[ -z "$_exitCodes_Version" ]]; then
+	. "$_LIB/exitCodes.bashlib"
+fi
 
 ################################################################################
 #  VARIABLES
@@ -460,4 +465,78 @@ helperFunctions/getProtocolSpecifier()
 	fi
 }
 
+
+helperFunctions/isValidUrl()
+{
+	#  determines if a valid URL was used and also checks if the host does
+	#+ exist in DNS.
+	#
+	#  usage:
+	#+ isValidUrl url
+
+	local url="$1"
+	local hostName=""
+
+	#  if the URL starts with an absolute path it's equal to "file://$URL"
+	#+ and therefore valid.
+	if  [[ ${url:0:1} == "/" ]]; then
+		return 0
+	#  protocol specifier missing?
+	elif ! echo $url | grep ".*://" &>/dev/null; then
+		#echo "ERROR: Protocol specifier missing in \"$URL\" and no local path specified!"
+		return 1
+	else
+		#  check if host exists in DNS
+		#  The "ping" command could be a good candidate, as it is often
+		#+ available by default. ping returns "2" if a host name cannot
+		#+ be resolved to an IP address, or if a wrong number of echo
+		#+ requests is used (e.g. "-c 0"). So the exit value "2" seems
+		#+ to indicate a general problem.
+		hostName=$( helperFunctions/getFQDNFromURL "$url" )
+		if [[ "$hostName" != "" ]]; then
+			ping -c 1 "$hostName"
+			
+			if [[ $? -eq 2 ]]; then
+				return 1
+			else
+				#  An exit value of "1" is returned, if the destination
+				#+ host couldn't be reached. But as there's a
+				#+ port scan done later, we can savely return 0,
+				#+ as the host seems to exist in DNS.
+				return 0
+			fi
+		else
+			return 1
+		fi
+	fi
+	
+}
+
+
+helperFunctions/getFQDNFromURL()
+{
+        #  get the Fully Qualified Domain Name from a URL
+        #
+        #  usage:
+        #+ getFQDNFromURL url
+
+        local _url="$1"
+
+        local _fqdn=$( getURLWithoutPath "$_url" | cut -d '/' -f 3 | cut -d ':' -f 1)
+
+        if [[ "$_fqdn" != "" ]]; then
+                echo "$_fqdn"
+                return
+        else
+                return 1
+        fi
+}
+
+
+################################################################################
+#  CHECKS
+################################################################################
+
+#  check that all required tools are available
+use ping || exit "$_gtransfer_exit_software"
 
