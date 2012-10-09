@@ -22,7 +22,8 @@ it supports usage of default parameters for specific connections.
 Detailed help is provided by the help output of the script and its man page.
 
 There's bash completion available for gtransfer. This supports completion of
-options and URLs. URL completion also expands (remote) paths.
+options and URLs. URL completion also expands (remote) paths. For more details, please checkout
+the [video](http://shelr.tv/records/4fd1be0096608036e1000001) at shelr.tv.
 
 ### (1.1) Data paths ###
 
@@ -127,7 +128,7 @@ Example file contents of a data path:
 `
 Local--to--Domain_gridftp-host -> 18b0cc9961ad47e7cb2021aa158f86e561e07683:
 `
-```
+```xml
 <source>
 file://
 </source>
@@ -244,7 +245,7 @@ features of dparam, please check the help with `--help`.
 
 Example file contents:
 
-```
+```xml
 <source>
 gsiftp://gridftp-host.site-a:2811
 </source>
