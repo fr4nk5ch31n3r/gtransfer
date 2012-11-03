@@ -147,3 +147,5 @@ when building tarballs.
 Installer script adapted (included new name for README.md and bash completion
 file).
 
+Some rework on manual pages (consistency, config file search order, etc.).
+
