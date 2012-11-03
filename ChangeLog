@@ -135,3 +135,15 @@ source directory after transferring the data (in a single step transfer) to the
 destination directory if no dpath exists for the current source destination
 combination. This is now fixed.
 
+2012-11-03  Frank Scheiner  <frank.scheiner@web.de>
+
+gtransfer dist v0.0.9c:
+
+Renamed modulefiles to generic names. Version strings inside of the modulefiles
+are now configurable by the tarball build script (not part of the repo!). Names
+of modulefiles are now also automatically renamed to the current dist version
+when building tarballs.
+
+Installer script adapted (included new name for README.md and bash completion
+file).
+
