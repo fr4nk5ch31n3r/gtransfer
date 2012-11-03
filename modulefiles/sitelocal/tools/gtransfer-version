@@ -1,12 +1,14 @@
-#  gtransfer/0.0.7 local dependencies
+#  gtransfer/<VERSION> local dependencies
 #
 #  2011-08-26  Frank Scheiner  <scheiner@hlrs.de>
 #  2011-12-18  Frank Scheiner
+#  2012-11-03  Frank Scheiner
 
 #  Please adapt to your local environment
 set GTRANSFER_DIRECTORY_OF_EXECUTABLES "/opt/gtransfer/bin"
 set GTRANSFER_DIRECTORY_OF_MANUALS     "/opt/gtransfer/share/man"
 set GTRANSFER_DIRECTORY_OF_DOCS        "/opt/gtransfer/share/doc"
+set GTRANSFER_BASH_COMPLETION_FILE     "/opt/gtransfer/etc/bash_completion.d/gtransfer"
 
 return
 
