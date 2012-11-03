@@ -146,20 +146,21 @@ Prints out version information.
 
 .SH FILES
 .TP 10
-.I $HOME/.gtransfer/dparams/
-This dir contains the default "optimized" parameters usable by
-.BR "gtransfer" ". Can be created with " "dparam" "."
-
-.TP
-.I /opt/gtransfer/etc/dparams/
-This dir contains the system "optimized" parameters usable by
-.BR "gtransfer" " and is configurable. Can be created with " "dparam" "."
-
-.TP
 .I [...]/dparam.conf
 The
 .B dparam
 configuration file.
+
+.TP
+.I <PATH_TO_SYSTEM>/dparams/
+This dir contains the system dparams usable by
+.BR "gtransfer" " and is configurable. Can be created with " "dparam" "."
+
+.TP
+.I $HOME/.gtransfer/dparams/
+This dir contains the user dparams usable by
+.BR "gtransfer" ". Can be created with " "dparam" "."
+
 
 .SH AUTHOR
 Frank Scheiner
