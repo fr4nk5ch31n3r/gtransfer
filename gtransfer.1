@@ -1,4 +1,4 @@
-.TH GTRANSFER 1 "03 Oct 2012" "version 0.0.9b" "User Commands"
+.TH GTRANSFER 1 "03 Nov 2012" "version 0.0.9b" "User Commands"
 .SH NAME
 gtransfer \- The GridFTP transfer script
 
@@ -84,7 +84,9 @@ Remove logfiles automatically after the transfer completed.
 Set the name of the configuration file for
 .BR "gtransfer" ". If not set, this defaults to:"
 
-.IR "/opt/gtransfer/etc/gtransfer.conf" " or"
+.IR "/etc/gtransfer/gtransfer.conf" " or"
+
+.IR "<INSTALL_PATH>/etc/gtransfer.conf" " or"
 
 .IR "/etc/gtransfer/gtransfer.conf" " or"
 
@@ -126,12 +128,12 @@ The
 configuration file.
 
 .TP
-.I /opt/gtransfer/etc/dpaths/
+.I <PATH_TO_SYSTEM>/dpaths/
 This directory contains the system's default dpaths usable by
 .BR "gtransfer" " and is configurable."
 
 .TP
-.I /opt/gtransfer/etc/dparams/
+.I <PATH_TO_SYSTEM>/dparams/
 This directory contains the system's default dparams usable by
 .BR "gtransfer" " and is configurable."
 
