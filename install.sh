@@ -69,7 +69,7 @@ if [[ "$(basename $0)" == "install.sh" ]]; then
 	ln -s "$prefixDir/gtransfer/bin/defaultparam.sh" "$linkPath/bin/dparam"
 
 	#  ...copy README and manpages.
-	cp ./README "$prefixDir/gtransfer/share/doc"
+	cp ./README.md "$prefixDir/gtransfer/share/doc"
 	cp ./gtransfer.1.pdf ./dpath.1.pdf ./dparam.1.pdf "$prefixDir/gtransfer/share/doc"
 	cp ./COPYING "$prefixDir/gtransfer/share/doc"
 
