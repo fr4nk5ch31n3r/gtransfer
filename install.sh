@@ -28,17 +28,19 @@ if [[ "$(basename $0)" == "install.sh" ]]; then
 	mkdir -p "$prefixDir/gtransfer/share/man/man1" &>/dev/null
 
 	#  create directory for configuration files and also copy configuration
-	#+ files
+	#+ files (also copy bash completion file)
 	if [[ $UserInstall -eq 1 ]]; then
 		mkdir -p "$HOME/.gtransfer" &>/dev/null
 		cp ./etc/gtransfer/gtransfer.conf "$HOME/.gtransfer"
 		cp ./etc/gtransfer/dpath.conf "$HOME/.gtransfer"
 		cp ./etc/gtransfer/dparam.conf "$HOME/.gtransfer"
+		cp -r ./etc/bash_completion.d "$HOME/.gtransfer"
 	else	
 		mkdir -p "$prefixDir/gtransfer/etc" &>/dev/null
 		cp ./etc/gtransfer/gtransfer.conf "$prefixDir/gtransfer/etc"
 		cp ./etc/gtransfer/dpath.conf "$prefixDir/gtransfer/etc"
 		cp ./etc/gtransfer/dparam.conf "$prefixDir/gtransfer/etc"
+		cp -r ./etc/bash_completion.d "$prefixDir/gtransfer/etc"
 	fi
 
 	#  copy scripts and...
@@ -46,7 +48,7 @@ if [[ "$(basename $0)" == "install.sh" ]]; then
 	cp ./datapath.sh "$prefixDir/gtransfer/bin"
 	cp ./defaultparam.sh "$prefixDir/gtransfer/bin"
 	
-	#  reconfigure paths inside of the scripts
+	#  ...reconfigure paths inside of the scripts and...
 	#        + reconfigure path to configuration files
 	#        |
 	#        |                                                 + remove (special) comments
@@ -55,7 +57,7 @@ if [[ "$(basename $0)" == "install.sh" ]]; then
 	sed -e "s|<PATH_TO_GTRANSFER>|$prefixDir/gtransfer|g" -e 's/#sed#//g' -i "$prefixDir/gtransfer/bin/datapath.sh"
 	sed -e "s|<PATH_TO_GTRANSFER>|$prefixDir/gtransfer|g" -e 's/#sed#//g' -i "$prefixDir/gtransfer/bin/defaultparam.sh"
 
-	#  ...make links...
+	#  ...make links and...
 	if [[ $UserInstall -eq 1 ]]; then
 		linkPath="$HOME"
 	else
@@ -66,7 +68,7 @@ if [[ "$(basename $0)" == "install.sh" ]]; then
 	ln -s "$prefixDir/gtransfer/bin/datapath.sh" "$linkPath/bin/dpath"
 	ln -s "$prefixDir/gtransfer/bin/defaultparam.sh" "$linkPath/bin/dparam"
 
-	#  copy README and manpages
+	#  ...copy README and manpages.
 	cp ./README "$prefixDir/gtransfer/share/doc"
 	cp ./gtransfer.1.pdf ./dpath.1.pdf ./dparam.1.pdf "$prefixDir/gtransfer/share/doc"
 	cp ./COPYING "$prefixDir/gtransfer/share/doc"
