@@ -149,20 +149,21 @@ Prints out version information.
 
 .SH FILES
 .TP 10
-.I $HOME/.gtransfer/dpaths/
-This dir contains the default data paths usable by
-.BR "gtransfer" ". Can be created with " "dpath" "."
-
-.TP
-.I /opt/gtransfer/etc/dpaths/
-This dir contains the system data paths usable by
-.BR "gtransfer" " and is configurable. Can be created with " "dpath" "."
-
-.TP
 .I [...]/dpath.conf
 The
 .B dpath
 configuration file.
+
+.TP
+.I <PATH_TO_SYSTEM>/dpaths/
+This dir contains the system data paths usable by
+.BR "gtransfer" " and is configurable. Can be created with " "dpath" "."
+
+.TP
+.I $HOME/.gtransfer/dpaths/
+This dir contains the default data paths usable by
+.BR "gtransfer" ". Can be created with " "dpath" "."
+
 
 .SH AUTHOR
 Frank Scheiner
