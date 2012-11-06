@@ -48,6 +48,34 @@ readonly _helperFunctions_Version="0.1.0"
 FUNCTIONS
 
 
+helperFunctions/use()
+{
+	#  determines if a required tool/binary/etc. is available
+	#
+	#  usage:
+	#+ use "tool1" "tool2" "tool3" [...]
+
+	local tools=$@
+
+	local requiredToolNotAvailable=0
+
+	for tool in $tools; do
+		#echo "$tool"
+		if ! which $tool &>/dev/null; then
+			requiredToolNotAvailable=1
+			echo "ERROR: Required tool \"$tool\" not available!"
+		fi
+	done
+
+	if [[ $requiredToolNotAvailable -eq 1 ]]; then
+		echo "       Cannot run without required tools!"
+		return 1
+	fi
+	
+	return 0
+}
+
+
 #  getTransitSiteTempDir() - get the temporary directory name on the transit
 #+ site
 #+ @transferId: The transfer id for which a temp dir name should be prepared.
@@ -538,5 +566,5 @@ helperFunctions/getFQDNFromURL()
 ################################################################################
 
 #  check that all required tools are available
-use ping || exit "$_gtransfer_exit_software"
+helperFunctions/use ping || exit "$_gtransfer_exit_software"
 
