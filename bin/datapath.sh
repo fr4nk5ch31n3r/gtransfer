@@ -108,7 +108,7 @@ The options are as follows:
 			or - if no additional path is given - in the default
 			data path directory in:
 
-			 "$HOME/.gtransfer/dpaths".
+			"$HOME/.gtransfer/dpaths".
 
 --source|-s gsiftpSourceUrl
 			Determine the source URL for the data path without any
@@ -118,7 +118,6 @@ The options are as follows:
 
 			gsiftp://saturn.milkyway.universe:2811
 
-
 --destination|-d gsiftpDestinationUrl
 			Determine the destination URL for the data path without
 			any path portion at the end.
@@ -127,8 +126,7 @@ The options are as follows:
 
 			gsiftp://pluto.milkyway.universe:2811
 
---alias|-a alias
-			Determine the alias for the created data path. dpath
+--alias|-a alias	Determine the alias for the created data path. dpath
 			will create a link named "alias" to the data path
 			which name is the sha1 hash of the source destination
 			combination.
@@ -139,6 +137,40 @@ The options are as follows:
 			encouraged to use something like the following:
 
 {{site|organization}_{resource|hostName|FQDN}|Local}--to--{site|organization}_{resource|hostName|FQDN}
+
+[--dpath-template dpathTemplate]
+			When provided, dpath will use the given template for
+			dpath creation. The following variables are expanded
+			during dpath creation:
+			
+			$sourceWithoutPath => gsiftpSourceUrl => the host
+			address of the source site
+			
+			$destinationWithoutPath => gsiftpDestinationUrl => the
+			host address of the destination site
+
+--------------------------------------------------------------------------------
+
+--batch-create|-b [/path/to/files]
+			Create data paths in batch mode either in the user-
+			provided path or - if no additional path is given - in
+			the default data path directory in:
+
+			"$HOME/.gtransfer/dpaths".
+			
+--hosts|-h hostsFile    Determine the file containing the host addresses for
+			which data paths should be created.			
+
+[--dpath-template dpathTemplate]
+			When provided, dpath will use the given template for
+			dpath creation. The following variables are expanded
+			during dpath creation:
+			
+			$sourceWithoutPath => gsiftpSourceUrl => the host
+			address of the source site
+			
+			$destinationWithoutPath => gsiftpDestinationUrl => the
+			host address of the destination site
 
 --------------------------------------------------------------------------------
 
@@ -238,6 +270,7 @@ createDataPath()
 	local destinationWithoutPath="$2"
 	local dataPathAlias="$3"
 	local pathToDataPaths="$4"
+	local dpathTemplate="$5"
 
 	local dataPathName="$( hashSourceDestination "$sourceWithoutPath" "$destinationWithoutPath" )"
 
@@ -252,24 +285,36 @@ createDataPath()
 	fi
 
 	#  create data path file and link alias to it
-	touch "$pathToDataPaths/$dataPathName" && \
-	ln -s "$dataPathName" "$pathToDataPaths/$dataPathAlias" && \
-	cat > "$pathToDataPaths/$dataPathAlias" <<-EOF
-	<source>
-	$sourceWithoutPath
-	</source>
-	<destination>
-	$destinationWithoutPath
-	</destination>
-	<path metric="0">
-	$sourceWithoutPath;$destinationWithoutPath
-	</path>
-	<path metric="1">
-	$sourceWithoutPath;# Enter transit site 1 #
-	# Enter transit site 1 #;# Enter transit site 2 #
-	# Enter transit site 2 #;$destinationWithoutPath
-	</path>
-	EOF
+	if [[ "$dpathTemplate" == "" ]]; then
+		touch "$pathToDataPaths/$dataPathName" && \
+		ln -s "$dataPathName" "$pathToDataPaths/$dataPathAlias" && \
+		cat > "$pathToDataPaths/$dataPathAlias" <<-EOF
+		<source>
+		$sourceWithoutPath
+		</source>
+		<destination>
+		$destinationWithoutPath
+		</destination>
+		<path metric="0">
+		$sourceWithoutPath;$destinationWithoutPath
+		</path>
+		<path metric="1">
+		$sourceWithoutPath;# Enter transit site 1 #
+		# Enter transit site 1 #;# Enter transit site 2 #
+		# Enter transit site 2 #;$destinationWithoutPath
+		</path>
+		EOF
+	else
+		dataPath=$( cat "$dpathTemplate" )
+		#  expand sourceWithoutPath
+		dataPath=$( echo "${dataPath//\$sourceWithoutPath/${sourceWithoutPath}}" )
+		#  expand destinationWithoutPath
+		dataPath=$( echo "${dataPath//\$destinationWithoutPath/${destinationWithoutPath}}" )		
+		
+		touch "$pathToDataPaths/$dataPathName" && \
+		ln -s "$dataPathName" "$pathToDataPaths/$dataPathAlias" && \
+		echo "$dataPath" > "$pathToDataPaths/$dataPathAlias"
+	fi
 
 	return	
 }
@@ -337,17 +382,24 @@ listSources()
 	local source=""
 
 	if [[ -e "$dataPathsDir" ]]; then
-		for dataPath in $(ls -1 $dataPathsDir); do
-			#  don't show links or backups (containing a '~' at the end of
-			#+ the filename)
-			if [[ ! -L "$dataPathsDir/$dataPath" && \
-			      $( echo $dataPath | grep '~' 2>/dev/null ) == "" \
-			]]; then
-				source=$(xtractXMLAttributeValue "source" $dataPathsDir/$dataPath)
+		#  if index file is available, just print its contents
+		if [[ -e "$dataPathsDir"/sources.index ]]; then
+			cat "$dataPathsDir"/sources.index
+		else
+			for dataPath in $(ls -1 $dataPathsDir); do
+				#  don't show links or backups (containing a '~' at the end of
+				#+ the filename)
+				if [[ ! -L "$dataPathsDir/$dataPath" && \
+				      $( echo $dataPath | grep '~' 2>/dev/null ) == "" \
+				]]; then
+					source=$(xtractXMLAttributeValue "source" $dataPathsDir/$dataPath)
+					#sourceAlias=$(xtractXMLAttributeValue "source-alias" $dataPathsDir/$dataPath)
 			
-				echo "$source"
-			fi
-		done | sort -u
+					echo "$source"
+					#[[ ! -z "$sourceAlias" ]] && echo "$sourceAlias"
+				fi
+			done | sort -u
+		fi
 	else
 		#echo "ERROR: \"$dataPathsDir\" not existing!"
 		false
@@ -368,17 +420,24 @@ listDestinations()
 	local destination=""
 
 	if [[ -e "$dataPathsDir" ]]; then
-		for dataPath in $(ls -1 $dataPathsDir); do
-			#  don't show links or backups (containing a '~' at the end of
-			#+ the filename)
-			if [[ ! -L "$dataPathsDir/$dataPath" && \
-			      $( echo $dataPath | grep '~' 2>/dev/null ) == "" \
-			]]; then
-				destination=$(xtractXMLAttributeValue "destination" $dataPathsDir/$dataPath)
+		#  if index file is available, just print its contents
+		if [[ -e "$dataPathsDir"/destinations.index ]]; then
+			cat "$dataPathsDir"/destinations.index
+		else
+			for dataPath in $(ls -1 $dataPathsDir); do
+				#  don't show links or backups (containing a '~' at the end of
+				#+ the filename)
+				if [[ ! -L "$dataPathsDir/$dataPath" && \
+				      $( echo $dataPath | grep '~' 2>/dev/null ) == "" \
+				]]; then
+					destination=$(xtractXMLAttributeValue "destination" $dataPathsDir/$dataPath)
+					#destinationAlias=$(xtractXMLAttributeValue "destination-alias" $dataPathsDir/$dataPath)
 			
-				echo "$destination"
-			fi
-		done | sort -u
+					echo "$destination"
+					#[[ ! -z "$destinationAlias" ]] && echo "$destinationAlias"
+				fi
+			done | sort -u
+		fi
 	else
 		#echo "ERROR: \"$dataPathsDir\" not existing!"
 		false
@@ -524,6 +583,9 @@ while [[ "$1" != "" ]]; do
 		"$1" != "--list-sources" && \
 		"$1" != "--list-destinations" && \
 		"$1" != "--retrieve" && "$1" != "-r" && \
+		"$1" != "--batch-create" && "$1" != "-b" && \
+		"$1" != "--hosts" && "$1" != "-h" && \
+		"$1" != "--dpath-template" && \
 		"$1" != "--configfile" \
 	]]; then
 		#  no, so output a usage message
@@ -610,6 +672,25 @@ while [[ "$1" != "" ]]; do
 		else
 			#  duplicate usage of this parameter
 			echo "ERROR: The parameter \"--create|-c\" cannot be used multiple times!"
+			exit 1
+		fi
+		
+	#  "--batch-create|-b [/path/to/files]"
+	elif [[ "$1" == "--batch-create" || "$1" == "-b" ]]; then
+		if [[ "$batchCreateDataPathsSet" != "0" ]]; then
+			shift 1
+			#  path provided?
+			if [[ "${1:0:1}" != "-" ]]; then
+				#  yes
+				dataPathsDir="$1"
+				shift 1
+			else
+				dataPathsDir=""
+			fi
+			batchCreateDataPathsSet="0"
+		else
+			#  duplicate usage of this parameter
+			echo "ERROR: The parameter \"--batch-create|-b\" cannot be used multiple times!"
 			exit 1
 		fi
 
@@ -703,7 +784,7 @@ while [[ "$1" != "" ]]; do
 			exit 1
 		fi
 
-	#  "--configfile"
+	#  "--configfile configurationFile"
 	elif [[ "$1" == "--configfile" ]]; then
 		if [[ $dpathConfigurationFileSet != 0 ]]; then
 			shift 1
@@ -713,6 +794,32 @@ while [[ "$1" != "" ]]; do
 		else
 			#  duplicate usage of this parameter
 			echo "ERROR: The parameter \"--configfile\" cannot be used multiple times!"
+			exit 1
+		fi
+		
+	#  "--hosts hostsFile"
+	elif [[ "$1" == "--hosts" ]]; then
+		if [[ $hostsFileSet != 0 ]]; then
+			shift 1
+			hostsFile="$1"
+			hostsFileSet=0
+			shift 1
+		else
+			#  duplicate usage of this parameter
+			echo "ERROR: The parameter \"--hosts\" cannot be used multiple times!"
+			exit 1
+		fi
+		
+	#  "[--dpath-template dpathTemplate]
+	elif [[ "$1" == "--dpath-template" ]]; then
+		if [[ $dpathTemplateSet != 0 ]]; then
+			shift 1
+			dpathTemplate="$1"
+			dpathTemplateSet=0
+			shift 1
+		else
+			#  duplicate usage of this parameter
+			echo "ERROR: The parameter \"--dpath-template\" cannot be used multiple times!"
 			exit 1
 		fi
 
@@ -732,6 +839,64 @@ fi
 if [[ "$helpMsgSet" == "0" ]]; then
 	helpMsg
 	exit 0
+
+#  BATCH CREATE mode
+elif [[ "$batchCreateDataPathsSet" == "0" ]]; then
+	if [[ "$hostsFileSet" != "0" ]]; then
+		#  no, so output a usage message
+		usageMsg
+		exit 1
+	else
+		if [[ "$dataPathsDir" == "" ]]; then
+			dataPathsDir="$defaultDataPathsDir"
+		fi
+
+		declare -a hosts
+
+		hosts=( $( cat "$hostsFile" ) )
+		
+		maxIndex=${#hosts[@]}
+		
+		#echo "($$) DEBUG: maxIndex=\"$maxIndex\"" 1>&2
+		
+		for index in $( seq 0 $maxIndex ); do
+			for index2 in $( seq 0 $maxIndex ); do
+				if [[ $index -eq $index2 ]]; then
+					continue
+				else
+					gsiftpSourceUrl=${hosts[$index]}
+					if [[ "$gsiftpSourceUrl" == "" ]]; then
+						continue
+					fi
+					gsiftpDestinationUrl=${hosts[$index2]}
+					if [[ "$gsiftpDestinationUrl" == "" ]]; then
+						continue
+					fi
+					gsiftpSourceFqdn=$( echo "$gsiftpSourceUrl" | sed -e 's|^.*://||' -e 's/:.*$//' )
+					gsiftpDestinationFqdn=$( echo "$gsiftpDestinationUrl" | sed -e 's|^.*://||' -e 's/:.*$//' )
+					alias="${gsiftpSourceFqdn}--to--${gsiftpDestinationFqdn}"
+					
+					createDataPath "$gsiftpSourceUrl" "$gsiftpDestinationUrl" "$alias" "$dataPathsDir" "$dpathTemplate"
+
+					returnValue="$?"
+
+					if [[ "$returnValue" == "2" ]]; then
+						echo "ERROR: Data path file already exists. For changes please edit \"$dataPathsDir/$alias\" directly!"
+						exit 1
+					elif [[ "$returnValue" != "0" ]]; then
+						echo "ERROR: Problems during data path creation!"
+						exit 1
+					else
+						echo "INFO: Data path \"$dataPathsDir/$alias\" was created."
+					fi
+				
+				fi
+			done
+		done
+
+		exit "$returnValue"			
+		
+	fi
 
 #  CREATE mode
 elif [[ "$createDataPathSet" == "0" ]]; then
