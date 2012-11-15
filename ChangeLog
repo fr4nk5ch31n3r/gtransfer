@@ -149,3 +149,28 @@ file).
 
 Some rework on manual pages (consistency, config file search order, etc.).
 
+2012-11-14  Frank Scheiner  <frank.scheiner@web.de>
+
+gtransfer dist 0.0.10:
+
+*0.0.10 (gtransfer):
+The connection check functionality (done prior to a transfer) can now be
+deactivated from the config file. In addition the timeout used for the
+connection check is now also configurable from the config file. The v0.0.10
+connection check functionality behaves like in pre-v0.0.10 versions when a
+pre-v0.0.10 config file is used.
+
+*0.0.6 (dpath):
+dpath now supports to create all possible dpaths between host addresses given
+in a file (BATCH CREATE mode). It now can also use a specific dpath template in
+CREATE and BATCH CREATE mode. In addition the list sources/destinations
+functionality now can also use index files for sources (sources.index) and
+destinations (destinations.index). This decreases response time of the remote
+host completion of gtransfer considerably when many dpaths are available. The
+index files are automatically created and updated during dpath creation.
+
+(installer):
+The installer script was reworked and now does not create links with absolute
+paths for a system install. In addition the INSTALL document was renamed and
+reformatted to Markdown syntax.
+
