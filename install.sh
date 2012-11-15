@@ -40,7 +40,8 @@ if [[ "$(basename $0)" == "install.sh" ]]; then
 	#  copy configuration files (also copy bash completion file)
 	cp ./etc/gtransfer/gtransfer.conf_example \
            ./etc/gtransfer/dpath.conf_example \
-           ./etc/gtransfer/dparam.conf_example "$etcDir"
+           ./etc/gtransfer/dparam.conf_example \
+           ./etc/gtransfer/dpath.template_example "$etcDir"
            
 	cp -r ./etc/bash_completion.d "$etcDir"
 

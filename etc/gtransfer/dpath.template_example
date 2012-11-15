@@ -1,0 +1,15 @@
+<source>
+$sourceWithoutPath
+</source>
+<destination>
+$destinationWithoutPath
+</destination>
+<path metric="0">
+$sourceWithoutPath;$destinationWithoutPath
+</path>
+<path metric="1">
+$sourceWithoutPath;# Enter transit site 1 #
+# Enter transit site 1 #;# Enter transit site 2 #
+# Enter transit site 2 #;$destinationWithoutPath
+</path>
+
