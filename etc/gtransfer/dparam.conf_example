@@ -2,7 +2,7 @@
 
 #  Please comment or remove the following lines after adapting this file to your
 #+ local environment
-echo "ERROR: Please adapt the dparam configuration ($dparamConfigurationFile) file to your local environment first!"
+echo "ERROR: Please adapt the dparam configuration ($dparamConfigurationFile) file to your local environment first!" 1>&2
 exit 1
 
 #  System dparams dir
