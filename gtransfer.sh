@@ -1,5 +1,4 @@
 #!/bin/bash
-
 #  gtransfer - wrapper for tgftp with support for:
 #+ * datapathing
 #+ * default parameter usage
@@ -34,7 +33,7 @@ COPYRIGHT
 #  prevent "*" expansion (filename globbing)
 set -f
 
-version="0.0.9b"
+version="0.0.10"
 gsiftpUserParams=""
 
 #  path to configuration files (prefer system paths!)
@@ -158,8 +157,10 @@ The options are as follows:
 			Determine the name of the configuration file for
 			gtransfer. If not set, this defaults to:
 
-			"/opt/gtransfer/etc/gtransfer.conf" or
+			"/etc/gtransfer/gtransfer.conf" or
 
+			"<INSTALL_PATH>/etc/gtransfer.conf" or
+			
 			"/etc/opt/gtransfer/gtransfer.conf" or
 
 			"$HOME/.gtransfer/gtransfer.conf" in this order.
@@ -275,11 +276,17 @@ scanPort()
 	local targetSiteHostname="$1"
 	local targetPort="$2"
 
+	if [[ ! -z "$__GLOBAL__scanPortTimeout" ]]; then
+		local scanTimeout=$__GLOBAL__scanPortTimeout
+	else
+		local scanTimeout=2
+	fi
+
 	echo "open $targetSiteHostname $targetPort" | telnet 2>/dev/null 1> .scanResult &
 
 	scanCommandPid="$!"
 
-	kill_after_timeout "$scanCommandPid" "2" &
+	kill_after_timeout "$scanCommandPid" "$scanTimeout" &
 
 	wait $scanCommandPid &>/dev/null
 
@@ -1000,12 +1007,19 @@ transferData()
 			#  check if connection to source and destination is possible
 			#  TODO:
 			#+ Change function name to e.g. connectionPossible.
-			if ! checkConnection "$transferStepSourceWithoutPath"; then
-				echo "ERROR: Cannot connect to \"$transferStepSourceWithoutPath\"!"
-				exit 1
-			elif ! checkConnection "$transferStepDestinationWithoutPath"; then
-				echo "ERROR: Cannot connect to \"$transferStepDestinationWithoutPath\"!"
-				exit 1
+			if [[ ! -z $__GLOBAL__checkConnection && \
+			           $__GLOBAL__checkConnection -eq 0 \
+			]]; then
+				#  skip connection check
+				:
+			else
+				if ! checkConnection "$transferStepSourceWithoutPath"; then
+					echo "ERROR: Cannot connect to \"$transferStepSourceWithoutPath\"!"
+					exit 1
+				elif ! checkConnection "$transferStepDestinationWithoutPath"; then
+					echo "ERROR: Cannot connect to \"$transferStepDestinationWithoutPath\"!"
+					exit 1
+				fi
 			fi
 
 			#  (0) construct logfilename
@@ -1251,12 +1265,19 @@ transferData()
 		transferStepDestinationWithoutPath=$(getURLWithoutPath "$transferStepDestination")
 
 		#  check if connection to source and destination is possible
-		if ! checkConnection "$transferStepSourceWithoutPath"; then
-			echo "ERROR: Cannot connect to \"$transferStepSourceWithoutPath\"!"
-			exit 1
-		elif ! checkConnection "$transferStepDestinationWithoutPath"; then
-			echo "ERROR: Cannot connect to \"$transferStepDestinationWithoutPath\"!"
-			exit 1
+		if [[ ! -z $__GLOBAL__checkConnection && \
+			   $__GLOBAL__checkConnection -eq 0 \
+		]]; then
+			#  skip connection check
+			:
+		else
+			if ! checkConnection "$transferStepSourceWithoutPath"; then
+				echo "ERROR: Cannot connect to \"$transferStepSourceWithoutPath\"!"
+				exit 1
+			elif ! checkConnection "$transferStepDestinationWithoutPath"; then
+				echo "ERROR: Cannot connect to \"$transferStepDestinationWithoutPath\"!"
+				exit 1
+			fi
 		fi
 
 		#  (0) construct logfilename
