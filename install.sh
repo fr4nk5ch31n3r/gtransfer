@@ -2,82 +2,91 @@
 
 #  install.sh / uninstall.sh - Install or uninstall software
 
-prefixDir="$HOME/opt"
-# UserInstall activated? 0 => no, 1 => yes
-UserInstall=1
-
 #  if a (prefix) directory is provided, switch to system install
 if [[ "$1" != "" ]]; then
+	# user install activated? 0 => no, 1 => yes
+	userInstall=0
+
 	prefixDir="$1"
-	UserInstall=0
+	etcDir="$prefixDir/gtransfer/etc"
+else
+	# user install activated? 0 => no, 1 => yes
+	userInstall=1
+
+	prefixDir="$HOME/opt"
+	etcDir="$HOME/.gtransfer"	
 fi
+
+binDir="$prefixDir/gtransfer/bin"
+docDir="$prefixDir/gtransfer/share/doc"
+manDir="$prefixDir/gtransfer/share/man"
 
 #  installation
 if [[ "$(basename $0)" == "install.sh" ]]; then
 
 	#  first create bin dir in home, if not already existing
-	if [[ $UserInstall -eq 1 ]]; then	
+	if [[ $userInstall -eq 1 ]]; then	
 		if [[ ! -e "$HOME/bin" ]]; then
 			mkdir -p "$HOME/bin" &>/dev/null
 		fi
 	fi
 
 	#  create directory structure
-	mkdir -p "$prefixDir/gtransfer/bin" &>/dev/null
-	mkdir -p "$prefixDir/gtransfer/share/doc" &>/dev/null
-	mkdir -p "$prefixDir/gtransfer/share/man/man1" &>/dev/null
+	mkdir -p "$binDir" &>/dev/null
+	mkdir -p "$docDir" &>/dev/null
+	mkdir -p "$manDir/man1" &>/dev/null
+	mkdir -p "$etcDir" &>/dev/null
 
-	#  create directory for configuration files and also copy configuration
-	#+ files (also copy bash completion file)
-	if [[ $UserInstall -eq 1 ]]; then
-		mkdir -p "$HOME/.gtransfer" &>/dev/null
-		cp ./etc/gtransfer/gtransfer.conf "$HOME/.gtransfer"
-		cp ./etc/gtransfer/dpath.conf "$HOME/.gtransfer"
-		cp ./etc/gtransfer/dparam.conf "$HOME/.gtransfer"
-		cp -r ./etc/bash_completion.d "$HOME/.gtransfer"
-	else	
-		mkdir -p "$prefixDir/gtransfer/etc" &>/dev/null
-		cp ./etc/gtransfer/gtransfer.conf "$prefixDir/gtransfer/etc"
-		cp ./etc/gtransfer/dpath.conf "$prefixDir/gtransfer/etc"
-		cp ./etc/gtransfer/dparam.conf "$prefixDir/gtransfer/etc"
-		cp -r ./etc/bash_completion.d "$prefixDir/gtransfer/etc"
-	fi
+	#  copy configuration files (also copy bash completion file)
+	cp ./etc/gtransfer/gtransfer.conf_example \
+           ./etc/gtransfer/dpath.conf_example \
+           ./etc/gtransfer/dparam.conf_example "$etcDir"
+           
+	cp -r ./etc/bash_completion.d "$etcDir"
 
 	#  copy scripts and...
-	cp ./gtransfer.sh "$prefixDir/gtransfer/bin"
-	cp ./datapath.sh "$prefixDir/gtransfer/bin"
-	cp ./defaultparam.sh "$prefixDir/gtransfer/bin"
+	cp ./gtransfer.sh \
+	   ./datapath.sh \
+	   ./defaultparam.sh "$binDir"
 	
 	#  ...reconfigure paths inside of the scripts and...
 	#        + reconfigure path to configuration files
 	#        |
 	#        |                                                 + remove (special) comments
 	#        |                                                 |
-	sed -e "s|<PATH_TO_GTRANSFER>|$prefixDir/gtransfer|g" -e 's/#sed#//g' -i "$prefixDir/gtransfer/bin/gtransfer.sh"
-	sed -e "s|<PATH_TO_GTRANSFER>|$prefixDir/gtransfer|g" -e 's/#sed#//g' -i "$prefixDir/gtransfer/bin/datapath.sh"
-	sed -e "s|<PATH_TO_GTRANSFER>|$prefixDir/gtransfer|g" -e 's/#sed#//g' -i "$prefixDir/gtransfer/bin/defaultparam.sh"
+	sed -e "s|<PATH_TO_GTRANSFER>|$prefixDir/gtransfer|g" -e 's/#sed#//g' -i "$binDir/gtransfer.sh"
+	sed -e "s|<PATH_TO_GTRANSFER>|$prefixDir/gtransfer|g" -e 's/#sed#//g' -i "$binDir/datapath.sh"
+	sed -e "s|<PATH_TO_GTRANSFER>|$prefixDir/gtransfer|g" -e 's/#sed#//g' -i "$binDir/defaultparam.sh"
 
 	#  ...make links and...
-	if [[ $UserInstall -eq 1 ]]; then
-		linkPath="$HOME"
+	if [[ $userInstall -eq 1 ]]; then
+		linkPath="$HOME/bin"
+		
+		ln -s "$binDir/gtransfer.sh" "$linkPath/gtransfer"	
+		ln -s "$binDir/gtransfer.sh" "$linkPath/gt"
+		ln -s "$binDir/datapath.sh" "$linkPath/dpath"
+		ln -s "$binDir/defaultparam.sh" "$linkPath/dparam"
 	else
-		linkPath="$prefixDir/gtransfer"
+		linkPath="$binDir"
+		
+		#  no path in links for system install!
+		ln -s "gtransfer.sh" "$linkPath/gtransfer"	
+		ln -s "gtransfer.sh" "$linkPath/gt"
+		ln -s "datapath.sh" "$linkPath/dpath"
+		ln -s "defaultparam.sh" "$linkPath/dparam"
 	fi
-	ln -s "$prefixDir/gtransfer/bin/gtransfer.sh" "$linkPath/bin/gtransfer"	
-	ln -s "$prefixDir/gtransfer/bin/gtransfer.sh" "$linkPath/bin/gt"
-	ln -s "$prefixDir/gtransfer/bin/datapath.sh" "$linkPath/bin/dpath"
-	ln -s "$prefixDir/gtransfer/bin/defaultparam.sh" "$linkPath/bin/dparam"
 
 	#  ...copy README and manpages.
-	cp ./README.md "$prefixDir/gtransfer/share/doc"
-	cp ./gtransfer.1.pdf ./dpath.1.pdf ./dparam.1.pdf "$prefixDir/gtransfer/share/doc"
-	cp ./COPYING "$prefixDir/gtransfer/share/doc"
+	cp ./README.md \
+	   ./gtransfer.1.pdf \
+	   ./dpath.1.pdf \
+	   ./dparam.1.pdf \
+	   ./COPYING "$docDir"
 
-	cp ./gtransfer.1 "$prefixDir/gtransfer/share/man/man1"
-	cp ./gt.1 "$prefixDir/gtransfer/share/man/man1"
-	cp ./dpath.1 "$prefixDir/gtransfer/share/man/man1"
-	cp ./dparam.1 "$prefixDir/gtransfer/share/man/man1"
-
+	cp ./gtransfer.1 \
+	   ./gt.1 \
+	   ./dpath.1 \
+	   ./dparam.1 "$manDir/man1"
 
 #  uninstallation
 elif [[ "$(basename $0)" == "uninstall.sh" ]]; then
