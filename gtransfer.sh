@@ -33,7 +33,7 @@ COPYRIGHT
 #  prevent "*" expansion (filename globbing)
 set -f
 
-version="0.0.10"
+version="0.0.10a"
 gsiftpUserParams=""
 
 #  path to configuration files (prefer system paths!)
@@ -1571,7 +1571,7 @@ if [[ "$gsiftpSourceUrl" == "" || \
       "$gsiftpDestinationUrl" == "" \
 ]]; then
         #  no, so output a usage message
-        usage_msg
+        usageMsg
         exit 1
 fi
 

@@ -174,3 +174,11 @@ The installer script was reworked and now does not create links with absolute
 paths for a system install. In addition the INSTALL document was renamed and
 reformatted to Markdown syntax.
 
+2012-11-19  Frank Scheiner  <frank.scheiner@web.de>
+
+gtransfer dist 0.0.10a:
+
+*0.0.10a (gtransfer):
+Corrected a call to the usageMsg() function that still used the old function
+name.
+
