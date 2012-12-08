@@ -5,7 +5,7 @@
 :<<COPYRIGHT
 
 Copyright (C) 2011 Frank Scheiner, HLRS, Universitaet Stuttgart
-Copyright (C) 2011 Frank Scheiner
+Copyright (C) 2011, 2012 Frank Scheiner
 
 The program is distributed under the terms of the GNU General Public License
 
@@ -28,18 +28,32 @@ contract number RI-222919.
 
 COPYRIGHT
 
-version="0.0.5-dev01a"
+version="0.0.5a"
 
-#  path to configuration file (prefer system paths!)
-if [[ -e "/opt/gtransfer/etc/dparam.conf" ]]; then
-	dparamConfigurationFile="/opt/gtransfer/etc/dparam.conf"
-#sed#elif [[ -e "<PATH_TO_GTRANSFER>/etc/dparam.conf" ]]; then
-#sed#    dparamConfigurationFile="<PATH_TO_GTRANSFER>/etc/dparam.conf"
-elif [[ -e "/etc/opt/gtransfer/dparam.conf" ]]; then
-	dparamConfigurationFile="/etc/opt/gtransfer/dparam.conf"
-elif [[ -e "$HOME/.gtransfer/dparam.conf" ]]; then
-	dparamConfigurationFile="$HOME/.gtransfer/dparam.conf"
+#  path to configuration files (prefer system paths!)
+#  For native OS packages:
+if [[ -e "/etc/gtransfer" ]]; then
+        dparamConfigurationFilesPath="/etc/gtransfer"
+
+#  For installation with "install.sh".
+#sed#elif [[ -e "<PATH_TO_GTRANSFER>/etc" ]]; then
+#sed#	dparamConfigurationFilesPath="<PATH_TO_GTRANSFER>/etc"
+
+#  According to FHS 2.3, configuration files for packages located in "/opt" have
+#+ to be placed here (if you use a provider super dir below "/opt" for the
+#+ gtransfer files, please also use the same provider super dir below
+#+ "/etc/opt").
+#elif [[ -e "/etc/opt/<PROVIDER>/gtransfer" ]]; then
+#	dparamConfigurationFilesPath="/etc/opt/<PROVIDER>/gtransfer"
+elif [[ -e "/etc/opt/gtransfer" ]]; then
+        dparamConfigurationFilesPath="/etc/opt/gtransfer"
+
+#  For user install in $HOME:
+elif [[ -e "$HOME/.gtransfer" ]]; then
+        dparamConfigurationFilesPath="$HOME/.gtransfer"
 fi
+
+dparamConfigurationFile="$dparamConfigurationFilesPath/dparam.conf"
 
 #USAGE##########################################################################
 usageMsg()
