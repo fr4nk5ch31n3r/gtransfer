@@ -1,5 +1,4 @@
 #!/bin/bash
-
 #  gtransfer - wrapper for tgftp with support for:
 #+ * datapathing
 #+ * default parameter usage
@@ -34,23 +33,55 @@ COPYRIGHT
 #  prevent "*" expansion (filename globbing)
 set -f
 
-version="0.0.7c-dev07"
+version="0.0.7c-dev08"
 gsiftpUserParams=""
 
-#  path to configuration file (prefer system paths!)
-if [[ -e "/opt/gtransfer/etc/gtransfer.conf" ]]; then
-        gtransferConfigurationFile="/opt/gtransfer/etc/gtransfer.conf"
-#sed#elif [[ -e "<PATH_TO_GTRANSFER>/etc/gtransfer.conf" ]]; then
-#sed#    gtransferConfigurationFile="<PATH_TO_GTRANSFER>/etc/gtransfer.conf"
-elif [[ -e "/etc/opt/gtransfer/gtransfer.conf" ]]; then
-        gtransferConfigurationFile="/etc/opt/gtransfer/gtransfer.conf"
-elif [[ -e "$HOME/.gtransfer/gtransfer.conf" ]]; then
-        gtransferConfigurationFile="$HOME/.gtransfer/gtransfer.conf"
+#  path to configuration files (prefer system paths!)
+#  For native OS packages:
+if [[ -e "/etc/gtransfer" ]]; then
+        gtransferConfigurationFilesPath="/etc/gtransfer"
+        #  gtransfer is installed in "/usr/bin", hence the base path is "/usr"
+        gtransferBasePath="/usr"
+        gtransferLibPath="$gtransferBasePath/lib/gtransfer"
+
+#  For installation with "install.sh".
+#sed#elif [[ -e "<GTRANSFER_BASE_PATH>/etc" ]]; then
+#sed#	gtransferConfigurationFilesPath="<GTRANSFER_BASE_PATH>/etc"
+#sed#	gtransferBasePath=<GTRANSFER_BASE_PATH>
+#sed#	gtransferLibPath="$gtransferBasePath/lib"
+
+#  According to FHS 2.3, configuration files for packages located in "/opt" have
+#+ to be placed here (if you use a provider super dir below "/opt" for the
+#+ gtransfer files, please also use the same provider super dir below
+#+ "/etc/opt").
+#elif [[ -e "/etc/opt/<PROVIDER>/gtransfer" ]]; then
+#	gtransferConfigurationFilesPath="/etc/opt/<PROVIDER>/gtransfer"
+#	gtransferBasePath="/opt/<PROVIDER>/gtransfer"
+#	gtransferLibPath="$gtransferBasePath/lib"
+elif [[ -e "/etc/opt/gtransfer" ]]; then
+        gtransferConfigurationFilesPath="/etc/opt/gtransfer"
+        gtransferBasePath="/opt/gtransfer"
+        gtransferLibPath="$gtransferBasePath/lib"
+
+#  For user install in $HOME:
+elif [[ -e "$HOME/.gtransfer" ]]; then
+        gtransferConfigurationFilesPath="$HOME/.gtransfer"
+        gtransferBasePath="$HOME/opt/gtransfer"
+        gtransferLibPath="$gtransferBasePath/lib"
+
+#  For git deploy, use $BASH_SOURCE
+elif [[ -e "$( dirname $BASH_SOURCE )/../etc" ]]; then
+	gtransferConfigurationFilesPath="$( dirname $BASH_SOURCE )/../etc"
+	gtransferBasePath="$( dirname $BASH_SOURCE )/../"
+	gtransferLibPath="$gtransferBasePath/lib"
 fi
 
-_GTRANSFER_LOCATION="$( dirname $gtransferConfigurationFile )"
-chunkConfig="$_GTRANSFER_LOCATION/chunkConfig"
-_LIB="$_GTRANSFER_LOCATION/lib"
+gtransferConfigurationFile="$gtransferConfigurationFilesPath/gtransfer.conf"
+
+chunkConfig="$gtransferConfigurationFilesPath/chunkConfig"
+
+#  Set $_LIB so gtransfer and its libraries can find their includes
+_LIB="$gtransferLibPath"
 
 ################################################################################
 #  INCLUDE LIBRARY FUNCTIONS
@@ -1886,8 +1917,8 @@ else
 		gsiftpTransferList=$( listTransfer/createTransferList "$gsiftpSourceUrl" "$gsiftpDestinationUrl" )
 		autoOptimization/performTransfer "$gsiftpTransferList"  "$dataPathMetric" "$tgftpLogfileName" "$chunkConfig" "$transferMode"
 	else
-        	transferData "$gsiftpSourceUrl" "$gsiftpDestinationUrl" "$dataPathMetric" "$tgftpLogfileName"
-        fi
+		transferData "$gsiftpSourceUrl" "$gsiftpDestinationUrl" "$dataPathMetric" "$tgftpLogfileName"
+	fi
 fi
 
 #transferData "$gsiftpSourceUrl" "$gsiftpDestinationUrl" "$dataPathMetric" "$tgftpLogfileName"
