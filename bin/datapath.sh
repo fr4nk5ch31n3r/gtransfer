@@ -28,47 +28,50 @@ contract number RI-222919.
 
 COPYRIGHT
 
-version="0.0.5a-dev01a"
+version="0.0.6"
 
-#  path to configuration file (prefer system paths!)
-if [[ -e "/opt/gtransfer/etc/dpath.conf" ]]; then
-	dpathConfigurationFile="/opt/gtransfer/etc/dpath.conf"
-#sed#elif [[ -e "<PATH_TO_GTRANSFER>/etc/dpath.conf" ]]; then
-#sed#    dpathConfigurationFile="<PATH_TO_GTRANSFER>/etc/dpath.conf"
-elif [[ -e "/etc/opt/gtransfer/dpath.conf" ]]; then
-	dpathConfigurationFile="/etc/opt/gtransfer/dpath.conf"
-elif [[ -e "$HOME/.gtransfer/dpath.conf" ]]; then
-	dpathConfigurationFile="$HOME/.gtransfer/dpath.conf"
+#  path to configuration files (prefer system paths!)
+#  For native OS packages:
+if [[ -e "/etc/gtransfer" ]]; then
+        dpathConfigurationFilesPath="/etc/gtransfer"
+
+#  For installation with "install.sh".
+#sed#elif [[ -e "<PATH_TO_GTRANSFER>/etc" ]]; then
+#sed#	dpathConfigurationFilesPath="<PATH_TO_GTRANSFER>/etc"
+
+#  According to FHS 2.3, configuration files for packages located in "/opt" have
+#+ to be placed here (if you use a provider super dir below "/opt" for the
+#+ gtransfer files, please also use the same provider super dir below
+#+ "/etc/opt").
+#elif [[ -e "/etc/opt/<PROVIDER>/gtransfer" ]]; then
+#	dpathConfigurationFilesPath="/etc/opt/<PROVIDER>/gtransfer"
+elif [[ -e "/etc/opt/gtransfer" ]]; then
+        dpathConfigurationFilesPath="/etc/opt/gtransfer"
+
+#  For user install in $HOME:
+elif [[ -e "$HOME/.gtransfer" ]]; then
+        dpathConfigurationFilesPath="$HOME/.gtransfer"
 fi
 
+dpathConfigurationFile="$dpathConfigurationFilesPath/dpath.conf"
+
+__GLOBAL__sourcesIndexFile="sources.index"
+__GLOBAL__destinationsIndexFile="destinations.index"
 
 #USAGE##########################################################################
 usageMsg()
 {
         cat <<USAGE
 
-usage: $(basename $0) [--help] ||
+usage: dpath [--help]
 
-       $(basename $0) \\
-        --create|-c [/path/to/files] \\
-        --source|-s gsiftpSourceUrl \\
-        --destination|-d gsiftpDestinationUrl \\
-        --alias|-a alias \\
-        [--configfile configurationFile]
+       dpath --create|-c [/path/to/files] --source|-s gsiftpSourceUrl --destination|-d gsiftpDestinationUrl --alias|-a alias [--dpath-template|-t dpathTemplate] [--configfile configurationFile]
 
-       ||
+       dpath --batch-create|-b [/path/to/files] --hosts|-h hostsFile [--dpath-template|-t dpathTemplate] [--configfile configurationFile]
 
-       $(basename $0) \\
-        --list|-l [/path/to/files] \\
-        [--verbose|-v] \\
-        [--configfile configurationFile]
+       dpath --list|-l [/path/to/files] [--verbose|-v] [--configfile configurationFile]
 
-       ||
-
-       $(basename $0) \\
-        --retrieve|-r [/path/to/files] \\
-        [--quiet|-q] \\
-        [--configfile configurationFile]
+       dpath --retrieve|-r [/path/to/files] [--quiet|-q] [--configfile configurationFile]
 
 --help gives more information
 
@@ -86,14 +89,13 @@ $(versionMsg)
 
 SYNOPSIS:
 
-dpath --create|-c [/path/to/files] \\
-      --source|-s gsiftpSourceUrl \\
-      --destination|-d gsiftpDestinationUrl \\
-      --alias|-a alias
+dpath --create|-c [/path/to/files] --source|-s gsiftpSourceUrl --destination|-d gsiftpDestinationUrl --alias|-a alias [--dpath-template|-t dpathTemplate] [--configfile configurationFile]
 
-dpath --list|-l [/path/to/files] [--verbose|-v]
+dpath --batch-create|-b [/path/to/files] --hosts|-h hostsFile [--dpath-template|-t dpathTemplate] [--configfile configurationFile]
 
-dpath --retrieve|-r [/path/to/files] [--quiet|-q]
+dpath --list|-l [/path/to/files] [--verbose|-v] [--configfile configurationFile]
+
+dpath --retrieve|-r [/path/to/files] [--quiet|-q] [--configfile configurationFile]
 
 DESCRIPTION:
 
@@ -108,7 +110,7 @@ The options are as follows:
 			or - if no additional path is given - in the default
 			data path directory in:
 
-			"$HOME/.gtransfer/dpaths".
+			"\$HOME/.gtransfer/dpaths".
 
 --source|-s gsiftpSourceUrl
 			Determine the source URL for the data path without any
@@ -126,7 +128,8 @@ The options are as follows:
 
 			gsiftp://pluto.milkyway.universe:2811
 
---alias|-a alias	Determine the alias for the created data path. dpath
+--alias|-a alias
+			Determine the alias for the created data path. dpath
 			will create a link named "alias" to the data path
 			which name is the sha1 hash of the source destination
 			combination.
@@ -138,15 +141,15 @@ The options are as follows:
 
 {{site|organization}_{resource|hostName|FQDN}|Local}--to--{site|organization}_{resource|hostName|FQDN}
 
-[--dpath-template dpathTemplate]
+[--dpath-template|-t dpathTemplate]
 			When provided, dpath will use the given template for
 			dpath creation. The following variables are expanded
 			during dpath creation:
 			
-			$sourceWithoutPath => gsiftpSourceUrl => the host
+			\$sourceWithoutPath => gsiftpSourceUrl => the host
 			address of the source site
 			
-			$destinationWithoutPath => gsiftpDestinationUrl => the
+			\$destinationWithoutPath => gsiftpDestinationUrl => the
 			host address of the destination site
 
 --------------------------------------------------------------------------------
@@ -158,18 +161,25 @@ The options are as follows:
 
 			"$HOME/.gtransfer/dpaths".
 			
---hosts|-h hostsFile    Determine the file containing the host addresses for
-			which data paths should be created.			
+			When used dpath will create dpaths for all possible
+			connections between the hosts given in the hostsFile and
+			omit connections between the same hosts.
+			
+--hosts|-h hostsFile    Set the file name for the file containing the host
+ 			addresses for which data paths should be created. The
+ 			format of each line in this file is as follows:
 
-[--dpath-template dpathTemplate]
+ 			<PROTOCOL>://hostname.domain.tld:<PORT>
+
+[--dpath-template|-t dpathTemplate]
 			When provided, dpath will use the given template for
 			dpath creation. The following variables are expanded
 			during dpath creation:
 			
-			$sourceWithoutPath => gsiftpSourceUrl => the host
+			\$sourceWithoutPath => gsiftpSourceUrl => the host
 			address of the source site
 			
-			$destinationWithoutPath => gsiftpDestinationUrl => the
+			\$destinationWithoutPath => gsiftpDestinationUrl => the
 			host address of the destination site
 
 --------------------------------------------------------------------------------
@@ -215,7 +225,7 @@ The options are as follows:
 
 			"/etc/opt/gtransfer/dpath.conf" or
 
-			"$HOME/.gtransfer/dpath.conf" in this order.
+			"\$HOME/.gtransfer/dpath.conf" in this order.
 
 [--help]                Prints out this help message.
 
@@ -259,7 +269,7 @@ createDataPath()
 	#  creates a data path file and alias link
 	#
 	#  usage:
-	#+ createDataPath source destination alias [path]
+	#+ createDataPath source destination alias path [dpathTemplate]
 	#
 	#  returns:
 	#+ 0 - success
@@ -315,8 +325,25 @@ createDataPath()
 		ln -s "$dataPathName" "$pathToDataPaths/$dataPathAlias" && \
 		echo "$dataPath" > "$pathToDataPaths/$dataPathAlias"
 	fi
-
-	return	
+	
+	if [[ $? -eq 0 ]]; then
+		#  add source and destination to index files
+		
+		#  NOTICE: If one provides the input for grep via stdin
+		#+ (<inputFile), then if the input file does not exist, the
+		#+ shell will print out an error message, as the redirection
+		#+ cannot be made. Therefore the input file is provided directly
+		#+ and any grep output is omitted.
+		if ! grep "$sourceWithoutPath" "$pathToDataPaths/$__GLOBAL__sourcesIndexFile" &>/dev/null; then
+			echo "$sourceWithoutPath" >>"$pathToDataPaths/$__GLOBAL__sourcesIndexFile"
+		fi
+		if ! grep "$destinationWithoutPath" "$pathToDataPaths/$__GLOBAL__destinationsIndexFile" &>/dev/null; then
+			echo "$destinationWithoutPath" >>"$pathToDataPaths/$__GLOBAL__destinationsIndexFile"
+		fi
+		return
+	else
+		return 1
+	fi
 }
 
 listDataPaths()
@@ -383,8 +410,8 @@ listSources()
 
 	if [[ -e "$dataPathsDir" ]]; then
 		#  if index file is available, just print its contents
-		if [[ -e "$dataPathsDir"/sources.index ]]; then
-			cat "$dataPathsDir"/sources.index
+		if [[ -e "$dataPathsDir/$__GLOBAL__sourcesIndexFile" ]]; then
+			cat "$dataPathsDir/$__GLOBAL__sourcesIndexFile"
 		else
 			for dataPath in $(ls -1 $dataPathsDir); do
 				#  don't show links or backups (containing a '~' at the end of
@@ -398,7 +425,7 @@ listSources()
 					echo "$source"
 					#[[ ! -z "$sourceAlias" ]] && echo "$sourceAlias"
 				fi
-			done | sort -u
+			done #| sort -u
 		fi
 	else
 		#echo "ERROR: \"$dataPathsDir\" not existing!"
@@ -421,8 +448,8 @@ listDestinations()
 
 	if [[ -e "$dataPathsDir" ]]; then
 		#  if index file is available, just print its contents
-		if [[ -e "$dataPathsDir"/destinations.index ]]; then
-			cat "$dataPathsDir"/destinations.index
+		if [[ -e "$dataPathsDir/$__GLOBAL__destinationsIndexFile" ]]; then
+			cat "$dataPathsDir/$__GLOBAL__destinationsIndexFile"
 		else
 			for dataPath in $(ls -1 $dataPathsDir); do
 				#  don't show links or backups (containing a '~' at the end of
@@ -436,7 +463,7 @@ listDestinations()
 					echo "$destination"
 					#[[ ! -z "$destinationAlias" ]] && echo "$destinationAlias"
 				fi
-			done | sort -u
+			done #| sort -u
 		fi
 	else
 		#echo "ERROR: \"$dataPathsDir\" not existing!"
@@ -585,7 +612,7 @@ while [[ "$1" != "" ]]; do
 		"$1" != "--retrieve" && "$1" != "-r" && \
 		"$1" != "--batch-create" && "$1" != "-b" && \
 		"$1" != "--hosts" && "$1" != "-h" && \
-		"$1" != "--dpath-template" && \
+		"$1" != "--dpath-template" && "$1" != "-t" && \
 		"$1" != "--configfile" \
 	]]; then
 		#  no, so output a usage message
@@ -797,8 +824,8 @@ while [[ "$1" != "" ]]; do
 			exit 1
 		fi
 		
-	#  "--hosts hostsFile"
-	elif [[ "$1" == "--hosts" ]]; then
+	#  "--hosts|-h hostsFile"
+	elif [[ "$1" == "--hosts" || "$1" == "-h" ]]; then
 		if [[ $hostsFileSet != 0 ]]; then
 			shift 1
 			hostsFile="$1"
@@ -810,8 +837,8 @@ while [[ "$1" != "" ]]; do
 			exit 1
 		fi
 		
-	#  "[--dpath-template dpathTemplate]
-	elif [[ "$1" == "--dpath-template" ]]; then
+	#  "[--dpath-template|-t dpathTemplate]
+	elif [[ "$1" == "--dpath-template" || "$1" == "-t" ]]; then
 		if [[ $dpathTemplateSet != 0 ]]; then
 			shift 1
 			dpathTemplate="$1"
@@ -893,6 +920,8 @@ elif [[ "$batchCreateDataPathsSet" == "0" ]]; then
 				fi
 			done
 		done
+		
+		#  create index files
 
 		exit "$returnValue"			
 		
