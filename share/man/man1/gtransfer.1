@@ -1,4 +1,4 @@
-.TH GTRANSFER 1 "18 Dec 2011" "version 0.0.7c" "User Commands"
+.TH GTRANSFER 1 "09 Dec 2012" "version 0.0.11" "User Commands"
 .SH NAME
 gtransfer \- The GridFTP transfer script
 
@@ -22,7 +22,7 @@ gtransfer \- The GridFTP transfer script
 is a wrapper script for
 .B tgftp
 that supports (GridFTP) transfers along predefined
-paths by using transit sites.  Additionally it supports usage of default
+paths by using transit sites.  Additionally it supports usage of pre-optimized
 parameters for specific connections. Therefore this tool is also helpful for
 direct transfers.
 
@@ -84,9 +84,11 @@ Remove logfiles automatically after the transfer completed.
 Set the name of the configuration file for
 .BR "gtransfer" ". If not set, this defaults to:"
 
-.IR "/opt/gtransfer/etc/gtransfer.conf" " or"
-
 .IR "/etc/gtransfer/gtransfer.conf" " or"
+
+.IR "<INSTALL_PATH>/etc/gtransfer.conf" " or"
+
+.IR "/etc/opt/gtransfer/gtransfer.conf" " or"
 
 .IR "$HOME/.gtransfer/gtransfer.conf" " in this order."
 
@@ -126,24 +128,24 @@ The
 configuration file.
 
 .TP
-.I /opt/gtransfer/etc/dpaths/
-This directory contains the system's default dpaths usable by
+.I [...]/dpaths/
+This directory contains the system dpaths usable by
 .BR "gtransfer" " and is configurable."
 
 .TP
-.I /opt/gtransfer/etc/dparams/
-This directory contains the system's default dparams usable by
+.I [...]/dparams/
+This directory contains the system dparams usable by
 .BR "gtransfer" " and is configurable."
 
 .TP
 .I $HOME/.gtransfer/dpaths/
-This directory contains the dpaths usable by
+This directory contains the user dpaths usable by
 .BR "gtransfer" ". Can be created with " "dpath" "."
 If existing, dpaths in this directory have precedence.
 
 .TP
 .I $HOME/.gtransfer/dparams/
-This directory contains the dparams usable by
+This directory contains the user dparams usable by
 .BR "gtransfer" ". Can be created with " "dparam" "."
 If existing, dparams in this directory have precedence.
 

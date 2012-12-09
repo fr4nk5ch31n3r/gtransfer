@@ -1,4 +1,4 @@
-.TH DPARAM 1 "09 Jan 2012" "version 0.0.5" "User Commands"
+.TH DPARAM 1 "09 Dec 2012" "version 0.0.6" "User Commands"
 .SH NAME
 dparam \- The default param helper script
 
@@ -128,11 +128,15 @@ omitted and success/failure is only reported by the exit value.
 Set the name of the configuration file for
 .BR "dpath" ". If not set, this defaults to:"
 
-.IR "/opt/gtransfer/etc/dparam.conf" " or"
+.IR "/etc/gtransfer/dparam.conf" " or"
+
+.IR "<GTRANSFER_BASE_PATH>/etc/dparam.conf" " or"
 
 .IR "/etc/opt/gtransfer/dparam.conf" " or"
 
-.IR "$HOME/.gtransfer/dparam.conf" " in this order."
+.IR "$HOME/.gtransfer/dparam.conf" " or"
+
+.IR "$( dirname $BASH_SOURCE )/../etc" " in this order."
 
 .TP
 .B [--help]
@@ -144,20 +148,21 @@ Prints out version information.
 
 .SH FILES
 .TP 10
-.I $HOME/.gtransfer/dparams/
-This dir contains the default "optimized" parameters usable by
-.BR "gtransfer" ". Can be created with " "dparam" "."
-
-.TP
-.I /opt/gtransfer/etc/dparams/
-This dir contains the system "optimized" parameters usable by
-.BR "gtransfer" " and is configurable. Can be created with " "dparam" "."
-
-.TP
 .I [...]/dparam.conf
 The
 .B dparam
 configuration file.
+
+.TP
+.I [...]/dparams/
+This dir contains the system dparams usable by
+.BR "gtransfer" " and is configurable. Can be created with " "dparam" "."
+
+.TP
+.I $HOME/.gtransfer/dparams/
+This dir contains the user dparams usable by
+.BR "gtransfer" ". Can be created with " "dparam" "."
+
 
 .SH AUTHOR
 Frank Scheiner
