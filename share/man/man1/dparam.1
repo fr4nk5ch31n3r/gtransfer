@@ -1,4 +1,4 @@
-.TH DPARAM 1 "03 Nov 2012" "version 0.0.5a" "User Commands"
+.TH DPARAM 1 "09 Dec 2012" "version 0.0.6" "User Commands"
 .SH NAME
 dparam \- The default param helper script
 
@@ -130,11 +130,13 @@ Set the name of the configuration file for
 
 .IR "/etc/gtransfer/dparam.conf" " or"
 
-.IR "<INSTALL_PATH>/etc/dparam.conf" " or"
+.IR "<GTRANSFER_BASE_PATH>/etc/dparam.conf" " or"
 
 .IR "/etc/opt/gtransfer/dparam.conf" " or"
 
-.IR "$HOME/.gtransfer/dparam.conf" " in this order."
+.IR "$HOME/.gtransfer/dparam.conf" " or"
+
+.IR "$( dirname $BASH_SOURCE )/../etc" " in this order."
 
 .TP
 .B [--help]
@@ -152,7 +154,7 @@ The
 configuration file.
 
 .TP
-.I <PATH_TO_SYSTEM>/dparams/
+.I [...]/dparams/
 This dir contains the system dparams usable by
 .BR "gtransfer" " and is configurable. Can be created with " "dparam" "."
 

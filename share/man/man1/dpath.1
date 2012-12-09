@@ -1,4 +1,4 @@
-.TH DPATH 1 "15 Nov 2012" "version 0.0.6" "User Commands"
+.TH DPATH 1 "09 Dec 2012" "version 0.0.7" "User Commands"
 .SH NAME
 dpath \- The data path helper script
 
@@ -160,17 +160,17 @@ following variables are expanded during dpath creation:
 .TP
 .BI "--list|-l " "[/path/to/files] "  "[--verbose|-v]"
 List all data paths available in the user-provided path or - if no
-additional path is given - in the default and system data path directories.
+additional path is given - in the user and system data path directories.
 
 .TP
 .BI "--list-sources " "[/path/to/dataPaths]"
 List all sources from the data paths in the user provided path or - if no
-additional path is given - in the default and system data path directories.
+additional path is given - in the user and system data path directories.
 			
 .TP
 .BI "--list-destinations " "[/path/to/dataPaths]"
 List all destinations from the data paths in the user provided path or - if no
-additional path is given - in the default and system data path directories.
+additional path is given - in the user and system data path directories.
 
 
 .TP
@@ -180,7 +180,7 @@ additional path is given - in the default and system data path directories.
 .BI "--retrieve|-r " "[/path/to/files] " "[--quiet|-q]"
 Retrieve the latest data paths available on the preconfigured repository and
 store them in the user-provided path or - if no additional path is given
-- in the default directory for data paths. If a "--quiet|-q" is provided, then output is
+- in the user data path directory. If a "--quiet|-q" is provided, then output is
 omitted and success/failure is only reported by the exit value. 
 
 
@@ -194,11 +194,13 @@ Set the name of the configuration file for
 
 .IR "/etc/gtransfer/dpath.conf" " or"
 
-.IR "<INSTALL_PATH>/etc/dpath.conf" " or"
+.IR "<GTRANSFER_BASE_PATH>/etc/dpath.conf" " or"
 
 .IR "/etc/opt/gtransfer/dpath.conf" " or"
 
-.IR "$HOME/.gtransfer/dpath.conf" " in this order."
+.IR "$HOME/.gtransfer/dpath.conf" " or"
+
+.IR "$( dirname $BASH_SOURCE )/../etc" " in this order."
 
 .TP
 .B [--help]
@@ -216,7 +218,7 @@ The
 configuration file.
 
 .TP
-.I <PATH_TO_SYSTEM>/dpaths/
+.I [...]/dpaths/
 This dir contains the system data paths usable by
 .BR "gtransfer" " and is configurable. Can be created with " "dpath" "."
 
@@ -225,6 +227,21 @@ This dir contains the system data paths usable by
 This dir contains the user data paths usable by
 .BR "gtransfer" ". Can be created with " "dpath" "."
 
+.TP
+.I [...]/dpaths/sources.index
+These files (there can be a system one and a user one!) contain all source host
+addresses available in the respective dpaths directories. 
+
+.TP
+.I [...]/dpaths/destinations.index
+These files (there can be a system one and a user one!) contain all destination
+host addresses available in the respective dpaths directories.
+
+The index files enable for faster lookup when used by gtransfer's bash
+completion. Index files are automatically created and extended when creating
+dpaths. The format of each line in these files is as follows:
+
+<PROTOCOL>://hostname.domain.tld:<PORT>
 
 .SH AUTHOR
 Frank Scheiner

@@ -1,4 +1,4 @@
-.TH GTRANSFER 1 "15 Nov 2012" "version 0.0.10" "User Commands"
+.TH GTRANSFER 1 "09 Dec 2012" "version 0.0.11" "User Commands"
 .SH NAME
 gtransfer \- The GridFTP transfer script
 
@@ -22,7 +22,7 @@ gtransfer \- The GridFTP transfer script
 is a wrapper script for
 .B tgftp
 that supports (GridFTP) transfers along predefined
-paths by using transit sites.  Additionally it supports usage of default
+paths by using transit sites.  Additionally it supports usage of pre-optimized
 parameters for specific connections. Therefore this tool is also helpful for
 direct transfers.
 
@@ -128,12 +128,12 @@ The
 configuration file.
 
 .TP
-.I <PATH_TO_SYSTEM>/dpaths/
+.I [...]/dpaths/
 This directory contains the system dpaths usable by
 .BR "gtransfer" " and is configurable."
 
 .TP
-.I <PATH_TO_SYSTEM>/dparams/
+.I [...]/dparams/
 This directory contains the system dparams usable by
 .BR "gtransfer" " and is configurable."
 
