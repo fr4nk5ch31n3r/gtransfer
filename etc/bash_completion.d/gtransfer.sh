@@ -171,7 +171,7 @@ _gtransfer()
 					local remote_urls=$( for path in "${remote_paths[@]}"; do echo ${userhost}${userpath}${path}; done )
 					COMPREPLY=( $(compgen -W "${remote_urls}" -- ${cur}) )
 					return 0
-                		elif echo "$cur" | grep '^ftp://.*:.*/.*' &>/dev/null; then
+                elif echo "$cur" | grep '^ftp://.*:.*/.*' &>/dev/null; then
 					userhost=$( getURLWithoutPath "${cur}" )
 					userpath=$( getPathFromURL "${cur}" )
 					local remote_paths=( $( globus-url-copy -list "$cur*" | sed -e 's/^\ *//' -e 1d ) )
@@ -202,7 +202,7 @@ _gtransfer()
 					local remote_urls=$( for path in "${remote_paths[@]}"; do echo ${userhost}${userpath}${path}; done )
 					COMPREPLY=( $(compgen -W "${remote_urls}" -- ${cur}) )
 					return 0
-                		elif echo "$cur" | grep '^ftp://.*:.*/.*' &>/dev/null; then
+                elif echo "$cur" | grep '^ftp://.*:.*/.*' &>/dev/null; then
 					userhost=$( getURLWithoutPath "${cur}" )
 					userpath=$( getPathFromURL "${cur}" )
 					local remote_paths=( $( globus-url-copy -list "$cur*" | sed -e 's/^\ *//' -e 1d ) )
