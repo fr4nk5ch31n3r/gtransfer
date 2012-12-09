@@ -1,11 +1,12 @@
 #%Module
 
-#  gtransfer/0.0.7 modulefile
+#  gtransfer/<VERSION> modulefile
 #
 #  2011-08-26  Frank Scheiner  <scheiner@hlrs.de>
 #  2011-12-18  Frank Scheiner
+#  2012-11-03  Frank Scheiner
 
-set ModulefileVersion "0.3"
+set ModulefileVersion "0.4"
 
 set VERSION [file tail [module-info name]]
 
@@ -41,13 +42,22 @@ prepend-path PATH $GTRANSFER_DIRECTORY_OF_EXECUTABLES
 # ------------------------------------------------------
 prepend-path MANPATH $GTRANSFER_DIRECTORY_OF_MANUALS
 
+
+if { [module-info shell] == "bash" || [module-info shell] == "sh" } {
+   puts stdout "source ${GTRANSFER_BASH_COMPLETION_FILE};"
+   puts stderr "Bash completion loaded: press the TAB key for completion."
+} else {
+   puts stderr "Bash completion is available for bash and sh shells."
+}
+
+
 if { [module-info mode] != "whatis" } {
    puts stderr "[module-info mode] gtransfer $VERSION (PATH, MANPATH)"
    puts stderr "In addition to the manual pages (man {gtransfer|gt|dparam|dpath}), there is also a longer README file available (less $GTRANSFER_DIRECTORY_OF_DOCS/README)."
 }
 
 
-# Help procedure: called by "module help gtransfer/0.0.7"
+# Help procedure: called by "module help gtransfer/<VERSION>"
 proc ModulesHelp {} {
    global VERSION ModulefileVersion
 
