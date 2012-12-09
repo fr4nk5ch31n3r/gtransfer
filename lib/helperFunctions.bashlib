@@ -1,0 +1,606 @@
+#  helperFunctions.bashlib - library of helper functions
+
+:<<COPYRIGHT
+
+Copyright (C) 2012 Frank Scheiner
+
+The program is distributed under the terms of the GNU General Public License
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+COPYRIGHT
+
+################################################################################
+#  INCLUDES
+################################################################################
+
+:<<INCLUDE
+exitCodes.bashlib
+INCLUDE
+
+#  only source if not already sourced
+if [[ -z "$_exitCodes_Version" ]]; then
+	. "$_LIB/exitCodes.bashlib"
+fi
+
+################################################################################
+#  VARIABLES
+################################################################################
+
+readonly _helperFunctions_Version="0.1.0"
+
+################################################################################
+#  FUNCTIONS
+################################################################################
+
+:<<FUNCTIONS
+FUNCTIONS
+
+
+helperFunctions/use()
+{
+	#  determines if a required tool/binary/etc. is available
+	#
+	#  usage:
+	#+ use "tool1" "tool2" "tool3" [...]
+
+	local tools=$@
+
+	local requiredToolNotAvailable=0
+
+	for tool in $tools; do
+		#echo "$tool"
+		if ! which $tool &>/dev/null; then
+			requiredToolNotAvailable=1
+			echo "ERROR: Required tool \"$tool\" not available!"
+		fi
+	done
+
+	if [[ $requiredToolNotAvailable -eq 1 ]]; then
+		echo "       Cannot run without required tools!"
+		return 1
+	fi
+	
+	return 0
+}
+
+
+#  getTransitSiteTempDir() - get the temporary directory name on the transit
+#+ site
+#+ @transferId: The transfer id for which a temp dir name should be prepared.
+helperFunctions/getTransitSiteTempDir()
+{
+	local _transferId="$1"
+
+	local _transitSiteTempDir		
+	#  temporary dir on transit site. This is the same for all transit
+	#+ sites used during a transfer.
+	#+ To finish a failed transfer the name of the temp. dir is also stored
+	#+ in a file until the whole transfer is finished.
+	#
+	#  NOTICE:
+	#+ This contains no leading and no trailing "/"!
+	if [[ -e "$_transferId".transitSiteTempDir ]]; then
+		_transitSiteTempDir=$( cat "$_transferId".transitSiteTempDir )
+	else
+		_transitSiteTempDir=$( mktemp -u "transitSiteTempDir.XXXXXXXX" )
+		echo "$_transitSiteTempDir" > "$_transferId".transitSiteTempDir
+	fi
+	
+	echo "$_transitSiteTempDir"
+	
+	return 0
+
+}
+
+
+helperFunctions/getURLWithoutPath()
+{
+	#  determines the URL portion that consists of the protocol id, the
+	#+ domain name and the port, or "file://":
+	#
+	#  (gsiftp://venus.milkyway.universe:2811)/path/to/file
+	#  (file://)/path/to/local/file
+        #  (gsiftp://user@host.domain:2811)/path/to/file
+        #
+        #  conserves any existing username portions
+	#
+	#  usage:
+	#+ getURLWithoutPath "URL"
+
+	local URL="$1"
+	
+	#  TODO:
+	#+ support URLs not containing any port descriptions:
+	#
+	#  done!
+	
+	:<<-COMMENT
+	from: <http://wiki.linuxquestions.org/wiki/Regular_expression>
+	"
+	echo gsiftp://venus.milkyway.universe/path/to/file | sed "s;\(gsiftp://[^/]*\)/.*;\1;"
+	"
+
+	or
+
+	"
+	echo gsiftp://venus.milkyway.universe/path/to/file | cut -d '/' -f "1-3"
+	"
+
+	returns:
+	"
+	gsiftp://venus.milkyway.universe
+	"
+	COMMENT
+
+	#local tmp=$(echo "$URL" | grep -o "gsiftp://.*:[[:digit:]]*")
+	local tmp=""
+	#  URL starting with "/", then this is a local path (equal to
+	#+  "file://$URL".
+	if [[ ${URL:0:1} == "/" ]]; then
+		#echo "DEBUG: 1"
+		tmp="file://"
+	#  valid URL
+	else
+		#echo "DEBUG: 3"
+		tmp=$( echo $URL | cut -d '/' -f "1-3" )
+	fi
+
+	#if [[ "$tmp" == "" ]]; then
+	#	tmp=$( echo "$URL" | grep -o "file://" )
+	#fi
+
+	#  Add default port automatically (if missing!)
+	#  does $tmp start with 'gsiftp://'?
+	if echo $tmp | grep '^gsiftp://' &>/dev/null; then
+		#  if yes, check if port is provided
+		if echo $tmp | grep -o ':[[:digit:]].*' &>/dev/null; then
+			#  port provided by user, don't modify string
+			:
+		else
+			#  no port provided, add default gsiftp port
+			tmp="${tmp}:2811"
+		fi
+	#  does $tmp start with 'ftp://'?
+	elif echo $tmp | grep '^ftp://' &>/dev/null; then
+		#  if yes, check if port is provided
+		if echo $tmp | grep -o ':[[:digit:]].*' &>/dev/null; then
+			#  port provided by user, don't modify string
+			:
+		else
+			#  no port provided, add default ftp port
+			tmp="${tmp}:21"
+		fi
+	#  does $tmp start with 'http://'?
+	elif echo $tmp | grep '^http://' &>/dev/null; then
+		#  if yes, check if port is provided
+		if echo $tmp | grep -o ':[[:digit:]].*' &>/dev/null; then
+			#  port provided by user, don't modify string
+			:
+		else
+			#  no port provided, add default ftp port
+			tmp="${tmp}:80"
+		fi
+	#  does $tmp start with 'https://'?
+	elif echo $tmp | grep '^https://' &>/dev/null; then
+		#  if yes, check if port is provided
+		if echo $tmp | grep -o ':[[:digit:]].*' &>/dev/null; then
+			#  port provided by user, don't modify string
+			:
+		else
+			#  no port provided, add default ftp port
+			tmp="${tmp}:443"
+		fi
+	fi
+
+	local URLWithoutPath=$tmp
+
+	echo "$URLWithoutPath"
+}
+
+
+helperFunctions/hashSourceDestination()
+{
+	#  hashes the "source;destination" combination
+	#
+	#  usage:
+	#+ hashSourceDestination source destination
+	#
+	#  NOTICE:
+	#+ "source" and "destination" are URLs without path
+
+	local sourceWithoutPath="$1"
+	local destinationWithoutPath="$2"
+
+	local dataPathName=$(echo "$sourceWithoutPath;$destinationWithoutPath" | sha1sum | cut -d ' ' -f 1)
+
+	echo $dataPathName
+}
+
+
+helperFunctions/echoIfVerbose()
+{
+        #  1 true, 0 false
+	if [[ $verboseExec -eq 1 ]]; then
+		echo $@
+	fi
+
+	return		
+}
+
+
+helperFunctions/catIfVerbose()
+{
+        #  1 true, 0 false
+        if [[ $verboseExec -eq 1 ]]; then
+	    cat $@
+	fi
+
+	return
+}
+
+
+helperFunctions/xtractXMLAttributeValue()
+{
+	#  determines the value between XML like tags
+	#
+	#  NOTICE:
+	#+ This function is limited to XML like files that have there tags in
+	#+ separate lines.
+	#+
+	#+ Example:
+	#+ "<tag>value</tag>" doesn't work
+	#+ "<tag>
+	#+ value
+	#+ </tag>" works
+	#
+	#  usage:
+	#+ xtractXMLAttributeValue attribute XMLFile
+	#
+	#  attribute may contain arguments ('attribute arg="0"') or can be
+	#+ without
+
+	local attributeOpen="<$1>"
+	
+	#echoDebug "stderr" "DEBUG1" "Open: $attributeOpen"
+
+	local attributeClose="<\/${1%% *}>"
+
+	#echoDebug "stderr" "DEBUG1" "Close: $attributeClose"
+
+	local XMLFile="$2"
+
+	#echoDebug "stderr" "DEBUG1" "$XMLFile"
+
+	#  extract everything between and incl. given attribute tags| remove tags    
+	sed -n -e "/$attributeOpen/,/$attributeClose/p" <"$XMLFile" | sed -e "/^<.*>$/d"
+}
+
+
+helperFunctions/getPathFromURL()
+{
+	#  determines the path portion from the URL:
+	#
+	#  gsiftp://venus.milkyway.universe:2811(/path/to/)file
+	#
+	#  usage:
+	#+ getPathFromURL "URL"
+
+	local URL="$1"
+
+	#  local path?
+	if echo $URL | grep "^.*://" &>/dev/null; then
+                #  no
+                #  gsiftp://venus.milkyway.universe:2811/path/to/file
+		#  gsiftp://venus.milkyway.universe:2811/file
+		#  strip protocol spec, domain name and port
+		#  path/to/file
+		#  file
+		local tmp=$( echo "$URL" | cut -d '/' -f '4-' )
+
+		#  add leading '/'
+		#  /path/to/file
+		#  /file
+		tmp="/$tmp"
+
+		#  strip file portion from it
+                #  /path/to
+		#  ""
+		tmp=${tmp%\/*}
+
+                #  add slashes if needed
+                if [[ "$tmp" == "" ]]; then
+                        #  /
+                        tmp="/"
+                else
+                        #  /path/to/
+                        tmp="$tmp/"
+                fi
+	else
+       		#  yes
+                #  /path/to/file
+                #  not allowed: file !
+		
+                #  so strip only the file portion from it
+                tmp=${URL%\/*}
+
+                #  add slashes if needed
+                if [[ "$tmp" == "" ]]; then
+                        #  /
+                        tmp="/"
+                else
+                        #  /path/to/
+                        tmp="$tmp/"
+                fi
+	fi
+
+	path="$tmp"	
+
+	echo "$path"
+
+        return
+}
+
+
+helperFunctions/getFilenameFromURL()
+{
+	#  determines the file portion (if any) from the URL:
+	#
+	#  gsiftp://venus.milkyway.universe:2811/path/to/(file)
+	#
+	#  usage:
+	#+ getFilenameFromURL "URL"
+	
+	local URL="$1"
+
+	#local tmp=$(echo "$URL" | sed -e "s|$( getURLWithoutPath $URL )||")
+	local tmp=$( echo "$URL" | sed -e "s/^.*\///" )
+	#local tmp=$( echo "$URL" | cut -d '/' -f '4-' )
+
+	#  strip any path portion from file
+	#file=$(basename $file)
+	#  doesn't work "correctly" =>
+	#+ "/lrztemp/test1/*/file/" is evaluated to "file" but should be empty
+	#file=$(echo $file | sed -e "s|^.*/||")
+	file=${tmp##*/}
+
+	#  file may contain "*" which would be expanded by the shell, therefore
+	#+ this clause decides if the function echoes a "*" or "$file".
+	if [[ "$file" == "*" ]]; then	
+		echo '*'
+	else
+		echo "$file"
+	fi
+}
+
+
+helperFunctions/checkConnection()
+{
+	#  determines if a direct connection between the user's machine and the
+	#+ target machine is possible
+	#
+	#  usage:
+	#+ checkConnection "target"
+	#
+	#  NOTICE:
+	#+ source has to be valid "protocol://fqdn:port" URL without path.
+
+	#echo "DEBUG1: checkConnection $1"
+
+	#  handle file URLs specially!
+	if [[ $(echo "$1" | cut -d '/' -f "1-3") == "file://" ]]; then
+		#  just return "0", so "guc" will handle missing files
+		return 0
+	fi	
+
+	#                                      +-> strip protocol
+	#                                      |
+	#                                      |               +-> strip username portion
+	#                                      |               |            
+	#                                      |               |            +-> strip port
+	#                                      |               |            |
+	local targetHostname=$(echo "$1" | sed -e "s|^.*://||" -e "s/.*@//" -e "s/:.*$//")
+	local targetPort=$(echo "$1" | sed -e "s/^.*://")
+
+	#  check target
+	if ! helperFunctions/scanPort "$targetHostname" "$targetPort"; then
+		#  port closed/blocked/etc.
+		return 1
+	else
+		#  port open
+		return 0
+	fi
+}
+
+
+helperFunctions/kill_after_timeout()
+{
+        local KPID="$1"
+
+        local TIMEOUT="$2"
+
+        #  if $TIMEOUT is "0" just return and don't kill the process
+        if [[ "$TIMEOUT" == "0" ]]; then
+                return
+        fi
+
+        sleep "$TIMEOUT"
+
+        if ps -p "$KPID" &>/dev/null ; then
+                kill "$KPID" &>/dev/null
+
+                #  indicate that the pid was killed
+                touch .GSIFTP_COMMAND_KILLED
+                RETURN_VAL="0"
+        else
+                RETURN_VAL="1"
+        fi
+
+        return
+}
+
+
+helperFunctions/scanPort()
+{
+	#  determines if a port is open at a remote site, or not
+	#
+	#  usage:
+	#+ scanPort "targetSiteHostname" "targetPort"
+
+	local targetSiteHostname="$1"
+	local targetPort="$2"
+
+        #  included for thread safety
+        local _scanResult=$( mktemp .scanResult_XXXXXX )
+
+	if [[ ! -z "$__GLOBAL__scanPortTimeout" ]]; then
+		local scanTimeout=$__GLOBAL__scanPortTimeout
+	else
+		local scanTimeout=2
+	fi
+
+	echo "open $targetSiteHostname $targetPort" | telnet 2>/dev/null 1> $_scanResult &
+
+	scanCommandPid="$!"
+
+	kill_after_timeout "$scanCommandPid" "$scanTimeout" &
+
+	wait $scanCommandPid &>/dev/null
+
+	if cat "$_scanResult" | grep "Connected" &>/dev/null; then
+		rm "$_scanResult" &>/dev/null
+		return 0
+	else
+		rm "$_scanResult" &>/dev/null
+		return 1
+	fi
+}
+
+
+helperFunctions/getProtocolSpecifier()
+{
+	#  determine the protocol specifier for a URL
+	#
+	#  usage:
+	#+ getProtocolSpecifier url
+
+	local url="$1"
+
+	local protocolSpecifier=""
+
+	#  if the URL starts with an absolute path it's equal to "file://$URL"
+	if  [[ ${url:0:1} == "/" ]]; then
+		echo "file://"
+		return 0
+	#  return the protocol specifier
+	else
+		protocolSpecifier=$( echo $url | grep -o ".*://" )
+		echo "$protocolSpecifier"
+		return 0
+	fi
+}
+
+
+helperFunctions/isValidUrl()
+{
+	#  determines if a valid URL was used and also checks if the host does
+	#+ exist in DNS.
+	#
+	#  usage:
+	#+ isValidUrl url
+
+	local url="$1"
+	local hostName=""
+
+	#  if the URL starts with an absolute path it's equal to "file://$URL"
+	#+ and therefore valid.
+	if  [[ ${url:0:1} == "/" ]]; then
+		return 0
+	#  protocol specifier missing?
+	elif ! echo $url | grep ".*://" &>/dev/null; then
+		#echo "ERROR: Protocol specifier missing in \"$URL\" and no local path specified!"
+		return 1
+	else
+		#  check if host exists in DNS
+		#  The "ping" command could be a good candidate, as it is often
+		#+ available by default. ping returns "2" if a host name cannot
+		#+ be resolved to an IP address, or if a wrong number of echo
+		#+ requests is used (e.g. "-c 0"). So the exit value "2" seems
+		#+ to indicate a general problem.
+		hostName=$( helperFunctions/getFQDNFromURL "$url" )
+		if [[ "$hostName" != "" ]]; then
+			ping -c 1 "$hostName" &>/dev/null
+			
+			if [[ $? -eq 2 ]]; then
+				return 1
+			else
+				#  An exit value of "1" is returned, if the destination
+				#+ host couldn't be reached. But as there's a
+				#+ port scan done later, we can savely return 0,
+				#+ as the host seems to exist in DNS.
+				return 0
+			fi
+		else
+			return 1
+		fi
+	fi
+	
+}
+
+
+helperFunctions/getFQDNFromURL()
+{
+        #  get the Fully Qualified Domain Name from a URL
+        #
+        #  usage:
+        #+ getFQDNFromURL url
+
+        local _url="$1"
+
+        local _fqdn=$( getURLWithoutPath "$_url" | cut -d '/' -f 3 | cut -d ':' -f 1)
+
+        if [[ "$_fqdn" != "" ]]; then
+                echo "$_fqdn"
+                return
+        else
+                return 1
+        fi
+}
+
+
+helperFunctions/getPortNumberFromURL()
+{
+        #  get the port number from a URL
+        #
+        #  usage:
+        #+ getPortNumberFromUrl url
+
+        local _url="$1"
+
+        local _portNumber=$( echo "$_url" | cut -d ':' -f 3 | cut -d '/' -f 1 )
+
+        if [[ "$_portNumber" != "" ]]; then
+                echo "$_portNumber"
+                return
+        else
+                return 1
+        fi
+}
+################################################################################
+#  CHECKS
+################################################################################
+
+#  check that all required tools are available
+helperFunctions/use ping || exit "$_gtransfer_exit_software"
+

@@ -1,0 +1,51 @@
+doSomething()
+{
+
+	#NEW#v##########################################################
+	    	
+
+	#  (2) get default params
+	########################################################################
+	if [[ -e "$transferStepDefaultParamsFile" && \
+	      -z "$gsiftpUserParams" \
+	]]; then
+		#  default params file available, no user params
+		#+ specified
+		transferStepDefaultParams="$(xtractXMLAttributeValue "gsiftp_params" $transferStepDefaultParamsFile)"
+		echoIfVerbose -e "Default params used:\n$transferStepDefaultParamsFile"
+
+	elif [[ -e "$transferStepDefaultParamsFile" && \
+		-n "$gsiftpUserParams" \
+	]]; then
+		#  user params specified
+		transferStepDefaultParams="$(xtractXMLAttributeValue "gsiftp_params" $transferStepDefaultParamsFile)"
+
+		#  if user only provided "-len|-partial-length [...]", then just add it to the default gsiftp params,
+		#+ if not only use the user provided params.
+		grepMatch=$( echo "$gsiftpUserParams" | egrep -o "\-len [[:alnum:]]*|\-partial-length [[:alnum:]]*" )
+		if [[ "$grepMatch" == "$gsiftpUserParams" ]]; then
+			transferStepDefaultParams="$transferStepDefaultParams $gsiftpUserParams"
+		else
+			transferStepDefaultParams="$gsiftpUserParams"
+		fi
+
+	elif [[ -n "$gsiftpUserParams" ]]; then
+		#  no default params available, use parameters
+		#+ supplied by user or a combination of builtin
+		#+ parameters and "-len"
+		grepMatch=$( echo "$gsiftpUserParams" | egrep -o "\-len [[:alnum:]]*|\-partial-length [[:alnum:]]*" )
+		if [[ "$grepMatch" == "$gsiftpUserParams" ]]; then
+			transferStepDefaultParams="$gsiftpDefaultParams $gsiftpUserParams"
+		else
+			transferStepDefaultParams="$gsiftpUserParams"
+		fi
+
+	else
+		#  no default params available and no params specified by the user, use builtin
+		#+ default parameters
+		transferStepDefaultParams="$gsiftpDefaultParams"
+	fi
+	
+	#NEW#^##########################################################
+}
+
