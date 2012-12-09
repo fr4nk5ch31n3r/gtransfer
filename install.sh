@@ -20,6 +20,7 @@ fi
 binDir="$prefixDir/gtransfer/bin"
 docDir="$prefixDir/gtransfer/share/doc"
 manDir="$prefixDir/gtransfer/share/man"
+libDir="$prefixDir/gtransfer/lib"
 
 #  installation
 if [[ "$(basename $0)" == "install.sh" ]]; then
@@ -36,6 +37,7 @@ if [[ "$(basename $0)" == "install.sh" ]]; then
 	mkdir -p "$docDir" &>/dev/null
 	mkdir -p "$manDir/man1" &>/dev/null
 	mkdir -p "$etcDir" &>/dev/null
+	mkdir -p "$libDir" &>/dev/null
 
 	#  copy configuration files (also copy bash completion file)
 	cp ./etc/gtransfer/gtransfer.conf_example \
@@ -87,6 +89,9 @@ if [[ "$(basename $0)" == "install.sh" ]]; then
 	   ./share/man/man1/gt.1 \
 	   ./share/man/man1/dpath.1 \
 	   ./share/man/man1/dparam.1 "$manDir/man1"
+	   
+	#  copy libraries
+	cp -r ./lib/* "$libDir"
 
 #  uninstallation
 elif [[ "$(basename $0)" == "uninstall.sh" ]]; then
