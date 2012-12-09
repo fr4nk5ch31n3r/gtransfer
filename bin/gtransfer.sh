@@ -293,13 +293,16 @@ scanPort()
 	local targetSiteHostname="$1"
 	local targetPort="$2"
 
+        #  included for thread safety
+        local _scanResult=$( mktemp .scanResult_XXXXXX )
+
 	if [[ ! -z "$__GLOBAL__scanPortTimeout" ]]; then
 		local scanTimeout=$__GLOBAL__scanPortTimeout
 	else
 		local scanTimeout=2
 	fi
 
-	echo "open $targetSiteHostname $targetPort" | telnet 2>/dev/null 1> .scanResult &
+	echo "open $targetSiteHostname $targetPort" | telnet 2>/dev/null 1> $_scanResult &
 
 	scanCommandPid="$!"
 
@@ -307,11 +310,11 @@ scanPort()
 
 	wait $scanCommandPid &>/dev/null
 
-	if cat ".scanResult" | grep "Connected" &>/dev/null; then
-		rm ".scanResult"
+	if cat "$_scanResult" | grep "Connected" &>/dev/null; then
+		rm "$_scanResult" &>/dev/null
 		return 0
 	else
-		rm ".scanResult"
+		rm "$_scanResult" &>/dev/null
 		return 1
 	fi
 }
@@ -429,6 +432,9 @@ getURLWithoutPath()
 	#
 	#  (gsiftp://venus.milkyway.universe:2811)/path/to/file
 	#  (file://)/path/to/local/file
+        #  (gsiftp://user@host.domain:2811)/path/to/file
+        #
+        #  conserves any existing username portions
 	#
 	#  usage:
 	#+ getURLWithoutPath "URL"
@@ -675,7 +681,7 @@ hashSourceDestination()
 echoIfVerbose()
 {
         #  1 true, 0 false
-	if [[ $verboseExec == 1 ]]; then
+	if [[ $verboseExec -eq 1 ]]; then
 		echo $@
 	fi
 
