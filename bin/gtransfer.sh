@@ -33,7 +33,7 @@ COPYRIGHT
 #  prevent "*" expansion (filename globbing)
 set -f
 
-version="0.0.7c-dev08"
+version="0.1.0"
 gsiftpUserParams=""
 
 #  path to configuration files (prefer system paths!)
