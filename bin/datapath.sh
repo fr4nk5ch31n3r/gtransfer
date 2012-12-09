@@ -28,32 +28,49 @@ contract number RI-222919.
 
 COPYRIGHT
 
-version="0.0.6"
+version="0.0.7"
 
 #  path to configuration files (prefer system paths!)
 #  For native OS packages:
 if [[ -e "/etc/gtransfer" ]]; then
-        dpathConfigurationFilesPath="/etc/gtransfer"
+        gtransferConfigurationFilesPath="/etc/gtransfer"
+        #  gtransfer is installed in "/usr/bin", hence the base path is "/usr"
+        gtransferBasePath="/usr"
+        gtransferLibPath="$gtransferBasePath/lib/gtransfer"
 
 #  For installation with "install.sh".
-#sed#elif [[ -e "<PATH_TO_GTRANSFER>/etc" ]]; then
-#sed#	dpathConfigurationFilesPath="<PATH_TO_GTRANSFER>/etc"
+#sed#elif [[ -e "<GTRANSFER_BASE_PATH>/etc" ]]; then
+#sed#	gtransferConfigurationFilesPath="<GTRANSFER_BASE_PATH>/etc"
+#sed#	gtransferBasePath=<GTRANSFER_BASE_PATH>
+#sed#	gtransferLibPath="$gtransferBasePath/lib"
 
 #  According to FHS 2.3, configuration files for packages located in "/opt" have
 #+ to be placed here (if you use a provider super dir below "/opt" for the
 #+ gtransfer files, please also use the same provider super dir below
 #+ "/etc/opt").
 #elif [[ -e "/etc/opt/<PROVIDER>/gtransfer" ]]; then
-#	dpathConfigurationFilesPath="/etc/opt/<PROVIDER>/gtransfer"
+#	gtransferConfigurationFilesPath="/etc/opt/<PROVIDER>/gtransfer"
+#	gtransferBasePath="/opt/<PROVIDER>/gtransfer"
+#	gtransferLibPath="$gtransferBasePath/lib"
 elif [[ -e "/etc/opt/gtransfer" ]]; then
-        dpathConfigurationFilesPath="/etc/opt/gtransfer"
+        gtransferConfigurationFilesPath="/etc/opt/gtransfer"
+        gtransferBasePath="/opt/gtransfer"
+        gtransferLibPath="$gtransferBasePath/lib"
 
 #  For user install in $HOME:
 elif [[ -e "$HOME/.gtransfer" ]]; then
-        dpathConfigurationFilesPath="$HOME/.gtransfer"
+        gtransferConfigurationFilesPath="$HOME/.gtransfer"
+        gtransferBasePath="$HOME/opt/gtransfer"
+        gtransferLibPath="$gtransferBasePath/lib"
+
+#  For git deploy, use $BASH_SOURCE
+elif [[ -e "$( dirname $BASH_SOURCE )/../etc" ]]; then
+	gtransferConfigurationFilesPath="$( dirname $BASH_SOURCE )/../etc"
+	gtransferBasePath="$( dirname $BASH_SOURCE )/../"
+	gtransferLibPath="$gtransferBasePath/lib"
 fi
 
-dpathConfigurationFile="$dpathConfigurationFilesPath/dpath.conf"
+dpathConfigurationFile="$gtransferConfigurationFilesPath/dpath.conf"
 
 __GLOBAL__sourcesIndexFile="sources.index"
 __GLOBAL__destinationsIndexFile="destinations.index"
