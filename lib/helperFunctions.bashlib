@@ -239,6 +239,18 @@ helperFunctions/echoIfVerbose()
 	return		
 }
 
+
+helperFunctions/catIfVerbose()
+{
+        #  1 true, 0 false
+        if [[ $verboseExec -eq 1 ]]; then
+	    cat $@
+	fi
+
+	return
+}
+
+
 helperFunctions/xtractXMLAttributeValue()
 {
 	#  determines the value between XML like tags
@@ -452,11 +464,17 @@ helperFunctions/scanPort()
         #  included for thread safety
         local _scanResult=$( mktemp .scanResult_XXXXXX )
 
+	if [[ ! -z "$__GLOBAL__scanPortTimeout" ]]; then
+		local scanTimeout=$__GLOBAL__scanPortTimeout
+	else
+		local scanTimeout=2
+	fi
+
 	echo "open $targetSiteHostname $targetPort" | telnet 2>/dev/null 1> $_scanResult &
 
 	scanCommandPid="$!"
 
-	helperFunctions/kill_after_timeout "$scanCommandPid" "2" &
+	kill_after_timeout "$scanCommandPid" "$scanTimeout" &
 
 	wait $scanCommandPid &>/dev/null
 
@@ -522,7 +540,7 @@ helperFunctions/isValidUrl()
 		#+ to indicate a general problem.
 		hostName=$( helperFunctions/getFQDNFromURL "$url" )
 		if [[ "$hostName" != "" ]]; then
-			ping -c 1 "$hostName"
+			ping -c 1 "$hostName" &>/dev/null
 			
 			if [[ $? -eq 2 ]]; then
 				return 1
@@ -561,6 +579,24 @@ helperFunctions/getFQDNFromURL()
 }
 
 
+helperFunctions/getPortNumberFromURL()
+{
+        #  get the port number from a URL
+        #
+        #  usage:
+        #+ getPortNumberFromUrl url
+
+        local _url="$1"
+
+        local _portNumber=$( echo "$_url" | cut -d ':' -f 3 | cut -d '/' -f 1 )
+
+        if [[ "$_portNumber" != "" ]]; then
+                echo "$_portNumber"
+                return
+        else
+                return 1
+        fi
+}
 ################################################################################
 #  CHECKS
 ################################################################################

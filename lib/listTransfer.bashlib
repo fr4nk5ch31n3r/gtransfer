@@ -630,22 +630,29 @@ listTransfer/doTransferStep()
 	local transferStepDestinationWithoutPath=$( helperFunctions/getURLWithoutPath "$transferStepDestination" )
 
 	#  check if connection to source and destination is possible
-	if ! helperFunctions/checkConnection "$transferStepSourceWithoutPath" && \
-	   ! helperFunctions/checkConnection "$transferStepDestinationWithoutPath"; then
-		echo "ERROR: Cannot connect to neither \"$transferStepSourceWithoutPath\" nor \"$transferStepDestinationWithoutPath\"! Either try again or correct your input!"
-		#  we assume that source and destination strings are correct,
-		#+ and they're just unavailable currently. If the user just used
-		#+ a nonexistent host, he can detect this by reading the error
-		#+ message
-		return $_gtransfer_exit_tempfail
-	elif ! helperFunctions/checkConnection "$transferStepSourceWithoutPath"; then
-		echo "ERROR: Cannot connect to \"$transferStepSourceWithoutPath\"! Either try again or correct your input!"
-		#  same as above
-		return $_gtransfer_exit_tempfail
-	elif ! helperFunctions/checkConnection "$transferStepDestinationWithoutPath"; then
-		echo "ERROR: Cannot connect to \"$transferStepDestinationWithoutPath\"! Either try again or correct your input!"
-		#  same as above
-		return $_gtransfer_exit_tempfail
+	if [[ ! -z $__GLOBAL__checkConnection && \
+	           $__GLOBAL__checkConnection -eq 0 \
+	]]; then
+		#  skip connection check
+		:
+	else
+		if ! helperFunctions/checkConnection "$transferStepSourceWithoutPath" && \
+		   ! helperFunctions/checkConnection "$transferStepDestinationWithoutPath"; then
+			echo "ERROR: Cannot connect to neither \"$transferStepSourceWithoutPath\" nor \"$transferStepDestinationWithoutPath\"! Either try again or correct your input!"
+			#  we assume that source and destination strings are correct,
+			#+ and they're just unavailable currently. If the user just used
+			#+ a nonexistent host, he can detect this by reading the error
+			#+ message
+			return $_gtransfer_exit_tempfail
+		elif ! helperFunctions/checkConnection "$transferStepSourceWithoutPath"; then
+			echo "ERROR: Cannot connect to \"$transferStepSourceWithoutPath\"! Either try again or correct your input!"
+			#  same as above
+			return $_gtransfer_exit_tempfail
+		elif ! helperFunctions/checkConnection "$transferStepDestinationWithoutPath"; then
+			echo "ERROR: Cannot connect to \"$transferStepDestinationWithoutPath\"! Either try again or correct your input!"
+			#  same as above
+			return $_gtransfer_exit_tempfail
+		fi
 	fi
 
 	#  (0) construct names for logfile and dumpfile
