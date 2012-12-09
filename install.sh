@@ -46,18 +46,17 @@ if [[ "$(basename $0)" == "install.sh" ]]; then
 	cp -r ./etc/bash_completion.d "$etcDir"
 
 	#  copy scripts and...
-	cp ./gtransfer.sh \
-	   ./datapath.sh \
-	   ./defaultparam.sh "$binDir"
+	cp ./bin/gtransfer.sh \
+	   ./bin/datapath.sh \
+	   ./bin/defaultparam.sh "$binDir"
 	
 	#  ...reconfigure paths inside of the scripts and...
 	#        + reconfigure path to configuration files
-	#        |
 	#        |                                                 + remove (special) comments
 	#        |                                                 |
-	sed -e "s|<PATH_TO_GTRANSFER>|$prefixDir/gtransfer|g" -e 's/#sed#//g' -i "$binDir/gtransfer.sh"
-	sed -e "s|<PATH_TO_GTRANSFER>|$prefixDir/gtransfer|g" -e 's/#sed#//g' -i "$binDir/datapath.sh"
-	sed -e "s|<PATH_TO_GTRANSFER>|$prefixDir/gtransfer|g" -e 's/#sed#//g' -i "$binDir/defaultparam.sh"
+	sed -e "s|<GTRANSFER_BASE_PATH>|$prefixDir/gtransfer|g" -e 's/#sed#//g' -i "$binDir/gtransfer.sh"
+	sed -e "s|<GTRANSFER_BASE_PATH>|$prefixDir/gtransfer|g" -e 's/#sed#//g' -i "$binDir/datapath.sh"
+	sed -e "s|<GTRANSFER_BASE_PATH>|$prefixDir/gtransfer|g" -e 's/#sed#//g' -i "$binDir/defaultparam.sh"
 
 	#  ...make links and...
 	if [[ $userInstall -eq 1 ]]; then
@@ -78,16 +77,16 @@ if [[ "$(basename $0)" == "install.sh" ]]; then
 	fi
 
 	#  ...copy README and manpages.
-	cp ./README.md \
-	   ./gtransfer.1.pdf \
-	   ./dpath.1.pdf \
-	   ./dparam.1.pdf \
+	cp ./share/doc/README.md \
+	   ./share/doc/gtransfer.1.pdf \
+	   ./share/doc/dpath.1.pdf \
+	   ./share/doc/dparam.1.pdf \
 	   ./COPYING "$docDir"
 
-	cp ./gtransfer.1 \
-	   ./gt.1 \
-	   ./dpath.1 \
-	   ./dparam.1 "$manDir/man1"
+	cp ./share/man/man1/gtransfer.1 \
+	   ./share/man/man1/gt.1 \
+	   ./share/man/man1/dpath.1 \
+	   ./share/man/man1/dparam.1 "$manDir/man1"
 
 #  uninstallation
 elif [[ "$(basename $0)" == "uninstall.sh" ]]; then
@@ -107,7 +106,7 @@ elif [[ "$(basename $0)" == "uninstall.sh" ]]; then
 		rm -r "$prefixDir/gtransfer"
 
 		#  remove basedir for dpaths, dparams and configuration files
-		rm -r "$HOME/.gtransfer"
+		#rm -r "$HOME/.gtransfer"
 	fi
 fi
 
