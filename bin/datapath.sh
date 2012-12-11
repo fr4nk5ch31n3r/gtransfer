@@ -28,7 +28,7 @@ contract number RI-222919.
 
 COPYRIGHT
 
-version="0.0.7"
+version="0.1.0"
 
 #  path to configuration files (prefer system paths!)
 #  For native OS packages:
