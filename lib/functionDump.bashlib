@@ -1,3 +1,45 @@
+#  getTransitSiteTempDir() - get the temporary directory name on the transit
+#+ site
+#+ @source:      The source URL (e.g.
+#+               "gsiftp://user@host.domain:2811/path/to/files")
+#+ @destination: The destination URL (similar to source URL)
+#
+#
+listTransfer/getTransitSiteTempDir()
+{
+	local _source="$1"
+	local _destination="$2"
+
+	local _dpathFileName
+	_dpathFileName=$( listTransfer/dpathAvailable "$_source" "$_destination" )
+
+	local _functionReturnValue=$?
+	
+	if [[ $_functionReturnValue -eq 0 ]]; then
+		local _transitSiteTempDir		
+		#  temporary dir on transit site. This is the same for all transit sites.
+		#+ To finish a failed transfer the name of the temp. dir is also stored
+		#+ in a file until the whole transfer is finished.
+		#
+		#  NOTICE:
+		#+ This contains no leading and no trailing "/"!
+		if [[ -e "$_dpathFileName".transitSiteTempDir ]]; then
+			_transitSiteTempDir=$( cat "$_dpathFileName".transitSiteTempDir )
+		else
+			_transitSiteTempDir=$( mktemp -u "transitSiteTempDir.XXXXXXXX" )
+			echo "$_transitSiteTempDir" > "$_dpathFileName".transitSiteTempDir
+		fi
+		
+		echo "$_transitSiteTempDir"
+		
+		return 0
+	else
+		return 1
+	fi
+
+}
+
+
 doSomething()
 {
 
