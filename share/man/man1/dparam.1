@@ -1,6 +1,6 @@
-.TH DPARAM 1 "09 Dec 2012" "version 0.0.6" "User Commands"
+.TH DPARAM 1 "16 Dec 2012" "version 0.1.0" "User Commands"
 .SH NAME
-dparam \- The default param helper script
+dparam \- The dparam helper script
 
 .SH SYNOPSIS
 .B dparam
@@ -25,10 +25,8 @@ dparam \- The default param helper script
 .B dparam
 is a helper script for 
 .B gtransfer
-to support users in creating default params, listing available default params
-and retrieve the latest default params from the
-.B gtransfer
-home.
+to support users in creating dparams, listing available dparams and retrieve the
+latest dparams from a preconfigured repository.
 
 .SH MODES
 
@@ -37,20 +35,19 @@ has several modes of operation:
 
 .TP 10
 .B CREATE
-Creates a default parameter file and a link to it named after the
+Creates a dparam file and a link to it named after the
 .I alias
 that is specified by the user.
 
 .TP
 .B LIST
-Lists all available default parameter files.
+Lists all available dparams files.
 
 .TP
 .B RETRIEVE
-Retrieve the latest default parameters available. In this mode
+Retrieve the latest dparams available. In this mode
 .B dparam
-updates the local default parameters with data available from the preconfigured 
-repository.
+updates the local dparams with data available from a preconfigured repository.
 
 .SH OPTIONS
 .TP
@@ -62,7 +59,7 @@ The options are as follows:
 .TP
 .BI "--create|-c " "[/path/to/files] " "[--automatic]"
 Create a new default param either in the user-provided path or - if no
-additional path is given - in the default directory for default params in:
+additional path is given - in the user dparams directory:
 
 .I $HOME/.gtransfer/dparams
 
@@ -74,8 +71,7 @@ auto-tuning will be used to determine the default param.
 
 .TP
 .BI "--source|-s " "gsiftpSourceUrl"
-Set the source URL for the default param without any path portion at the
-end.
+Set the source URL for the dparam without any path portion at the end.
 
 Example:
 
@@ -83,8 +79,7 @@ Example:
 
 .TP
 .BI "--destination|-d " "gsiftpDestinationUrl"
-Set the destination URL for the default param without any path portion at
-the end.
+Set the destination URL for the dparam without any path portion at the end.
 
 Example:
 
@@ -94,8 +89,8 @@ Example:
 .BI "--alias|-a " "alias"
 Set the alias for the created default param.
 .B dparam
-will create a link named "alias" to the default param file which name is the
-SHA1 hash of the source destination combination.
+will create a link named "alias" to the dparam file which name is the SHA1 hash
+of the source destination combination.
 
 .B NOTICE: Naming of the aliases is not restricted, but one's encouraged to use
 .B something like the following:
@@ -107,17 +102,17 @@ SHA1 hash of the source destination combination.
 
 .TP
 .BI "--list|-l " "[/path/to/files] "  "[--verbose|-v]"
-List all default params available in the user-provided path or - if no
-additional path is given - in the default and system default params directories.
+List all dparams available in the user-provided path or - if no
+additional path is given - in the user and system dparams directories.
 
 .TP
 .B RETRIEVE Mode:
 
 .TP
 .BI "--retrieve|-r " "[/path/to/files] " "[--quiet|-q]"
-Retrieve the latest default params available on the preconfigured repository and
+Retrieve the latest dparams available on a preconfigured repository and
 store them in the user-provided path or - if no additional path is given
-- in the default directory for default params. If a "--quiet|-q" is provided, then output is
+- in the user dparams directory. If a "--quiet|-q" is provided, then output is
 omitted and success/failure is only reported by the exit value. 
 
 .TP
@@ -126,7 +121,7 @@ omitted and success/failure is only reported by the exit value.
 .TP
 .BI "[--configfile " "configurationFile" "]"
 Set the name of the configuration file for
-.BR "dpath" ". If not set, this defaults to:"
+.BR "dparam" ". If not set, this defaults to:"
 
 .IR "/etc/gtransfer/dparam.conf" " or"
 

@@ -127,25 +127,25 @@ dparam --retrieve|-r [/path/to/files] [--quiet|-q]
 
 DESCRIPTION:
 
-dparam is a helper script for gtransfer to support users in creating default
-params, listing available default params and retrieve the latest default params
-from the gtransfer home.
+dparam is a helper script for gtransfer to support users in creating dparams,
+listing available dparams and retrieve the latest dparams from a pre-configured
+repository.
 
 The options are as follows:
 
 --create|-c [/path/to/files] [--automatic]
-			Create a new default param either in the user-provided
+			Create a new dparam either in the user-provided
 			path or - if no additional path is given - in the
-			default directory for default params in:
+			user dparams directory in:
 
 			"$HOME/.gtransfer/.dparams"
 			
 			If "--automatic" is provided, tgftp auto-tuning will be
-			used to determine the default param.
+			used to determine the dparam.
 
 --source|-s gsiftpSourceUrl
-			Determine the source URL for the default param without
-			any path portion at the end.
+			Determine the source URL for the dparam without any path
+			portion at the end.
 
 			Example:
 
@@ -153,18 +153,18 @@ The options are as follows:
 
 
 --destination|-d gsiftpDestinationUrl
-			Determine the destination URL for the default param
-			without	any path portion at the end.
+			Determine the destination URL for the dparam without any
+			path portion at the end.
 
 			Example:
 
 			gsiftp://pluto.milkyway.universe:2811
 
 --alias|-a alias
-			Determine the alias for the created default param.
-			dparam will create a link named "alias" to the default
-			param file which name is the sha1 hash of the source
-			destination combination.
+			Determine the alias for the created dparam. dparam will
+			create a link named "alias" to the dparam file which
+			name is the sha1 hash of the source destination
+			combination.
 
 			NOTICE:
 
@@ -176,23 +176,23 @@ The options are as follows:
 --------------------------------------------------------------------------------
 
 --list|-l [/path/to/files] [--verbose|-v]
-			List all default params available in the user-provided
-			path or - if no additional path is given - in the
-			default and system default params directories.
+			List all dparams available in the user-provided oath or
+			- if no additional path is given - in the user and
+			system dparams directories.
 
 --------------------------------------------------------------------------------
 
 --retrieve|-r [/path/to/files] [--quiet|-q]
-			Retrieve the latest default params available on the
-			repository at:
+			Retrieve the latest dparams available on a repository
+			at:
 
 			<$dParamsUrl>
 
 			...and store them in the user-provided path or - if no
-			additional path is given - in the default directory for
-			default params. If a "--quiet|-q" is provided, then
-			output is omitted and success/failure is only reported
-			by the exit value. 
+			additional path is given - in the user dparams
+			directory. If a "--quiet|-q" is provided, then output is
+			omitted and success/failure is only reported by the exit
+			value. 
 
 --------------------------------------------------------------------------------
 
