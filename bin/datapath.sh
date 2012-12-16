@@ -116,40 +116,39 @@ dpath --retrieve|-r [/path/to/files] [--quiet|-q] [--configfile configurationFil
 
 DESCRIPTION:
 
-dpath is a helper script for gtransfer to support users in creating data paths,
-listing available data paths and retrieve the latest data paths from the
-gtransfer home.
+dpath is a helper script for gtransfer to support users in creating dpaths,
+listing available dpaths and retrieve the latest dpaths from a pre-configured
+repository.
 
 The options are as follows:
 
 --create|-c [/path/to/files]
-			Create a new data path either in the user-provided path
-			or - if no additional path is given - in the default
-			data path directory in:
+			Create a new dpath either in the user-provided path
+			or - if no additional path is given - in the user dpaths
+			directory in:
 
 			"\$HOME/.gtransfer/dpaths".
 
 --source|-s gsiftpSourceUrl
-			Determine the source URL for the data path without any
-			path portion at the end.
+			Determine the source URL for the dpath without any path
+			portion at the end.
 
 			Example:
 
 			gsiftp://saturn.milkyway.universe:2811
 
 --destination|-d gsiftpDestinationUrl
-			Determine the destination URL for the data path without
-			any path portion at the end.
+			Determine the destination URL for the dpath without any
+			path portion at the end.
 
 			Example:
 
 			gsiftp://pluto.milkyway.universe:2811
 
 --alias|-a alias
-			Determine the alias for the created data path. dpath
-			will create a link named "alias" to the data path
-			which name is the sha1 hash of the source destination
-			combination.
+			Determine the alias for the created dpath. dpath will
+			create a link named "alias" to the dpath which name is
+			the SHA1 hash of the source destination combination.
 
 			NOTICE:
 
@@ -172,19 +171,19 @@ The options are as follows:
 --------------------------------------------------------------------------------
 
 --batch-create|-b [/path/to/files]
-			Create data paths in batch mode either in the user-
-			provided path or - if no additional path is given - in
-			the default data path directory in:
+			Create dpaths in batch mode either in the user-provided
+			path or - if no additional path is given - in the user
+			dpaths directory in:
 
 			"$HOME/.gtransfer/dpaths".
 			
-			When used dpath will create dpaths for all possible
+			When used, dpath will create dpaths for all possible
 			connections between the hosts given in the hostsFile and
 			omit connections between the same hosts.
 			
 --hosts|-h hostsFile    Set the file name for the file containing the host
- 			addresses for which data paths should be created. The
- 			format of each line in this file is as follows:
+ 			addresses for which dpaths should be created. The format
+ 			of each line in this file is as follows:
 
  			<PROTOCOL>://hostname.domain.tld:<PORT>
 
@@ -202,35 +201,33 @@ The options are as follows:
 --------------------------------------------------------------------------------
 
 --list|-l [/path/to/files] [--verbose|-v]
-			List all data paths available in the user-provided path 
-			or - if no additional path is given - in the default and
-			system data path directories.
+			List all dpaths available in the user-provided path or -
+			if no additional path is given - in the user and system
+			dpaths directories.
 
 --------------------------------------------------------------------------------
 
 --list-sources [/path/to/dataPaths]
-			List all sources from the data paths in the user
-			provided path or - if no additional path is given - in
-			the default and system data path directories.
+			List all sources from the dpaths in the user-provided
+			path or - if no additional path is given - in the user
+			and system dpaths directories.
 			
 --list-destinations [/path/to/dataPaths]
-			List all destinations from the data paths in the user
+			List all destinations from the dpaths in the user-
 			provided path or - if no additional path is given - in
-			the default and system data path directories.
+			the user and system dpaths directories.
 
 --------------------------------------------------------------------------------
 
 --retrieve|-r [/path/to/files] [--quiet|-q]
-			Retrieve the latest data paths available on the
-			repository at:
+			Retrieve the latest dpaths available on a repository at:
 
 			<$dataPathsUrl>
 
 			...and store them in the user-provided path or - if no
-			additional path is given - in the default data path
-			directory. If a "--quiet|-q" is provided, then output is
-                        omitted and success/failure is only reported by the exit
-			value. 
+			additional path is given - in the user dpaths directory.
+			If a "--quiet|-q" is provided, then output is omitted
+			and success/failure is only reported by the exit value. 
 
 --------------------------------------------------------------------------------
 

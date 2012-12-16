@@ -1,6 +1,6 @@
-.TH DPATH 1 "09 Dec 2012" "version 0.0.7" "User Commands"
+.TH DPATH 1 "09 Dec 2012" "version 0.1.0" "User Commands"
 .SH NAME
-dpath \- The data path helper script
+dpath \- The dpath helper script
 
 .SH SYNOPSIS
 .B dpath
@@ -31,8 +31,8 @@ dpath \- The data path helper script
 .B dpath
 is a helper script for 
 .B gtransfer
-to support users in creating data paths, listing available data paths
-and retrieve the latest data paths from a preconfigured repository.
+to support users in creating dpaths, listing available dpaths and retrieve the
+latest dpaths from a preconfigured repository.
 
 .SH MODES
 
@@ -41,26 +41,25 @@ has several modes of operation:
 
 .TP 10
 .B CREATE
-Creates a data path file and a link to it named after the
+Creates a dpath file and a link to it named after the
 .I alias
 that is specified by the user.
 
 .TP
 .B BATCH CREATE
-Creates all possible data paths between host addresses given in a file.
+Creates all possible dpaths between host addresses given in a file.
 Corresponding aliases are created automatically.
 
 .TP
 .B LIST
-Lists all available data path files. Additionally only sources and destinations
-of data paths can be listed, too.
+Lists all available dpaths. Additionally only sources and destinations of dpaths
+can be listed, too.
 
 .TP
 .B RETRIEVE
-Retrieve the latest data paths available. In this mode
+Retrieve the latest dpaths available. In this mode
 .B dpath
-updates the local data paths with data available from the preconfigured
-repository.
+updates the local dpaths with data available from a preconfigured repository.
 
 .SH OPTIONS
 .TP
@@ -71,15 +70,14 @@ The options are as follows:
 
 .TP
 .BI "--create|-c " "[/path/to/files] "
-Create a new data path either in the user-provided path or - if no
-additional path is given - in the default data path directory in:
+Create a new dpath either in the user-provided path or - if no additional path
+is given - in the user dpaths directory in:
 
-.I $HOME/.gtransfer/dpaths/
+.I $HOME/.gtransfer/dpaths
 
 .TP
 .BI "--source|-s " "gsiftpSourceUrl"
-Set the source URL for the data path without any path portion at the
-end.
+Set the source URL for the dpath without any path portion at the end.
 
 Example:
 
@@ -87,8 +85,7 @@ Example:
 
 .TP
 .BI "--destination|-d " "gsiftpDestinationUrl"
-Set the destination URL for the data path without any path portion at the
-end.
+Set the destination URL for the dpath without any path portion at the end.
 
 Example:
 
@@ -98,8 +95,8 @@ Example:
 .BI "--alias|-a " "alias"
 Set the alias for the created data path.
 .B dpath
-will create a link named "alias" to the data path file which name is the
-SHA1 hash of the source destination combination.
+will create a link named "alias" to the dpath file which name is the SHA1 hash
+of the source destination combination.
 
 .B NOTICE: Naming of the aliases is not restricted, but one's encouraged to use
 .B something like the following:
@@ -121,18 +118,18 @@ following variables are expanded during dpath creation:
 
 .TP
 .BI "--batch-create|-b " "[/path/to/files]"
-Create data paths in batch mode either in the user-provided path or - if no
-additional path is given - in the default data path directory in:
+Create dpaths in batch mode either in the user-provided path or - if no
+additional path is given - in the user dpaths directory in:
 
-.I "$HOME/.gtransfer/dpaths"
+.I $HOME/.gtransfer/dpaths
 
 When used dpath will create dpaths for all possible connections between the
 hosts given in the hostsFile and omit connections between the same hosts.
 			
 .TP
 .BI "--hosts|-h " "hostsFile"
-Set the file name for the file containing the host addresses for which data
-paths should be created. The format of each line in this file is as follows:
+Set the file name for the file containing the host addresses for which dpaths
+should be created. The format of each line in this file is as follows:
 
 <PROTOCOL>://hostname.domain.tld:<PORT>
 
@@ -159,18 +156,18 @@ following variables are expanded during dpath creation:
 
 .TP
 .BI "--list|-l " "[/path/to/files] "  "[--verbose|-v]"
-List all data paths available in the user-provided path or - if no
-additional path is given - in the user and system data path directories.
+List all dpaths available in the user-provided path or - if no additional path
+is given - in the user and system dpaths directories.
 
 .TP
 .BI "--list-sources " "[/path/to/dataPaths]"
-List all sources from the data paths in the user provided path or - if no
-additional path is given - in the user and system data path directories.
+List all sources from the dpaths in the user provided path or - if no additional
+path is given - in the user and system dpaths directories.
 			
 .TP
 .BI "--list-destinations " "[/path/to/dataPaths]"
-List all destinations from the data paths in the user provided path or - if no
-additional path is given - in the user and system data path directories.
+List all destinations from the dpaths in the user provided path or - if no
+additional path is given - in the user and system dpaths directories.
 
 
 .TP
@@ -178,10 +175,10 @@ additional path is given - in the user and system data path directories.
 
 .TP
 .BI "--retrieve|-r " "[/path/to/files] " "[--quiet|-q]"
-Retrieve the latest data paths available on the preconfigured repository and
-store them in the user-provided path or - if no additional path is given
-- in the user data path directory. If a "--quiet|-q" is provided, then output is
-omitted and success/failure is only reported by the exit value. 
+Retrieve the latest dpaths available on the preconfigured repository and store
+them in the user-provided path or - if no additional path is given - in the user
+dpaths directory. If a "--quiet|-q" is provided, then output is omitted and
+success/failure is only reported by the exit value. 
 
 
 .TP
@@ -219,12 +216,12 @@ configuration file.
 
 .TP
 .I [...]/dpaths/
-This dir contains the system data paths usable by
+This dir contains the system dpaths usable by
 .BR "gtransfer" " and is configurable. Can be created with " "dpath" "."
 
 .TP
 .I $HOME/.gtransfer/dpaths/
-This dir contains the user data paths usable by
+This dir contains the user dpaths usable by
 .BR "gtransfer" ". Can be created with " "dpath" "."
 
 .TP
