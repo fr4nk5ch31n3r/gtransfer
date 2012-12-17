@@ -388,19 +388,20 @@ listDataPaths()
 
 	#echo "$@ - $dataPathsDir"
 	if [[ -e "$dataPathsDir" ]]; then
-		for dataPath in $(ls -1 $dataPathsDir); do
+		for dataPath in "$dataPathsDir"/*; do
 			#  don't show links or backups (containing a '~' at the end of
 			#+ the filename)
-			if [[ ! -L "$dataPathsDir/$dataPath" && \
-			      $( echo $dataPath | grep '~' 2>/dev/null ) == "" \
+			if [[ ! -L "$dataPath" && \
+			      "$dataPath" != *~ && \
+			      "$dataPath" != *index \
 			]]; then
-				source=$(xtractXMLAttributeValue "source" $dataPathsDir/$dataPath)
-				destination=$(xtractXMLAttributeValue "destination" $dataPathsDir/$dataPath)
+				source=$(xtractXMLAttributeValue "source" "$dataPath")
+				destination=$(xtractXMLAttributeValue "destination" "$dataPath")
 				if [[ $verboseExec == 0 ]]; then
-					hashValue="$(hashSourceDestination $source $destination): "
+					hashValue=$(hashSourceDestination $source $destination)
 				fi
 	
-				echo "${hashValue}$source => $destination"
+				echo "${hashValue}: ${source} => ${destination}"
 			fi
 		done
 	else
@@ -427,19 +428,19 @@ listSources()
 		if [[ -e "$dataPathsDir/$__GLOBAL__sourcesIndexFile" ]]; then
 			cat "$dataPathsDir/$__GLOBAL__sourcesIndexFile"
 		else
-			for dataPath in $(ls -1 $dataPathsDir); do
+			for dataPath in "$dataPathsDir"/*; do
 				#  don't show links or backups (containing a '~' at the end of
 				#+ the filename)
-				if [[ ! -L "$dataPathsDir/$dataPath" && \
-				      $( echo $dataPath | grep '~' 2>/dev/null ) == "" \
+				if [[ ! -L "$dataPath" && \
+				      "$dataPath" != *~ && \
+				      "$dataPath" != *index \
 				]]; then
-					source=$(xtractXMLAttributeValue "source" $dataPathsDir/$dataPath)
+					source=$(xtractXMLAttributeValue "source" "$dataPath")
 					#sourceAlias=$(xtractXMLAttributeValue "source-alias" $dataPathsDir/$dataPath)
-			
-					echo "$source"
+					echo "${source}"
 					#[[ ! -z "$sourceAlias" ]] && echo "$sourceAlias"
 				fi
-			done #| sort -u
+			done
 		fi
 	else
 		#echo "ERROR: \"$dataPathsDir\" not existing!"
@@ -465,19 +466,19 @@ listDestinations()
 		if [[ -e "$dataPathsDir/$__GLOBAL__destinationsIndexFile" ]]; then
 			cat "$dataPathsDir/$__GLOBAL__destinationsIndexFile"
 		else
-			for dataPath in $(ls -1 $dataPathsDir); do
+			for dataPath in "$dataPathsDir"/*; do
 				#  don't show links or backups (containing a '~' at the end of
 				#+ the filename)
-				if [[ ! -L "$dataPathsDir/$dataPath" && \
-				      $( echo $dataPath | grep '~' 2>/dev/null ) == "" \
+				if [[ ! -L "$dataPath" && \
+				      "$dataPath" != *~ && \
+				      "$dataPath" != *index \
 				]]; then
 					destination=$(xtractXMLAttributeValue "destination" $dataPathsDir/$dataPath)
 					#destinationAlias=$(xtractXMLAttributeValue "destination-alias" $dataPathsDir/$dataPath)
-			
 					echo "$destination"
 					#[[ ! -z "$destinationAlias" ]] && echo "$destinationAlias"
 				fi
-			done #| sort -u
+			done
 		fi
 	else
 		#echo "ERROR: \"$dataPathsDir\" not existing!"
