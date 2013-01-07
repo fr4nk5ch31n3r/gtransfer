@@ -1,39 +1,71 @@
-.TH GTRANSFER 1 "09 Dec 2012" "version 0.0.11" "User Commands"
+.TH GTRANSFER 1 "07 Jan 2013" "version 0.1.0" "User Commands"
 .SH NAME
 gtransfer \- The GridFTP transfer script
 
 .SH SYNOPSIS
 .B {gtransfer|gt}
-.BI "--source|-s " "sourceUrl"
-.BI "--destination|-d " "destinationUrl"
+.BI "[--source|-s " "sourceUrl" "]"
+.BI "[--destination|-d " "destinationUrl" "]"
+.BI "[--transfer-list|-f " "transferList" "]"
+.BI "[--auto-optimize|-o " "transferMode" "]"
+.BI "[--guc-max-retries " "gucMaxRetries" "]"
+.BI "[--gt-max-retries " "gtMaxRetries" "]"
+.BI "[--gt-progress-indicator " "indicatorCharacter" "]"
 .B [--verbose|-v] 
-.B [--metric|-m
-.IB dataPathMetric ]
-.B [--logfile|-l
-.IB logfile ]
+.BI "[--metric|-m " "dataPathMetric" "]"
+.BI "[--logfile|-l " "logfile" "]"
 .B [--auto-clean|-a]
-.B [--configfile
-.IB configurationFile ]
-.B [--
-.IB gsiftpParameters ]
+.BI "[--configfile " "configurationFile" "]"
+.BI "[-- " "gsiftpParameters" "]"
 
 .SH DESCRIPTION
 .B gtransfer
 is a wrapper script for
 .B tgftp
-that supports (GridFTP) transfers along predefined
-paths by using transit sites.  Additionally it supports usage of pre-optimized
-parameters for specific connections. Therefore this tool is also helpful for
-direct transfers.
+and provides an advanced interface for performing GridFTP transfers.
+
+.B gtransfer
+has the following features:
+
+.TP 10
+.B Multi-step data transfers
+It can transfer files along predefined paths by using transit sites and can
+therefore bridge different network domains.
+
+.TP
+.B Optimized data transfer performance
+It supports usage of pre-optimized data transfer parameters for specific
+connections. Therefore this tool is also helpful for single step transfers. In
+addition 
+.B gtransfer
+can also automatically optimize a data transfer depending on the size of the
+files.
+
+.TP
+.B Data transfer interruption and continuation
+It supports interruption and continuation of transfers. You can interrupt a
+transfer by hitting Ctrl+C. To continue an interrupted transfer simply issue the
+very same command, 
+.B gtransfer
+will then continue the transfer where it was interrupted. The same procedure
+works for a failed transfer.
+
+.TP
+.B Data transfer reliability
+It supports automatic retries of failed transfer steps. The number of retries is
+configurable.
+
+.TP
+.B Bash completion
+It makes use of bash completion to ease usage. This supports completion of
+options and URLs. URL completion also expands (remote) paths. Just hit the TAB
+key to see what's possible.
 
 .SH OPTIONS
-There's bash completion available for gtransfer. This supports completion of
-options and URLs. URL completion also expands (remote) paths. Just hit the <TAB>
-key to see what's possible.
 
 The options are as follows:
 .TP 10
-.BI "--source|-s " "sourceUrl"
+.BI "[--source|-s " "sourceUrl" "]"
 Set the source URL for the transfer.
 
 Possible URL examples:
@@ -45,7 +77,7 @@ Possible URL examples:
 "FQDN" is the fully qualified domain name.
 
 .TP
-.BI "--destination|-d " "destinationUrl"
+.BI "[--destination|-d " "destinationUrl" "]"
 Set the destination URL for the transfer.
 
 Possible URL examples:
@@ -57,12 +89,54 @@ Possible URL examples:
 "FQDN" is the fully qualified domain name.
 
 .TP
+.BI "[--transfer-list|-f " "transferList" "]"
+As alternative to providing source and destination URLs on the command line, one
+can also provide a list of source and destination URLs in a transfer list;
+gtransfer will then perform a
+.IR "list transfer" " instead of an " "URL transfer" " when using source and destination URLs."
+The format of each line of the transfer list file is as follows:
+
+<PROTOCOL>://source.domain.tld:<PORT>/path/to/file <PROTOCOL>://destination.domain.tld:<PORT>/path/to/file[/]
+
+All lines have to use the exact same source and destination host addresses (i.e.
+"gsiftp://host.domain.tld:2811")!
+
+.TP
+.BI "[--auto-optimize|-o " "transferMode" "]"
+This option activates an automatic optimization of transfers depending on the
+size of files to be transferred. If less than 100 files are going to be
+transferred, gtransfer will fall back to URL or list transfer depending on
+command line options. The
+.I transferMode
+controls how files of different size classes are transferred. Currently
+"seq[uential]" (different size classes are transferred sequentially) or
+"par[allel]" (different size classes are transferred in parallel) is possible.
+To define different file size classes use the file
+.IR "[...]/chunkConfig" "."
+See FILES section below for more details.
+
+.TP
+.BI "[--guc-max-retries " "gucMaxRetries" "]"
+This option sets the maximum number of retries globus-url-copy (guc) will do for
+a transfer of a single file. By default this is set to 1, which means that guc
+will tolerate at max. one transfer error per file and retry the transfer once.
+Alternatively this option can also be set through the environment variable
+"GUC_MAX_RETRIES".
+
+.TP
+.BI "[--gt-max-retries " "gtMaxRetries" "]"
+This option sets the maximum number of retries gt will do for a single transfer
+step. By default this is set to 3, which means that gt will try to finish a
+single transfer step three times or fail. Alternatively this option can also be
+set through the environment variable "GT_MAX_RETRIES".
+
+.TP
 .B [--verbose|-v]
 Be verbose.
 
 .TP
 .BI "[--metric|-m " "dataPathMetric" "]"
-Set the metric to select the corresponding data path.
+Set the metric to select the corresponding path of a data path.
 
 .TP
 .BI "[--logfile|-l " "logfile" "]"
@@ -86,7 +160,7 @@ Set the name of the configuration file for
 
 .IR "/etc/gtransfer/gtransfer.conf" " or"
 
-.IR "<INSTALL_PATH>/etc/gtransfer.conf" " or"
+.IR "<GTRANSFER_BASE_PATH>/etc/gtransfer.conf" " or"
 
 .IR "/etc/opt/gtransfer/gtransfer.conf" " or"
 
@@ -126,6 +200,32 @@ Prints out version information.
 The
 .B gtransfer
 configuration file.
+
+.TP
+.I  [...]/chunkConfig
+The chunk configuration file. In this file you can define the different file
+size classes for the auto-optimization. Practically the file is a table with
+three columns: MIN_SIZE_IN_MB, MAX_SIZE_IN_MB and GUC_PARAMETERS separated by
+a semicolon.
+
+Each line defines a size class. The value for MIN_SIZE_IN_MB is
+.B not
+included in the class. The value for MAX_SIZE_IN_MB is included in the class.
+Use the keyword "min" in the column MIN_SIZE_IN_MB to default to the size of the
+smallest file available in a transfer list. Files of this size will be included
+in this class then. Use the keyword "max" in the column MAX_SIZE_IN_MB to
+default to the size of the biggest file available in a transfer list.
+The third column (GUC_PARAMETERS) defines the transfer parameters to use for the
+specific file size class.
+
+Example:
+
+.nf
+#  MIN_SIZE_IN_MB;MAX_SIZE_IN_MB;GUC_PARAMETERS
+min;50;-pp -cc 16 -p 2 -tcp-bs 1M -cd
+50;250;-pp -cc 8 -p 4 -tcp-bs 1M -stripe -sbs 4M -cd
+250;max;-pp -p 8 -tcp-bs 2M -stripe -sbs 4M -cd
+.fi
 
 .TP
 .I [...]/dpaths/
