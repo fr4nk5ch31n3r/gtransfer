@@ -91,11 +91,11 @@ helperFunctions/getTransitSiteTempDir()
 	#
 	#  NOTICE:
 	#+ This contains no leading and no trailing "/"!
-	if [[ -e "$_transferId".transitSiteTempDir ]]; then
-		_transitSiteTempDir=$( cat "$_transferId".transitSiteTempDir )
+	if [[ -e "${__GLOBAL__gtTmpDir}/$_transferId".transitSiteTempDir ]]; then
+		_transitSiteTempDir=$( cat "${__GLOBAL__gtTmpDir}/$_transferId".transitSiteTempDir )
 	else
 		_transitSiteTempDir=$( mktemp -u "transitSiteTempDir.XXXXXXXX" )
-		echo "$_transitSiteTempDir" > "$_transferId".transitSiteTempDir
+		echo "$_transitSiteTempDir" > "${__GLOBAL__gtTmpDir}/$_transferId".transitSiteTempDir
 	fi
 	
 	echo "$_transitSiteTempDir"
@@ -474,7 +474,7 @@ helperFunctions/scanPort()
 
 	scanCommandPid="$!"
 
-	kill_after_timeout "$scanCommandPid" "$scanTimeout" &
+	helperFunctions/kill_after_timeout "$scanCommandPid" "$scanTimeout" &
 
 	wait $scanCommandPid &>/dev/null
 
@@ -568,7 +568,7 @@ helperFunctions/getFQDNFromURL()
 
         local _url="$1"
 
-        local _fqdn=$( getURLWithoutPath "$_url" | cut -d '/' -f 3 | cut -d ':' -f 1)
+        local _fqdn=$( helperFunctions/getURLWithoutPath "$_url" | cut -d '/' -f 3 | cut -d ':' -f 1)
 
         if [[ "$_fqdn" != "" ]]; then
                 echo "$_fqdn"
