@@ -5,7 +5,7 @@
 :<<COPYRIGHT
 
 Copyright (C) 2011 Frank Scheiner, HLRS, Universitaet Stuttgart
-Copyright (C) 2011, 2012 Frank Scheiner
+Copyright (C) 2011, 2012, 2013 Frank Scheiner
 
 The program is distributed under the terms of the GNU General Public License
 
@@ -100,6 +100,8 @@ usage: dpath [--help]
        dpath --list|-l [/path/to/files] [--verbose|-v] [--configfile configurationFile]
 
        dpath --retrieve|-r [/path/to/files] [--quiet|-q] [--configfile configurationFile]
+       
+       dpath --reindex [/path/to/files] [--verbose|-v] [--configfile configurationFile]
 
 --help gives more information
 
@@ -124,6 +126,8 @@ dpath --batch-create|-b [/path/to/files] --hosts|-h hostsFile [--dpath-template|
 dpath --list|-l [/path/to/files] [--verbose|-v] [--configfile configurationFile]
 
 dpath --retrieve|-r [/path/to/files] [--quiet|-q] [--configfile configurationFile]
+
+dpath --reindex [/path/to/files] [--verbose|-v] [--configfile configurationFile]
 
 DESCRIPTION:
 
@@ -239,6 +243,12 @@ The options are as follows:
 			additional path is given - in the user dpaths directory.
 			If a "--quiet|-q" is provided, then output is omitted
 			and success/failure is only reported by the exit value. 
+
+--------------------------------------------------------------------------------
+
+--reindex [/path/to/files] [--verbose|-v]
+			Reindex all dpaths in the user provided path or - if no
+			additional path is given - in the user dpaths directory.
 
 --------------------------------------------------------------------------------
 
@@ -761,11 +771,18 @@ while [[ "$1" != "" ]]; do
 			exit 1
 		fi
 		
-	#  "--reindex"
+	#  "--reindex [/path/to/dataPaths]"
 	elif [[ "$1" == "--reindex" ]]; then
 		if [[ $reindexSet != 0 ]]; then
 			shift 1
-			reindex=0
+			#  path provided?		
+			if [[ "${1:0:1}" != "-" && "$1" != "" ]]; then
+				#  yes
+				dataPathsDir="$1"
+				shift 1
+			else
+				dataPathsDir=""
+			fi
 			reindexSet=0
 		else
 			#  duplicate usage of this parameter

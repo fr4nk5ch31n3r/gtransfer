@@ -1,4 +1,4 @@
-.TH DPATH 1 "09 Dec 2012" "version 0.1.0" "User Commands"
+.TH DPATH 1 "17 Jan 2013" "version 0.1.0" "User Commands"
 .SH NAME
 dpath \- The dpath helper script
 
@@ -24,8 +24,11 @@ dpath \- The dpath helper script
 
 .B dpath
 .BI "--retrieve|-r " "[/path/to/files] " "[--verbose|-v]"
-.B [--configfile
-.IB configurationFile ]
+.BI "[--configfile " "configurationFile" "]"
+
+.B dpath
+.BI "--reindex " "[/path/to/files] " "[--verbose|-v]"
+.BI "[--configfile " "configurationFile" "]"
 
 .SH DESCRIPTION
 .B dpath
@@ -60,6 +63,12 @@ can be listed, too.
 Retrieve the latest dpaths available. In this mode
 .B dpath
 updates the local dpaths with data available from a preconfigured repository.
+
+.TP
+.B REINDEX
+Reindex all dpaths. In this mode
+.B dpath 
+updates the sources and destinations index files.
 
 .SH OPTIONS
 .TP
@@ -179,6 +188,15 @@ Retrieve the latest dpaths available on the preconfigured repository and store
 them in the user-provided path or - if no additional path is given - in the user
 dpaths directory. If a "--quiet|-q" is provided, then output is omitted and
 success/failure is only reported by the exit value. 
+
+
+.TP
+.B REINDEX Mode:
+
+.TP
+.BI "--reindex " "[/path/to/files]"
+Reindex all dpaths in the user provided path or - if no additional path is
+given - in the user dpaths directory.
 
 
 .TP
