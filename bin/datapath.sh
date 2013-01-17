@@ -74,6 +74,17 @@ dpathConfigurationFile="$gtransferConfigurationFilesPath/dpath.conf"
 
 __GLOBAL__sourcesIndexFile="sources.index"
 __GLOBAL__destinationsIndexFile="destinations.index"
+__GLOBAL__requiredTools=( cat 
+                          sha1sum 
+                          cut 
+                          mkdir 
+                          touch 
+                          ln 
+                          grep 
+                          sed 
+                          tar 
+                          globus-url-copy 
+                          sort )
 
 #USAGE##########################################################################
 usageMsg()
@@ -398,10 +409,10 @@ listDataPaths()
 				source=$(xtractXMLAttributeValue "source" "$dataPath")
 				destination=$(xtractXMLAttributeValue "destination" "$dataPath")
 				if [[ $verboseExec == 0 ]]; then
-					hashValue=$(hashSourceDestination $source $destination)
+					hashValue="$(hashSourceDestination $source $destination): "
 				fi
 	
-				echo "${hashValue}: ${source} => ${destination}"
+				echo "${hashValue}${source} => ${destination}"
 			fi
 		done
 	else
@@ -411,6 +422,7 @@ listDataPaths()
 
 	return
 }
+
 
 listSources()
 {
@@ -449,6 +461,7 @@ listSources()
 
 	return
 }
+
 
 listDestinations()
 {
@@ -543,10 +556,12 @@ retrieveDataPaths()
 
 	if [[ verboseExec -eq 1 ]]; then
 		#  make wget quiet
-		wgetVerbose="-q"
+		#wgetVerbose="-q"
+		gucVerbose=""
 	elif [[ verboseExec -eq 0 ]]; then
 		#  make wget and tar verbose
-		wgetVerbose="-v"
+		#wgetVerbose="-v"
+		gucVerbose="-v"
 		tarVerbose="-v"
 	fi
 
@@ -559,8 +574,15 @@ retrieveDataPaths()
 	fi
 
 	#  retrieve data paths to data paths dir
+	#cd "$dataPathsDir" && \
+	#wget $wgetVerbose "$dataPathsUrl" && \
+	#tar $tarVerbose -xzf "$dataPathsUrlPkg" && \
+	#rm "$dataPathsUrlPkg"
+	
+	export GLOBUS_FTP_CLIENT_SOURCE_PASV=1
+	
 	cd "$dataPathsDir" && \
-	wget $wgetVerbose "$dataPathsUrl" && \
+	globus-url-copy $gucVerbose "$dataPathsUrl" "file://$PWD/" && \
 	tar $tarVerbose -xzf "$dataPathsUrlPkg" && \
 	rm "$dataPathsUrlPkg"
 	
@@ -585,7 +607,7 @@ use()
 
 	for tool in $tools; do
 		#echo "$tool"
-		if ! which $tool &>/dev/null; then
+		if ! hash $tool &>/dev/null; then
 			requiredToolNotAvailable=0
 			echo "ERROR: Required tool \"$tool\" can not be found!"
 		fi
@@ -596,7 +618,73 @@ use()
 	fi
 }
 
+
+reindexDataPaths()
+{
+	#  list available data paths
+	#
+	#  usage:
+	#+ reindexDataPaths [-v] dataPathsDir
+
+	local dataPathsDir=""
+
+	local source=""
+	local destination=""
+	local hashValue=""
+
+	if [[ "$1" == "-v" ]]; then
+		verboseExec=0
+		#echo "shifting"
+		shift 1
+	fi
+
+	#echo "$1"
+
+	if [[ "$1" != "-v" && "$1" != "--verbose" && "$1" != "" ]]; then
+		dataPathsDir="$1"
+	fi
+
+	#echo "$@ - $dataPathsDir"
+	if [[ -e "$dataPathsDir" ]]; then
+		for dataPath in "$dataPathsDir"/*; do
+			#  don't show links or backups (containing a '~' at the end of
+			#+ the filename)
+			if [[ ! -L "$dataPath" && \
+			      "$dataPath" != *~ && \
+			      "$dataPath" != *.index* \
+			]]; then
+				source=$(xtractXMLAttributeValue "source" "$dataPath")
+				destination=$(xtractXMLAttributeValue "destination" "$dataPath")
+				if [[ $verboseExec == 0 ]]; then
+					hashValue="$(hashSourceDestination $source $destination): "
+				fi
+	
+				echo "${hashValue}${source} => ${destination}"
+				
+				echo "${source}" >> "$dataPathsDir/${__GLOBAL__sourcesIndexFile}.#dpath#tmp#"
+				echo "${destination}" >> "$dataPathsDir/${__GLOBAL__destinationsIndexFile}.#dpath#tmp#"
+			fi
+		done
+	else
+		echo "\"$dataPathsDir\" not existing!"
+		return 1
+	fi
+
+	sort -u "$dataPathsDir/${__GLOBAL__sourcesIndexFile}.#dpath#tmp#" > "$dataPathsDir/${__GLOBAL__sourcesIndexFile}"
+	sort -u "$dataPathsDir/${__GLOBAL__destinationsIndexFile}.#dpath#tmp#" > "$dataPathsDir/${__GLOBAL__destinationsIndexFile}"
+	rm -f "$dataPathsDir/${__GLOBAL__sourcesIndexFile}.#dpath#tmp#" \
+	      "$dataPathsDir/${__GLOBAL__destinationsIndexFile}.#dpath#tmp#"
+	      
+	return
+}
+
+
 #MAIN###########################################################################
+
+#  test if all required tools are available
+if ! use "${__GLOBAL__requiredTools[@]}"; then
+	exit 1
+fi
 
 #  correct number of params?
 if [[ "$#" -lt "1" ]]; then
@@ -628,6 +716,7 @@ while [[ "$1" != "" ]]; do
 		"$1" != "--batch-create" && "$1" != "-b" && \
 		"$1" != "--hosts" && "$1" != "-h" && \
 		"$1" != "--dpath-template" && "$1" != "-t" && \
+		"$1" != "--reindex" && \
 		"$1" != "--configfile" \
 	]]; then
 		#  no, so output a usage message
@@ -669,6 +758,18 @@ while [[ "$1" != "" ]]; do
 		else
 			#  duplicate usage of this parameter
 			echo "ERROR: The parameter \"--quiet|-q\" cannot be used multiple times!"
+			exit 1
+		fi
+		
+	#  "--reindex"
+	elif [[ "$1" == "--reindex" ]]; then
+		if [[ $reindexSet != 0 ]]; then
+			shift 1
+			reindex=0
+			reindexSet=0
+		else
+			#  duplicate usage of this parameter
+			echo "ERROR: The parameter \"--reindex\" cannot be used multiple times!"
 			exit 1
 		fi
 
@@ -876,11 +977,24 @@ else
 	exit 1
 fi
 
-
 #  HELP
 if [[ "$helpMsgSet" == "0" ]]; then
 	helpMsg
 	exit 0
+
+#  REINDEX mode
+elif [[ "$reindexSet" == "0" ]]; then
+	if [[ "$dataPathsDir" == "" ]]; then
+		dataPathsDir="$defaultDataPathsDir"
+	fi
+	
+	if [[ "$verboseExecSet" == "0" ]]; then
+		reindexDataPaths -v "$dataPathsDir"
+	else
+		reindexDataPaths "$dataPathsDir"
+	fi
+	
+	exit
 
 #  BATCH CREATE mode
 elif [[ "$batchCreateDataPathsSet" == "0" ]]; then
@@ -1001,9 +1115,7 @@ elif [[ "$listDataPathsSet" == "0" ]]; then
 		else
 			listDataPaths "$dataPathsDir"
 		fi	
-	fi
-	
-	
+	fi	
 
 	exit $?
 
@@ -1037,7 +1149,7 @@ elif [[ "$listDestinationsSet" == "0" ]]; then
 elif [[ "$retrieveDataPathsSet" == "0" ]]; then
 
 	if ! use wget tar; then
-		echo "ERROR: Cannot run without required tools (wget, tar)! Exiting now!"
+		#echo "ERROR: Cannot run without required tools (wget, tar)! Exiting now!"
 		exit 1
 	fi
 
