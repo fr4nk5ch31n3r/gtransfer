@@ -5,7 +5,7 @@
 :<<COPYRIGHT
 
 Copyright (C) 2011 Frank Scheiner, HLRS, Universitaet Stuttgart
-Copyright (C) 2011, 2012 Frank Scheiner
+Copyright (C) 2011, 2012, 2013 Frank Scheiner
 
 The program is distributed under the terms of the GNU General Public License
 
@@ -421,10 +421,12 @@ retrieveDParams()
 
 	if [[ verboseExec -eq 1 ]]; then
 		#  make wget quiet
-		wgetVerbose="-q"
+		#wgetVerbose="-q"
+		gucVerbos=""
 	elif [[ verboseExec -eq 0 ]]; then
 		#  make wget and tar verbose
-		wgetVerbose="-v"
+		#wgetVerbose="-v"
+		gucVerbose="-v"
 		tarVerbose="-v"
 	fi
 
@@ -437,8 +439,15 @@ retrieveDParams()
 	fi
 
 	#  retrieve data paths to data paths dir
+	#cd "$dParamsDir" && \
+	#wget $wgetVerbose "$dParamsUrl" && \
+	#tar $tarVerbose -xzf "$dParamsUrlPkg" && \
+	#rm "$dParamsUrlPkg"
+	
+	export GLOBUS_FTP_CLIENT_SOURCE_PASV=1
+	
 	cd "$dParamsDir" && \
-	wget $wgetVerbose "$dParamsUrl" && \
+	globus-url-copy "$gucVerbose" "$dParamsUrl" "file://$PWD/" && \
 	tar $tarVerbose -xzf "$dParamsUrlPkg" && \
 	rm "$dParamsUrlPkg"
 	
