@@ -592,7 +592,7 @@ retrieveDataPaths()
 	export GLOBUS_FTP_CLIENT_SOURCE_PASV=1
 	
 	cd "$dataPathsDir" && \
-	globus-url-copy $gucVerbose "$dataPathsUrl" "file://$PWD/" && \
+	globus-url-copy "$gucVerbose" "$dataPathsUrl" "file://$PWD/" && \
 	tar $tarVerbose -xzf "$dataPathsUrlPkg" && \
 	rm "$dataPathsUrlPkg"
 	
