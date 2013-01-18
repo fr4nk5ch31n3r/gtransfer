@@ -1,15 +1,168 @@
-2011-12-17  Frank Scheiner  <frank.scheiner@web.de>
+2013-01-18  Frank Scheiner  <frank.scheiner@web.de>
 
-*0.0.7b (gtransfer)
-*0.0.4b (dparam)
-*0.0.4c (dpath)
+gtransfer dist 0.1.0:
 
-all:
-Enhanced builtin support for configuration files. The scripts now search for the
-configuration files in three different locations:
-- "/opt/gtransfer/etc/" (default for system install)
-- "/etc/opt/gtransfer/"
-- "$HOME/.gtransfer/" (default for user install)
+*0.1.0 (gtransfer):
+Merged dev version into master version of gtransfer. This added the following
+functionality:
+- Support for bash libraries, specific functionality is now contained in
+  libraries.
+- Support for list transfers.
+- Support for configurable auto-optimization depending on the file size.
+- Support for reliabilty (incl. configurable number of retries).
+- Support for interruptible and continuable transfers.
+- Temporary files created during a transfer are now located below
+  "$HOME/.gtransfer/tmp/<SHA1_HASH_OF_COMMAND_LINE>/".
+  
+*0.1.0 (dpath):
+Now supports dpath retrieval via globus-url-copy which allows to use "http://",
+"https://", "gsiftp://" and "file://" URLs. Also integrated a reindexing
+functionality to allow to use already existing dpaths and updating the indices
+with sources and destinations from those dpaths.
+
+*0.1.0 (dparam):
+Now also supports dpath retrieval via globus-url-copy which allows to use
+"http://", "https://", "gsiftp://" and "file://" URLs.
+
+2012-11-19  Frank Scheiner  <frank.scheiner@web.de>
+
+gtransfer dist 0.0.10a:
+
+*0.0.10a (gtransfer):
+Corrected a call to the usageMsg() function that still used the old function
+name.
+
+2012-11-14  Frank Scheiner  <frank.scheiner@web.de>
+
+gtransfer dist 0.0.10:
+
+*0.0.10 (gtransfer):
+The connection check functionality (done prior to a transfer) can now be
+deactivated from the config file. In addition the timeout used for the
+connection check is now also configurable from the config file. The v0.0.10
+connection check functionality behaves like in pre-v0.0.10 versions when a
+pre-v0.0.10 config file is used.
+
+*0.0.6 (dpath):
+dpath now supports to create all possible dpaths between host addresses given
+in a file (BATCH CREATE mode). It now can also use a specific dpath template in
+CREATE and BATCH CREATE mode. In addition the list sources/destinations
+functionality now can also use index files for sources (sources.index) and
+destinations (destinations.index). This decreases response time of the remote
+host completion of gtransfer considerably when many dpaths are available. The
+index files are automatically created and updated during dpath creation.
+
+(installer):
+The installer script was reworked and now does not create links with absolute
+paths for a system install. In addition the INSTALL document was renamed and
+reformatted to Markdown syntax.
+
+2012-11-03  Frank Scheiner  <frank.scheiner@web.de>
+
+gtransfer dist v0.0.9c:
+
+Renamed modulefiles to generic names. Version strings inside of the modulefiles
+are now configurable by the tarball build script (not part of the repo!). Names
+of modulefiles are now also automatically renamed to the current dist version
+when building tarballs.
+
+Installer script adapted (included new name for README.md and bash completion
+file).
+
+Some rework on manual pages (consistency, config file search order, etc.).
+
+2012-10-03  Frank Scheiner  <frank.scheiner@web.de>
+
+gtransfer dist v0.0.9b:
+
+*0.0.9b (gtransfer):
+Hotfix for a serious bug. Due to an unmodified call to an internal function,
+which got a new interface in v0.0.8, v0.0.8 to v0.0.9a versions remove the
+source directory after transferring the data (in a single step transfer) to the
+destination directory if no dpath exists for the current source destination
+combination. This is now fixed.
+
+2012-10-03  Frank Scheiner  <frank.scheiner@web.de>
+
+gtransfer dist v0.0.9a:
+
+*0.0.9a (gtransfer), 0.0.5b (dpath), 0.0.5a (dparam)
+Added "/etc/gtransfer" search path for gtransfer configuration files to support
+native OS packages. Removed non-standard "/opt/gtransfer/etc" search path
+(although the FHS 2.3 is not fully clear on this). Adapted installer script and
+tools to automatically add a config file search path for the gtransfer
+installation dir structure. Updated man pages. Filename globbing is deactivated
+inside of gtransfer.
+
+2012-05-15  Frank Scheiner  <frank.scheiner@web.de>
+
+gtransfer distribution v0.0.9:
+
+*0.0.9 (gtransfer)
+Added a workaround for a uberftp "anomaly". Two or more subsequent calls to
+uberftp don't work if the time frame in between is too short. The second call to
+uberftp then fails and emits "Failed to connect to <IP_ADDRESS> port
+<PORT_NUMBER>: Cannot assign requested address". The current workaround should
+work for multi-step transfers that are not too short. If they're too short, the
+post-command that removes the transit directory might be executed too early
+after the pre-command that creates the transit directory and chmods it to 0700
+was executed.
+
+2012-05-11  Frank Scheiner  <frank.scheiner@web.de>
+
+gtransfer distribution v0.0.8:
+
+*0.0.8 (gtransfer)
+Added workaround for guc limitation. guc creates dirs with group and world r-x
+permissions set. Because of this, temp dirs on transit sites were readable by
+others than the owner during a transfer from source to transit site, transit
+site to transit site and transit site to destination site.
+The workaround now uses a tgftp pre-command to create the dir and then make it
+only accessible by the owner (chmod 0700). This is done with two calls to
+uberftp in the cases described above.
+
+!IMPORTANT!
+Additionally internal logic changes were introduced, that require a change in
+the gtransfer configuration file. "verboseExec" is now activated when set to "1"
+instead of "0". PLEASE CHANGE THIS IN YOUR CONF FILES!
+
+2012-03-15  Frank Scheiner  <frank.scheiner@web.de>
+
+gtransfer distribution v0.0.7e:
+
+Added PDF versions of the manual pages to the repo.
+
+*0.0.7d (gtransfer)
+Corrected a bug in the getPathFromURL() function that showed wrong behaviour for
+URLs with files in the root directory ("/"). Example:
+
+gsiftp://host.domain:2811/file.txt
+
+This was parsed as follows:
+
+protocol spec: gsiftp://
+URL without path: gsiftp://host.domain:2811
+path: "" (!) (=> should be "/")
+file: file.txt
+
+Thanks to Giacomo Mariani (CINECA) for detecting this bug.
+
+2012-02-03 Frank Scheiner <frank.scheiner@web.de>
+
+gtransfer distribution v0.0.7d:
+Introduced own version number for gtransfer distribution. The version number of
+the dist. is no longer determined by gtransfer itself, as updates to dpath and
+dparam would not justify a new version number for gtransfer.
+
+2012-01-19  Frank Scheiner  <frank.scheiner@web.de>
+
+*0.0.5a (dpath)
+Corrected a wrong function call. The function name was still using the old
+nomenclature.
+
+2012-01-09  Frank Scheiner  <frank.scheiner@web.de>
+
+Minor changes in man pages and modulefile.
 
 2011-12-18  Frank Scheiner <frank.scheiner@web.de>
 
@@ -41,144 +194,16 @@ output and manpage.
 Dparam now supports listing dparams for both system and user dirs. Adapted help
 output and manpage.
 
-2012-01-09  Frank Scheiner  <frank.scheiner@web.de>
+2011-12-17  Frank Scheiner  <frank.scheiner@web.de>
 
-Minor changes in man pages and modulefile.
+*0.0.7b (gtransfer)
+*0.0.4b (dparam)
+*0.0.4c (dpath)
 
-2012-01-19  Frank Scheiner  <frank.scheiner@web.de>
-
-*0.0.5a (dpath)
-Corrected a wrong function call. The function name was still using the old
-nomenclature.
-
-2012-02-03 Frank Scheiner <frank.scheiner@web.de>
-
-gtransfer distribution v0.0.7d:
-Introduced own version number for gtransfer distribution. The version number of
-the dist. is no longer determined by gtransfer itself, as updates to dpath and
-dparam would not justify a new version number for gtransfer.
-
-2012-03-15  Frank Scheiner  <frank.scheiner@web.de>
-
-gtransfer distribution v0.0.7e:
-
-Added PDF versions of the manual pages to the repo.
-
-*0.0.7d (gtransfer)
-Corrected a bug in the getPathFromURL() function that showed wrong behaviour for
-URLs with files in the root directory ("/"). Example:
-
-gsiftp://host.domain:2811/file.txt
-
-This was parsed as follows:
-
-protocol spec: gsiftp://
-URL without path: gsiftp://host.domain:2811
-path: "" (!) (=> should be "/")
-file: file.txt
-
-Thanks to Giacomo Mariani (CINECA) for detecting this bug.
-
-2012-05-11  Frank Scheiner  <frank.scheiner@web.de>
-
-gtransfer distribution v0.0.8:
-
-*0.0.8 (gtransfer)
-Added workaround for guc limitation. guc creates dirs with group and world r-x
-permissions set. Because of this, temp dirs on transit sites were readable by
-others than the owner during a transfer from source to transit site, transit
-site to transit site and transit site to destination site.
-The workaround now uses a tgftp pre-command to create the dir and then make it
-only accessible by the owner (chmod 0700). This is done with two calls to
-uberftp in the cases described above.
-
-!IMPORTANT!
-Additionally internal logic changes were introduced, that require a change in
-the gtransfer configuration file. "verboseExec" is now activated when set to "1"
-instead of "0". PLEASE CHANGE THIS IN YOUR CONF FILES!
-
-
-2012-05-15  Frank Scheiner  <frank.scheiner@web.de>
-
-gtransfer distribution v0.0.9:
-
-*0.0.9 (gtransfer)
-Added a workaround for a uberftp "anomaly". Two or more subsequent calls to
-uberftp don't work if the time frame in between is too short. The second call to
-uberftp then fails and emits "Failed to connect to <IP_ADDRESS> port
-<PORT_NUMBER>: Cannot assign requested address". The current workaround should
-work for multi-step transfers that are not too short. If they're too short, the
-post-command that removes the transit directory might be executed too early
-after the pre-command that creates the transit directory and chmods it to 0700
-was executed.
-
-2012-10-03  Frank Scheiner  <frank.scheiner@web.de>
-
-gtransfer dist v0.0.9a:
-
-*0.0.9a (gtransfer), 0.0.5b (dpath), 0.0.5a (dparam)
-Added "/etc/gtransfer" search path for gtransfer configuration files to support
-native OS packages. Removed non-standard "/opt/gtransfer/etc" search path
-(although the FHS 2.3 is not fully clear on this). Adapted installer script and
-tools to automatically add a config file search path for the gtransfer
-installation dir structure. Updated man pages. Filename globbing is deactivated
-inside of gtransfer.
-
-2012-10-03  Frank Scheiner  <frank.scheiner@web.de>
-
-gtransfer dist v0.0.9b:
-
-*0.0.9b (gtransfer):
-Hotfix for a serious bug. Due to an unmodified call to an internal function,
-which got a new interface in v0.0.8, v0.0.8 to v0.0.9a versions remove the
-source directory after transferring the data (in a single step transfer) to the
-destination directory if no dpath exists for the current source destination
-combination. This is now fixed.
-
-2012-11-03  Frank Scheiner  <frank.scheiner@web.de>
-
-gtransfer dist v0.0.9c:
-
-Renamed modulefiles to generic names. Version strings inside of the modulefiles
-are now configurable by the tarball build script (not part of the repo!). Names
-of modulefiles are now also automatically renamed to the current dist version
-when building tarballs.
-
-Installer script adapted (included new name for README.md and bash completion
-file).
-
-Some rework on manual pages (consistency, config file search order, etc.).
-
-2012-11-14  Frank Scheiner  <frank.scheiner@web.de>
-
-gtransfer dist 0.0.10:
-
-*0.0.10 (gtransfer):
-The connection check functionality (done prior to a transfer) can now be
-deactivated from the config file. In addition the timeout used for the
-connection check is now also configurable from the config file. The v0.0.10
-connection check functionality behaves like in pre-v0.0.10 versions when a
-pre-v0.0.10 config file is used.
-
-*0.0.6 (dpath):
-dpath now supports to create all possible dpaths between host addresses given
-in a file (BATCH CREATE mode). It now can also use a specific dpath template in
-CREATE and BATCH CREATE mode. In addition the list sources/destinations
-functionality now can also use index files for sources (sources.index) and
-destinations (destinations.index). This decreases response time of the remote
-host completion of gtransfer considerably when many dpaths are available. The
-index files are automatically created and updated during dpath creation.
-
-(installer):
-The installer script was reworked and now does not create links with absolute
-paths for a system install. In addition the INSTALL document was renamed and
-reformatted to Markdown syntax.
-
-2012-11-19  Frank Scheiner  <frank.scheiner@web.de>
-
-gtransfer dist 0.0.10a:
-
-*0.0.10a (gtransfer):
-Corrected a call to the usageMsg() function that still used the old function
-name.
+all:
+Enhanced builtin support for configuration files. The scripts now search for the
+configuration files in three different locations:
+- "/opt/gtransfer/etc/" (default for system install)
+- "/etc/opt/gtransfer/"
+- "$HOME/.gtransfer/" (default for user install)
 
