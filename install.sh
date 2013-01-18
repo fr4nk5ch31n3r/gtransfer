@@ -37,6 +37,8 @@ if [[ "$(basename $0)" == "install.sh" ]]; then
 	mkdir -p "$docDir" &>/dev/null
 	mkdir -p "$manDir/man1" &>/dev/null
 	mkdir -p "$etcDir" &>/dev/null
+	mkdir -p "$etcDir/dpaths" &>/dev/null
+	mkdir -p "$etcDir/dparams" &>/dev/null
 	mkdir -p "$libDir" &>/dev/null
 
 	#  copy configuration files (also copy bash completion file)
