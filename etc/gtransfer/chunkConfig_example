@@ -1,5 +1,5 @@
 #  MIN_SIZE_IN_MB;MAX_SIZE_IN_MB;GUC_PARAMETERS
-min;50;-pp -cc 16 -p 2 -tcp-bs 1M -cd
-50;250;-pp -cc 8 -p 4 -tcp-bs 1M -stripe -sbs 4M -cd
-250;max;-pp -p 8 -tcp-bs 2M -stripe -sbs 4M -cd
+min;50;-cc 16 -tcp-bs 4M -cd -stripe -sbs 4M
+50;250;-cc 8 -tcp-bs 8M -stripe -sbs 4M -cd
+250;max;-cc 6 -p 4 -tcp-bs 8M -stripe -sbs 8M -g2 -cd
 
