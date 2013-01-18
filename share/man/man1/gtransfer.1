@@ -1,4 +1,4 @@
-.TH GTRANSFER 1 "07 Jan 2013" "version 0.1.0" "User Commands"
+.TH GTRANSFER 1 "18 Jan 2013" "version 0.1.0" "User Commands"
 .SH NAME
 gtransfer \- The GridFTP transfer script
 
@@ -96,7 +96,7 @@ gtransfer will then perform a
 .IR "list transfer" " instead of an " "URL transfer" " when using source and destination URLs."
 The format of each line of the transfer list file is as follows:
 
-<PROTOCOL>://source.domain.tld:<PORT>/path/to/file <PROTOCOL>://destination.domain.tld:<PORT>/path/to/file[/]
+"<PROTOCOL>://source.domain.tld:<PORT>/path/to/file" "<PROTOCOL>://destination.domain.tld:<PORT>/path/to/file[/]"
 
 All lines have to use the exact same source and destination host addresses (i.e.
 "gsiftp://host.domain.tld:2811")!
@@ -109,8 +109,7 @@ transferred, gtransfer will fall back to URL or list transfer depending on
 command line options. The
 .I transferMode
 controls how files of different size classes are transferred. Currently
-"seq[uential]" (different size classes are transferred sequentially) or
-"par[allel]" (different size classes are transferred in parallel) is possible.
+"seq[uential]" (different size classes are transferred sequentially) is possible.
 To define different file size classes use the file
 .IR "[...]/chunkConfig" "."
 See FILES section below for more details.
@@ -222,9 +221,9 @@ Example:
 
 .nf
 #  MIN_SIZE_IN_MB;MAX_SIZE_IN_MB;GUC_PARAMETERS
-min;50;-pp -cc 16 -p 2 -tcp-bs 1M -cd
-50;250;-pp -cc 8 -p 4 -tcp-bs 1M -stripe -sbs 4M -cd
-250;max;-pp -p 8 -tcp-bs 2M -stripe -sbs 4M -cd
+min;50;-cc 16 -tcp-bs 4M -stripe -sbs 4M -cd
+50;250;-cc 8 -tcp-bs 8M -stripe -sbs 4M -cd
+250;max;-cc 6 -p 4 -tcp-bs 8M -stripe -sbs 8M -g2 -cd
 .fi
 
 .TP
