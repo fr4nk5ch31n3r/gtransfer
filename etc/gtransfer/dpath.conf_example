@@ -1,18 +1,30 @@
 #  dpath configuration file
 
-#  Please comment or remove the following lines after adapting this file to your
-#+ local environment
-echo "ERROR: Please adapt the dpath configuration ($dpathConfigurationFile) file to your local environment first!" 1>&2
-exit 1
+#  If needed please adapt this file to your local environment
 
 #  System dpaths dir
-systemDataPathsDir="/opt/gtransfer/etc/dpaths"
+#  try to use the already configured path to the configuration files
+if [[ -e "$gtransferConfigurationFilesPath" ]]; then
+	systemDataPathsDir="${gtransferConfigurationFilesPath}/dpaths"
+#  If the dpaths are located elsewhere locally, please configure the next two
+#+ lines	
+#else
+#	systemDataPathsDir=<PATH_TO_DPATHS>
+fi
 
 #  User dpaths dir (shouldn't be changed!)
 defaultDataPathsDir="$HOME/.gtransfer/dpaths"
 
-#  URL of dpaths package
-dataPathsUrl="http://<DPATH_REPO>/dpaths.tar.gz"
+#  URL of dpaths package for retrieval
+#  This can be any valid globus-url-copy URL, e.g.:
+#
+#  For remote repos:
+#  * "http[s]://host.domain.tld[:{80|443}]/path/to/dpaths.tar.gz"
+#  * "gsiftp://host.domain.tld[:2811]/path/to/dpaths.tar.gz"
+#
+#  For a local repo:
+#  * "file:///path/to/dpaths.tar.gz"
+dataPathsUrl="<DPATH_REPO>/dpaths.tar.gz"
 
 #  Determine package name
 dataPathsUrlPkg="$( basename "$dataPathsUrl" )"

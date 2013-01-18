@@ -1,9 +1,6 @@
 #  gtransfer configuration file
 
-#  Please comment or remove the following lines after adapting this file to your
-#+ local environment
-echo "ERROR: Please adapt the gtransfer configuration ($gtransferConfigurationFile) file to your local environment first!" 1>&2
-exit 1
+#  If needed please adapt this file to your local environment
 
 ################################################################################
 #  tgftp specific configuration:
@@ -26,33 +23,29 @@ defaultTgftpLogfileName="tgftp_transfer_$$.log"
 #  gtransfer specific configuration
 ################################################################################
 #  NOTICE:
-#+ The default dpaths/dparams directories are preferred over the system's
-#+ dpaths/dparams directories. If there exists a dpath/dparam for a specific
-#+ source destination combination in both system's and default dpaths/dparams
-#+ dirs, the dpath/dparam in the default dpaths/dparams dirs is preferred.
+#+ The user dpaths/dparams directories are preferred over the system's
+#+ dpaths/dparams directories.
 
-#  gtransfer system dpaths directory
-if [[ -e "/opt/gtransfer/etc/dpaths" ]]; then
-	gtransferSystemDataPathDirectory="/opt/gtransfer/etc/dpaths"
-elif [[ -e "/etc/opt/gtransfer/dpaths" ]]; then
-	gtransferSystemDataPathDirectory="/etc/opt/gtransfer/dpaths"
+#  gtransfer system dpaths and dparams directories
+#  try to use the already configured path to the configuration files
+if [[ -e "$gtransferConfigurationFilesPath" ]]; then
+	gtransferSystemDataPathDirectory="${gtransferConfigurationFilesPath}/dpaths"
+	gtransferSystemDefaultParamsDirectory="${gtransferConfigurationFilesPath}/dparams"
+#  If the dpaths are located elsewhere locally, please configure the next three
+#+ lines	
+#else
+#	gtransferSystemDataPathDirectory=<PATH_TO_DPATHS>
+#	gtransferSystemDefaultParamsDirectory=<PATH_TO_DPARAMS>
 fi
 
-#  gtransfer system dparams directory
-if [[ -e "/opt/gtransfer/etc/dparams" ]]; then
-	gtransferSystemDefaultParamsDirectory="/opt/gtransfer/etc/dparams"
-elif [[ -e "/etc/opt/gtransfer/dparams" ]]; then
-	gtransferSystemDefaultParamsDirectory="/etc/opt/gtransfer/dparams"
-fi
-
-#  gtransfer default dpaths directory
+#  gtransfer user dpaths directory
 gtransferDataPathDirectory="$HOME/.gtransfer/dpaths"
 
-#  gtransfer default dparams directory
+#  gtransfer user dparams directory
 gtransferDefaultParamsDirectory="$HOME/.gtransfer/dparams"
 
 #  default parameters to use for guc (if dparam is unavailable)
-gsiftpDefaultParams="-tcp-bs 4M -p 4 -cd"
+gsiftpDefaultParams="-cc 2 -tcp-bs 4M -p 2 -cd"
 
 #  default path to use ("0" is the lowest metric and therefore the fastest path)
 defaultDataPathMetric=0

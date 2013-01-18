@@ -1,18 +1,30 @@
 #  dparam configuration file
 
-#  Please comment or remove the following lines after adapting this file to your
-#+ local environment
-echo "ERROR: Please adapt the dparam configuration ($dparamConfigurationFile) file to your local environment first!" 1>&2
-exit 1
+#  If needed please adapt this file to your local environment
 
 #  System dparams dir
-systemDParamsDir="/opt/gtransfer/etc/dparams"
+#  try to use the already configured path to the configuration files
+if [[ -e "$gtransferConfigurationFilesPath" ]]; then
+	systemDParamsDir="${gtransferConfigurationFilesPath}/dparams"
+#  If the dpaths are located elsewhere locally, please configure the next two
+#+ lines	
+#else
+#	systemDParamsDir=<PATH_TO_DPARAMS>
+fi
 
-#  Default dparams dir (shouldn't be changed!)
+#  User dparams dir (shouldn't be changed!)
 defaultDParamsDir="$HOME/.gtransfer/dparams"
 
-#  URL of dparams package
-dParamsUrl="http://<DPARAM_REPO>/dparams.tar.gz"
+#  URL of dparams package for retrieval
+#  This can be any valid globus-url-copy URL, e.g.:
+#
+#  For remote repos:
+#  * "http[s]://host.domain.tld[:{80|443}]/path/to/dparams.tar.gz"
+#  * "gsiftp://host.domain.tld[:2811]/path/to/dparams.tar.gz"
+#
+#  For a local repo:
+#  * "file:///path/to/dparamss.tar.gz"
+dParamsUrl="<DPARAM_REPO>/dparams.tar.gz"
 
 #  Determine package name
 dParamsUrlPkg="$( basename "$dParamsUrl" )"
