@@ -3,7 +3,7 @@
 
 :<<COPYRIGHT
 
-Copyright (C) 2012 Frank Scheiner
+Copyright (C) 2012, 2013 Frank Scheiner
 
 The program is distributed under the terms of the GNU General Public License
 
@@ -45,14 +45,18 @@ if [[ -z "$_listTransfer_Version" ]]; then
 	. "$_LIB"/listTransfer.bashlib
 fi
 
-#  TO BE REMOVED V
-#  TO BE REMOVED ^
-
 ################################################################################
 #  VARIABLES
 ################################################################################
 
 readonly _autoOptimization_Version="0.1.0"
+
+if [[ ! "$__GLOBAL__gtTmpSuffix" ]]; then
+	readonly __GLOBAL__gtTmpSuffix="#gt#tmp#"
+fi
+if [[ ! "$__GLOBAL__gtCacheSuffix" ]]; then
+	readonly __GLOBAL__gtCacheSuffix="#gt#cache#"
+fi
 
 ################################################################################
 #  FUNCTIONS
@@ -110,11 +114,11 @@ autoOptimization/createChunk()
 	local _sortedTransferList="$1"
 	local _minFileSize=$2
 	local _maxFileSize=$3
-	
-	local _minFileSizeInBytes=$(( $_minFileSize * 1024 * 1024 ))
-	local _maxFileSizeInBytes=$(( $_maxFileSize * 1024 * 1024 ))
-	
-	local _transferListfileSizes="$$_transferList_sorted_fileSizes.tmp"
+
+	local _chunkStartLineNo=""
+	local _chunkEndLineNo=""
+
+	local _transferListFileSizes="${__GLOBAL__gtTmpDir}/$$_transferList_sorted_fileSizes.$__GLOBAL__gtTmpSuffix"
 	
 	#  A line in a transfer list looks like that:
 	#													 offset
@@ -124,26 +128,27 @@ autoOptimization/createChunk()
 
 	#  If file with file sizes already exists from a previous call to this
 	#+ function, don't recreate it.
-	if [[ ! -e "$$_transferList_sorted_fileSizes.tmp" ]]; then
-		cat "$_sortedTransferList" | cut -d ' ' -f 4 | cut -d ';' -f 1 | cut -d '=' -f 2 > "$_transferListfileSizes"
+	if [[ ! -e "$_transferListFileSizes" ]]; then
+		cat "$_sortedTransferList" | cut -d ' ' -f 4 | cut -d ';' -f 1 | cut -d '=' -f 2 > "$_transferListFileSizes"
 	fi
-
-	local _chunkStartLineNo=""
-	local _chunkEndLineNo=""
 	
 	#  handle specific strings
 	if [[ "$_minFileSize" == "min" ]]; then
-		_minFileSizeInBytes=$( head -1 "$_transferListfileSizes" )
+		_minFileSizeInBytes=$( head -1 "$_transferListFileSizes" )
 		#  optimization
 		_chunkStartLineNo=1
+	else
+		local _minFileSizeInBytes=$(( $_minFileSize * 1024 * 1024 ))
 	fi
 	if [[ "$_maxFileSize" == "max" ]]; then
-		_maxFileSizeInBytes=$( tail -1 "$_transferListfileSizes" )
+		_maxFileSizeInBytes=$( tail -1 "$_transferListFileSizes" )
 		#  optimization
 		_chunkEndLineNo=$( wc -l "$_sortedTransferList" | cut -d ' ' -f 1 )
-	fi	
-	
-	local _transferListChunk="$$_transferList_chunk_${_minFileSize}MB_to_${_maxFileSize}MB"
+	else
+		local _maxFileSizeInBytes=$(( $_maxFileSize * 1024 * 1024 ))
+	fi
+
+	local _transferListChunk="${__GLOBAL__gtTmpDir}/$$_transferList_chunk_${_minFileSize}MB_to_${_maxFileSize}MB.$__GLOBAL__gtTmpSuffix"
 
 	if [[ "$_minFileSize" == "min" && \
 	      "$_maxFileSize" == "max" ]]; then
@@ -177,12 +182,22 @@ autoOptimization/createChunk()
 			fi
 			_lineNumber=$(( $_lineNumber + 1 ))
 			
-		done < "$_transferListfileSizes"
+		done < "$_transferListFileSizes"
 
-		#  select part ($_lineMin to $_lineMax) of sorted transfer list
-		sed -n "$_chunkStartLineNo,${_chunkEndLineNo}p;${_chunkEndLineNo}q;" "$_sortedTransferList" > "$_transferListChunk"
+		if [[ -z "$_chunkEndLineNo" ]]; then
+			_chunkEndLineNo="$_lineNumber"
+		fi
+
+		if [[ ! -z "$_chunkStartLineNo" && \
+		      ! -z "$_chunkEndLineNo" ]]; then
+
+			#  select part ($_lineMin to $_lineMax) of sorted transfer list
+			sed -n "$_chunkStartLineNo,${_chunkEndLineNo}p;${_chunkEndLineNo}q;" "$_sortedTransferList" > "$_transferListChunk"
+		else
+			touch "$_transferListChunk"
+		fi
 	fi
-	
+
 	echo "$_transferListChunk"
 	
 	return
@@ -207,14 +222,14 @@ autoOptimization/prepareTransferLists()
 	#+ 2. create as many chunks as needed (depends on the configuration
 	#+ file)
 	#+ example content:
-	:<<-CHUNK_CONFIG
-	#  MIN_SIZE_IN_MB;MAX_SIZE_IN_MB;GUC_PARAMETERS
-	min;50;-pp -cc 4 -p 2
-	50;250;-pp -cc 2 -p 4
-	250;max;-pp -p 8
-CHUNK_CONFIG
+	#:<<-CHUNK_CONFIG
+	##  MIN_SIZE_IN_MB;MAX_SIZE_IN_MB;GUC_PARAMETERS
+	#min;50;-pp -cc 4 -p 2
+	#50;250;-pp -cc 2 -p 4
+	#250;max;-pp -p 8
+#CHUNK_CONFIG
 
-	local _transferListsFile="$$_transferLists"
+	local _transferListsFile="${__GLOBAL__gtTmpDir}/$$_transferLists.$__GLOBAL__gtTmpSuffix"
 
 	local _ifsBackup="$IFS"
 	IFS=";"
@@ -224,11 +239,14 @@ CHUNK_CONFIG
 		#  ignore comments
 		if [[ "${_lineArray[0]:0:1}" == "#" ]]; then
 			continue
+		elif [[ "${_lineArray[0]:0:1}" == "" ]]; then
+			continue
 		fi
 	
 		local _minFileSize=${_lineArray[0]}
 		local _maxFileSize=${_lineArray[1]}
 		
+		#echo "autoOptimization/createChunk "$_sortedTransferList" "$_minFileSize" "$_maxFileSize" >> "$_transferListsFile"" 1>&2
 		autoOptimization/createChunk "$_sortedTransferList" "$_minFileSize" "$_maxFileSize" >> "$_transferListsFile"
 		
 	done < "$_chunkConfiguration"
@@ -245,7 +263,7 @@ autoOptimization/prepareParameters()
 {
 	local _chunkConfiguration="$1"
 	
-	local _gucParametersFile="$$_gucParameters"
+	local _gucParametersFile="${__GLOBAL__gtTmpDir}/$$_gucParameters.$__GLOBAL__gtTmpSuffix"
 	
 	local _ifsBackup="$IFS"
 	IFS=";"
@@ -254,6 +272,8 @@ autoOptimization/prepareParameters()
 	
 		#  ignore comments
 		if [[ "${_lineArray[0]:0:1}" == "#" ]]; then
+			continue
+		elif [[ "${_lineArray[0]:0:1}" == "" ]]; then
 			continue
 		fi
 
@@ -278,7 +298,7 @@ autoOptimization/prepareParameters()
 #+ @transferMode:        either "par[allel]" or "seq[uential]"
 autoOptimization/performTransfer()
 {
-	echo "START: $(date)" 1>&2
+	#echo "START: $(date)" 1>&2
 
 	local _transferList="$1"
 	local _metric="$2"
@@ -301,72 +321,98 @@ autoOptimization/performTransfer()
 	
 	_transferListSource=$( listTransfer/getSourceFromTransferList "$_transferList" )
 	_transferListDestination=$( listTransfer/getDestinationFromTransferList "$_transferList" )
+
+	local _dpathFile=$( listTransfer/dpathAvailable "$_transferListSource" "$_transferListDestination" )
+
+	if [[ -e "$_dpathFile" && \
+	      $memToMem != 0 \
+	]]; then
+		helperFunctions/echoIfVerbose -e "Data path used:\n$_dpathFile"
+	fi
 	
 	#  prepare dpathArray (this is identical for all chunks!)
 	local -a _dpathArray=( $( listTransfer/getDpathData "$_transferListSource" "$_transferListDestination" "$_metric" ) )
 
 	local -a _gucParametersArray
+	local -a _chunkTransferListsArray
 	
 	local _chunkCount=0
+	local _retries=0
+	
 	#  store guc parameters in an array (one line per parameter set)
 	while read _gucParameterSet; do
 		#  escape guc parameter set
 		_gucParametersArray[$_chunkCount]="${_gucParameterSet// /#}"
 		_chunkCount=$(( $_chunkCount + 1 ))
-	done < "$_gucParametersFile"	
+	done < "$_gucParametersFile"
 	
-	echo "perform transfers: $(date)" 1>&2
-	#  perform transfers
-	if [[ "$_transferMode" == "par" || "$_transferMode" == "parallel" ]]; then
-		_chunkCount=0
-		while read _chunkTransferList; do
-			
-			echo listTransfer/transferData "$_chunkTransferList" \
-						  "$_metric" \
-						  "$_tmpTgftpLogFileName" \
-						  "${_dpathArray[*]}" \
-						  "${_gucParametersArray[$_chunkCount]}" 1>&2
-						  
-			listTransfer/transferData "$_chunkTransferList" \
-						  "$_metric" \
-						  "$_tmpTgftpLogFileName" \
-						  "${_dpathArray[*]}" \
-						  "${_gucParametersArray[$_chunkCount]}" &
-			                          
-			_chunkCount=$(( $_chunkCount + 1 ))
-			
-		done < "$_transferListsFile"
-		
-		wait
-		
-		echo "END: $(date)" 1>&2
-		return
+	_chunkCount=0
+	# store transfer list chunks in an array (one line per file)
+	while read _chunkTransferList; do
+		_chunkTransferListsArray[$_chunkCount]="$_chunkTransferList"
+		_chunkCount=$(( $_chunkCount + 1 ))
+	done < ""$_transferListsFile""
 	
-	elif [[ "$_transferMode" == "seq" || "$_transferMode" == "sequential" ]]; then
+	#echo "perform transfers: $(date)" 1>&2
+	if [[ "$_transferMode" == "seq" || "$_transferMode" == "sequential" ]]; then
 		_chunkCount=0
-		while read _chunkTransferList; do
+		local -a _retValArray
+		while [[ $_chunkCount -lt ${#_chunkTransferListsArray[@]} ]]; do
 		
-			echo listTransfer/transferData "$_chunkTransferList" \
-						  "$_metric" \
-						  "$_tmpTgftpLogFileName" \
-						  "${_dpathArray[*]}" \
-						  "${_gucParametersArray[$_chunkCount]}" 1>&2
-						  
-			listTransfer/transferData "$_chunkTransferList" \
-						  "$_metric" \
-						  "$_tmpTgftpLogFileName" \
-						  "${_dpathArray[*]}" \
-						  "${_gucParametersArray[$_chunkCount]}"
+			local _transferId=$( listTransfer/getTransferIdForTransferList "${_chunkTransferListsArray[$_chunkCount]}" )
 
+			helperFunctions/echoIfVerbose -e "Chunk: ${_chunkCount}"
+		
+			if [[ ! -e "${__GLOBAL__gtTmpDir}/chunk_#${_chunkCount}_${_transferId}.finished" ]]; then
+		
+				#echo listTransfer/transferData "${_chunkTransferListsArray[$_chunkCount]}" \
+				#			  "$_metric" \
+				#			  "chunk_#${_chunkCount}__$_tmpTgftpLogFileName" \
+				#			  "${_dpathArray[*]}" \
+				#			  "${_gucParametersArray[$_chunkCount]}" 1>&2
+							  
+				listTransfer/transferData "${_chunkTransferListsArray[$_chunkCount]}" \
+							  "$_metric" \
+							  "chunk_#${_chunkCount}__$_tmpTgftpLogFileName" \
+							  "${_dpathArray[*]}" \
+							  "${_gucParametersArray[$_chunkCount]}"
+							  
+				_retValArray[$_chunkCount]=$?
+			
+				if [[ ${_retVal[$_chunkCount]} -eq 0 ]]; then
+					#  save indicator file for finished transfer
+					#+ of current chunk
+					touch "${__GLOBAL__gtTmpDir}/chunk_#${_chunkCount}_${_transferId}.finished"
+										
+				elif [[ $_retries -gt $__GLOBAL__perChunkRetries ]];then
+					break
+				else
+					_retries=$(( $_retries + 1 ))
+				fi
+			else
+				#  already finished, can be skipped
+				helperFunctions/echoIfVerbose "Skipped because already finished!"
+			fi
 			
 			_chunkCount=$(( $_chunkCount + 1 ))
-			
-		done < "$_transferListsFile"
+		done
 		
-		echo "END: $(date)" 1>&2
-		return
+		for _retVal in "${_retValArray[@]}"; do
+			if [[ ! $_retVal -eq 0 ]]; then
+				return 1
+			fi
+		done
+		
+		#  remove any finished chunk transfer markers
+		set +f
+		rm -f "${__GLOBAL__gtTmpDir}/"*.finished &>/dev/null
+
+		helperFunctions/echoIfVerbose -ne "INFO: The transfer succeeded!"
+		echo ""
+		return 0
 	else
-		echo "END: $(date)" 1>&2
+		#echo "END: $(date)" 1>&2
+		echo ""
 		return 1
 	fi
 }

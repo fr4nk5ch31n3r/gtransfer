@@ -7,7 +7,7 @@
 :<<COPYRIGHT
 
 Copyright (C) 2010, 2011 Frank Scheiner, HLRS, Universitaet Stuttgart
-Copyright (C) 2011, 2012 Frank Scheiner
+Copyright (C) 2011, 2012, 2013 Frank Scheiner
 
 The program is distributed under the terms of the GNU General Public License
 
@@ -33,7 +33,7 @@ COPYRIGHT
 #  prevent "*" expansion (filename globbing)
 set -f
 
-version="0.0.11"
+version="0.1.0"
 gsiftpUserParams=""
 
 #  path to configuration files (prefer system paths!)
@@ -78,8 +78,28 @@ fi
 
 gtransferConfigurationFile="$gtransferConfigurationFilesPath/gtransfer.conf"
 
+chunkConfig="$gtransferConfigurationFilesPath/chunkConfig"
+
+#  Set $_LIB so gtransfer and its libraries can find their includes
+readonly _LIB="$gtransferLibPath"
+
+readonly __GLOBAL__gtTmpSuffix="#gt#tmp#"
+readonly __GLOBAL__gtCacheSuffix="#gt#cache#"
+
 ################################################################################
-#  FUNCTIONS  ##################################################################
+#  INCLUDE LIBRARY FUNCTIONS
+################################################################################
+
+. "$_LIB"/exitCodes.bashlib
+. "$_LIB"/urlTransfer.bashlib
+. "$_LIB"/listTransfer.bashlib
+. "$_LIB"/autoOptimization.bashlib
+
+################################################################################
+
+
+################################################################################
+#  FUNCTIONS
 ################################################################################
 
 #USAGE##########################################################################
@@ -134,8 +154,7 @@ key to see what's possible.
 
 The options are as follows:
 
---source|-s sourceUrl
-                        Determine the source URL for the transfer.
+[--source|-s sourceUrl] Determine the source URL for the transfer.
 
 			Possible URL examples:
 
@@ -144,8 +163,8 @@ The options are as follows:
 
 			"FQDN" is the fully qualified domain name.
 
---destination|-d destinationUrl
-                        Determine the destination URL for the transfer.
+[--destination|-d destinationUrl]
+			Determine the destination URL for the transfer.
 
 			Possible URL examples:
 
@@ -153,6 +172,20 @@ The options are as follows:
 			[file://]/path/to/file
 
 			"FQDN" is the fully qualified domain name.
+
+[--transfer-list|-f transferList]
+			As alternative to providing source and destination URLs
+			on the commandline one can also provide a list of source
+			and destination URLs. See the gt manual page for more
+			details.
+
+[--auto-optimize|-o transferMode]
+			Activates automatic optimization of transfers
+			depending on the size of files. The transferMode
+			controls how files of different size classes are
+			transferred. Currently only "seq[uential]" is possible.
+			
+[--recursive|-r]	Transfer files recursively.
 
 [--verbose|-v]		Be verbose.
 
@@ -177,10 +210,30 @@ The options are as follows:
 			"/etc/gtransfer/gtransfer.conf" or
 
 			"<INSTALL_PATH>/etc/gtransfer.conf" or
-			
+
 			"/etc/opt/gtransfer/gtransfer.conf" or
 
 			"$HOME/.gtransfer/gtransfer.conf" in this order.
+
+[--guc-max-retries gucMaxRetries]
+			Set the maximum number of retries globus-url-copy (guc)
+			will do for a transfer of a single file. By default this
+			is set to 1, which means that guc will tolerate at max.
+			one transfer error per file and retry the transfer once.
+			Alternatively this option can also be set through the
+			environment variable "GUC_MAX_RETRIES".
+
+[--gt-max-retries gtMaxRetries]
+			Set the maximum number of retries gt will do for a
+			single transfer step. By default this is set to 3, which
+			means that gt will try to finish a single transfer step
+			three times or fail. Alternatively this option can also
+			be set through the environment variable
+			"GT_MAX_RETRIES".
+
+[--gt-progress-indicator indicatorCharacter]
+			Set the character to use for the progress indicator of
+			gtransfer. By default this is a ".".
 
 [-- gsiftpParameters]	Determine the "globus-url-copy" parameters that should
 			be used for all transfer steps. Notice the space between
@@ -198,9 +251,9 @@ The options are as follows:
 
 --------------------------------------------------------------------------------
 
-[--help]                Prints out a help message.
+[--help]		Prints out a help message.
 
-[--version|-V]          Prints out version information.
+[--version|-V]		Prints out version information.
 
 HELP
 
@@ -219,475 +272,6 @@ versionMsg()
 #END_VERSION####################################################################
 
 
-checkConnection()
-{
-	#  determines if a direct connection between the user's machine and the
-	#+ target machine is possible
-	#
-	#  usage:
-	#+ checkConnection "target"
-	#
-	#  NOTICE:
-	#+ source has to be valid "protocol://fqdn:port" URL without path.
-
-	#echo "DEBUG1: checkConnection $1"
-
-	#  handle file URLs specially!
-	if [[ $(echo "$1" | cut -d '/' -f "1-3") == "file://" ]]; then
-		#  just return "0", so "guc" will handle missing files
-		return 0
-	fi	
-
-	#                                      +-> strip protocol
-	#                                      |
-	#                                      |               +-> strip username portion
-	#                                      |               |            
-	#                                      |               |            +-> strip port
-	#                                      |               |            |
-	local targetHostname=$(echo "$1" | sed -e "s|^.*://||" -e "s/.*@//" -e "s/:.*$//")
-	local targetPort=$(echo "$1" | sed -e "s/^.*://")
-
-	#  check target
-	if ! scanPort "$targetHostname" "$targetPort"; then
-		#  port closed/blocked/etc.
-		return 1
-	else
-		#  port open
-		return 0
-	fi
-}
-
-kill_after_timeout()
-{
-        local KPID="$1"
-
-        local TIMEOUT="$2"
-
-        #  if $TIMEOUT is "0" just return and don't kill the process
-        if [[ "$TIMEOUT" == "0" ]]; then
-                return
-        fi
-
-        sleep "$TIMEOUT"
-
-        if ps -p "$KPID" &>/dev/null ; then
-                kill "$KPID" &>/dev/null
-
-                #  indicate that the pid was killed
-                touch .GSIFTP_COMMAND_KILLED
-                RETURN_VAL="0"
-        else
-                RETURN_VAL="1"
-        fi
-
-        return
-}
-
-scanPort()
-{
-	#  determines if a port is open at a remote site, or not
-	#
-	#  usage:
-	#+ scanPort "targetSiteHostname" "targetPort"
-
-	local targetSiteHostname="$1"
-	local targetPort="$2"
-
-        #  included for thread safety
-        local _scanResult=$( mktemp .scanResult_XXXXXX )
-
-	if [[ ! -z "$__GLOBAL__scanPortTimeout" ]]; then
-		local scanTimeout=$__GLOBAL__scanPortTimeout
-	else
-		local scanTimeout=2
-	fi
-
-	echo "open $targetSiteHostname $targetPort" | telnet 2>/dev/null 1> $_scanResult &
-
-	scanCommandPid="$!"
-
-	kill_after_timeout "$scanCommandPid" "$scanTimeout" &
-
-	wait $scanCommandPid &>/dev/null
-
-	if cat "$_scanResult" | grep "Connected" &>/dev/null; then
-		rm "$_scanResult" &>/dev/null
-		return 0
-	else
-		rm "$_scanResult" &>/dev/null
-		return 1
-	fi
-}
-
-use()
-{
-	#  determines if a required tool/binary/etc. is available
-	#
-	#  usage:
-	#+ use "tool1" "tool2" "tool3" [...]
-
-	local tools=$@
-
-	local requiredToolNotAvailable=1
-
-	for tool in $tools; do
-		#echo "$tool"
-		if ! which $tool &>/dev/null; then
-			requiredToolNotAvailable=0
-			echo "ERROR: Required tool \"$tool\" not available!"
-		fi
-	done
-
-	if [[ $requiredToolNotAvailable == 0 ]]; then
-		echo "       Cannot run without required tools! Exiting now!"
-		exit 1
-	fi
-}
-
-isValidUrl()
-{
-	#  determines if a valid URL was used
-	#
-	#  usage:
-	#+ isValidUrl url
-
-	local url="$1"
-
-	#  if the URL starts with an absolute path it's equal to "file://$URL"
-	#+ and therefore valid.
-	if  [[ ${url:0:1} == "/" ]]; then
-		return 0
-	#  protocol specifier missing?
-	elif ! echo $url | grep ".*://" &>/dev/null; then
-		#echo "ERROR: Protocol specifier missing in \"$URL\" and no local path specified!"
-		return 1
-	fi
-}
-
-getProtocolSpecifier()
-{
-	#  determine the protocol specifier for a URL
-	#
-	#  usage:
-	#+ getProtocolSpecifier url
-
-	local url="$1"
-
-	local protocolSpecifier=""
-
-	#  if the URL starts with an absolute path it's equal to "file://$URL"
-	if  [[ ${url:0:1} == "/" ]]; then
-		echo "file://"
-		return 0
-	#  return the protocol specifier
-	else
-		protocolSpecifier=$( echo $url | grep -o ".*://" )
-		echo "$protocolSpecifier"
-		return 0
-	fi
-}
-
-getPortNumberFromURL()
-{
-        #  get the port number from a URL
-        #
-        #  usage:
-        #+ getPortNumberFromUrl url
-
-        local _url="$1"
-
-        local _portNumber=$( echo "$_url" | cut -d ':' -f 3 | cut -d '/' -f 1 )
-
-        if [[ "$_portNumber" != "" ]]; then
-                echo "$_portNumber"
-                return
-        else
-                return 1
-        fi
-}
-
-getFQDNFromURL()
-{
-        #  get the Fully Qualified Domain Name from a URL
-        #
-        #  usage:
-        #+ getFQDNFromURL url
-
-        local _url="$1"
-
-        local _fqdn=$( getURLWithoutPath "$_url" | cut -d '/' -f 3 | cut -d ':' -f 1)
-
-        if [[ "$_fqdn" != "" ]]; then
-                echo "$_fqdn"
-                return
-        else
-                return 1
-        fi
-}
-
-getURLWithoutPath()
-{
-	#  determines the URL portion that consists of the protocol id, the
-	#+ domain name and the port, or "file://":
-	#
-	#  (gsiftp://venus.milkyway.universe:2811)/path/to/file
-	#  (file://)/path/to/local/file
-        #  (gsiftp://user@host.domain:2811)/path/to/file
-        #
-        #  conserves any existing username portions
-	#
-	#  usage:
-	#+ getURLWithoutPath "URL"
-
-	local URL="$1"
-	
-	#  TODO:
-	#+ support URLs not containing any port descriptions:
-	#
-	#  done!
-	
-	:<<-COMMENT
-	from: <http://wiki.linuxquestions.org/wiki/Regular_expression>
-	"
-	echo gsiftp://venus.milkyway.universe/path/to/file | sed "s;\(gsiftp://[^/]*\)/.*;\1;"
-	"
-
-	or
-
-	"
-	echo gsiftp://venus.milkyway.universe/path/to/file | cut -d '/' -f "1-3"
-	"
-
-	returns:
-	"
-	gsiftp://venus.milkyway.universe
-	"
-	COMMENT
-
-	#local tmp=$(echo "$URL" | grep -o "gsiftp://.*:[[:digit:]]*")
-	local tmp=""
-	#  URL starting with "/", then this is a local path (equal to
-	#+  "file://$URL".
-	if [[ ${URL:0:1} == "/" ]]; then
-		#echo "DEBUG: 1"
-		tmp="file://"
-	#  valid URL
-	else
-		#echo "DEBUG: 3"
-		tmp=$( echo $URL | cut -d '/' -f "1-3" )
-	fi
-
-	#if [[ "$tmp" == "" ]]; then
-	#	tmp=$( echo "$URL" | grep -o "file://" )
-	#fi
-
-	#  Add default port automatically (if missing!)
-	#  does $tmp start with 'gsiftp://'?
-	if echo $tmp | grep '^gsiftp://' &>/dev/null; then
-		#  if yes, check if port is provided
-		if echo $tmp | grep -o ':[[:digit:]].*' &>/dev/null; then
-			#  port provided by user, don't modify string
-			:
-		else
-			#  no port provided, add default gsiftp port
-			tmp="${tmp}:2811"
-		fi
-	#  does $tmp start with 'ftp://'?
-	elif echo $tmp | grep '^ftp://' &>/dev/null; then
-		#  if yes, check if port is provided
-		if echo $tmp | grep -o ':[[:digit:]].*' &>/dev/null; then
-			#  port provided by user, don't modify string
-			:
-		else
-			#  no port provided, add default ftp port
-			tmp="${tmp}:21"
-		fi
-	#  does $tmp start with 'http://'?
-	elif echo $tmp | grep '^http://' &>/dev/null; then
-		#  if yes, check if port is provided
-		if echo $tmp | grep -o ':[[:digit:]].*' &>/dev/null; then
-			#  port provided by user, don't modify string
-			:
-		else
-			#  no port provided, add default ftp port
-			tmp="${tmp}:80"
-		fi
-	#  does $tmp start with 'https://'?
-	elif echo $tmp | grep '^https://' &>/dev/null; then
-		#  if yes, check if port is provided
-		if echo $tmp | grep -o ':[[:digit:]].*' &>/dev/null; then
-			#  port provided by user, don't modify string
-			:
-		else
-			#  no port provided, add default ftp port
-			tmp="${tmp}:443"
-		fi
-	fi
-
-	local URLWithoutPath=$tmp
-
-	echo "$URLWithoutPath"
-}
-
-getPathFromURL()
-{
-	#  determines the path portion from the URL:
-	#
-	#  gsiftp://venus.milkyway.universe:2811(/path/to/)file
-	#
-	#  usage:
-	#+ getPathFromURL "URL"
-
-	local URL="$1"
-
-	#  local path?
-	if echo $URL | grep "^.*://" &>/dev/null; then
-                #  no
-                #  gsiftp://venus.milkyway.universe:2811/path/to/file
-		#  gsiftp://venus.milkyway.universe:2811/file
-		#  strip protocol spec, domain name and port
-		#  path/to/file
-		#  file
-		local tmp=$( echo "$URL" | cut -d '/' -f '4-' )
-
-		#  add leading '/'
-		#  /path/to/file
-		#  /file
-		tmp="/$tmp"
-
-		#  strip file portion from it
-                #  /path/to
-		#  ""
-		tmp=${tmp%\/*}
-
-                #  add slashes if needed
-                if [[ "$tmp" == "" ]]; then
-                        #  /
-                        tmp="/"
-                else
-                        #  /path/to/
-                        tmp="$tmp/"
-                fi
-	else
-       		#  yes
-                #  /path/to/file
-                #  not allowed: file !
-		
-                #  so strip only the file portion from it
-                tmp=${URL%\/*}
-
-                #  add slashes if needed
-                if [[ "$tmp" == "" ]]; then
-                        #  /
-                        tmp="/"
-                else
-                        #  /path/to/
-                        tmp="$tmp/"
-                fi
-	fi
-
-	path="$tmp"	
-
-	echo "$path"
-
-        return
-}
-
-getFilenameFromURL()
-{
-	#  determines the file portion (if any) from the URL:
-	#
-	#  gsiftp://venus.milkyway.universe:2811/path/to/(file)
-	#
-	#  usage:
-	#+ getFilenameFromURL "URL"
-	
-	local URL="$1"
-
-	#local tmp=$(echo "$URL" | sed -e "s|$( getURLWithoutPath $URL )||")
-	local tmp=$( echo "$URL" | sed -e "s/^.*\///" )
-	#local tmp=$( echo "$URL" | cut -d '/' -f '4-' )
-
-	#  strip any path portion from file
-	#file=$(basename $file)
-	#  doesn't work "correctly" =>
-	#+ "/lrztemp/test1/*/file/" is evaluated to "file" but should be empty
-	#file=$(echo $file | sed -e "s|^.*/||")
-	file=${tmp##*/}
-
-	#  file may contain "*" which would be expanded by the shell, therefore
-	#+ this clause decides if the function echoes a "*" or "$file".
-	if [[ "$file" == "*" ]]; then	
-		echo '*'
-	else
-		echo "$file"
-	fi
-}
-
-xtractXMLAttributeValue()
-{
-	#  determines the value between XML like tags
-	#
-	#  NOTICE:
-	#+ This function is limited to XML like files that have there tags in
-	#+ separate lines.
-	#+
-	#+ Example:
-	#+ "<tag>value</tag>" doesn't work
-	#+ "<tag>
-	#+ value
-	#+ </tag>" works
-	#
-	#  usage:
-	#+ xtractXMLAttributeValue attribute XMLFile
-	#
-	#  attribute may contain arguments ('attribute arg="0"') or can be
-	#+ without
-
-	local attributeOpen="<$1>"
-	
-	#echoDebug "stderr" "DEBUG1" "Open: $attributeOpen"
-
-	local attributeClose="<\/${1%% *}>"
-
-	#echoDebug "stderr" "DEBUG1" "Close: $attributeClose"
-
-	local XMLFile="$2"
-
-	#echoDebug "stderr" "DEBUG1" "$XMLFile"
-
-	#  extract everything between and incl. given attribute tags| remove tags    
-	sed -n -e "/$attributeOpen/,/$attributeClose/p" <"$XMLFile" | sed -e "/^<.*>$/d"
-}
-
-hashSourceDestination()
-{
-	#  hashes the "source;destination" combination
-	#
-	#  usage:
-	#+ hashSourceDestination source destination
-	#
-	#  NOTICE:
-	#+ "source" and "destination" are URLs without path but !
-
-	local sourceWithoutPath="$1"
-	local destinationWithoutPath="$2"
-
-	local dataPathName=$(echo "$sourceWithoutPath;$destinationWithoutPath" | sha1sum | cut -d ' ' -f 1)
-
-	echo $dataPathName
-}
-
-echoIfVerbose()
-{
-        #  1 true, 0 false
-	if [[ $verboseExec -eq 1 ]]; then
-		echo $@
-	fi
-
-	return		
-}
-
 echoDebug()
 {
 	local fd="$1"
@@ -705,737 +289,45 @@ echoDebug()
 	return
 }
 
-createTgftpTransferCommand()
+
+onExit()
 {
-	#  creates the tgftp transfer command and puts it in a file
-	#
-	#  usage:
-	#+ createTgftpTransferCommand source \
-	#+                            destination \
-	#+                            gsiftpParams \
-	#+                            tgftpTransferCommand \
-	#+                            logfileName \
-	#+                            fromTransitSite \
-        #+                            toTransitSite \
-        #+                            transitDirUrl
+	#  on EXIT remove all temporary files (temporary files with the gt tmp
+	#+ suffix are recreated at every run and hence can also be savely
+	#+ removed on EXIT)
+	set +f
 
-	local source="$1"
-	local destination="$2"
-	local gsiftpParams="$3"
-	local tgftpTransferCommand="$4"
-	local logfileName="$5"
-	local fromTransitSite="$6"
-        local toTransitSite="$7"
-        local transitDirUrl="$8"
+	rm -rf ${__GLOBAL__gtTmpDir}/*."$__GLOBAL__gtTmpSuffix"
 
-	local tgftpPostCommandParam=""
-	local tgftpPostCommand=""
-
-	#  If a transit site is involved as source, the temporary transit
-	#+ directory will be removed after the transfer succeeded.
-	if [[ $fromTransitSite -eq 1 ]]; then
-		tgftpPostCommandParam="--post-command"
-		#  remove the whole temp. transit dir from the transit site
-		tgftpPostCommand="uberftp -rm -r $( getURLWithoutPath $source )$( getPathFromURL $source ) &"
-		#:
-	fi
-
-        #  workaround a guc limitation: guc by default creates dirs group and
-        #+ world r-x, this makes sure, that the transit dir is only accessible
-        #+ by the owner (create and chmod happen prior to the transfer).
-        #
-        #  NOTICE:
-        #+ This was tested on Louhi (with GT5.0.3). There needs to be a short
-        #+ sleep between dir creation and chmod, as otherwise the chmod fails.
-        #+
-        #+ $ uberftp -mkdir gsiftp://p6012-deisa.huygens.sara.nl:2812/scratch/shared/prace/gridftp/transitSiteTempDir.rQoM5180 && uberftp -chmod 0700 gsiftp://p6012-deisa.huygens.sara.nl:2812/scratch/shared/prace/gridftp/transitSiteTempDir.rQoM5180
-        #+ Failed to connect to 145.100.18.152 port 2812: Cannot assign requested address 
-        #+
-        #+ $ uberftp -mkdir gsiftp://p6012-deisa.huygens.sara.nl:2812/scratch/shared/prace/gridftp/transitSiteTempDir.rQoM5180 && sleep 0.5 &&  uberftp -chmod 0700 gsiftp://p6012-deisa.huygens.sara.nl:2812/scratch/shared/prace/gridftp/transitSiteTempDir.rQoM5180
-        if [[ $toTransitSite -eq 1 ]]; then
-                #  get FQDN and port number from destination URL
-                local _fqdn=$( getFQDNFromURL "$destination" )
-                local _portNumber=$( getPortNumberFromURL "$destination" )
-                local _transitDir=$( getPathFromURL "$transitDirUrl" )
-
-                tgftpPreCommandParam="--pre-command"
-                #tgftpPreCommand="uberftp -mkdir $transitDirUrl && sleep 0.5 && uberftp -chmod 0700 $transitDirUrl"
-                #  Alternative to the commands above which works around the issue mentioned above. Which wasn't really
-                #+ solved with the short sleep.
-                tgftpPreCommand="echo 'mkdir $_transitDir; chmod 0700 $_transitDir; bye' | uberftp -P $_portNumber $_fqdn"
-        fi
-	
-        ########################################################################
-
-        #  new
-
-        #  case
-        #  |
-        #  |  verbose (0 false, 1 true)
-        #  |  |
-        #  |  | fromTransitSite (0 false, 1 true)
-        #  |  | |
-        #  |  | | toTransitSite (0 false, 1 true)
-        #  |  | | |
-        #  4  1 0 0 source -> dest
-        #  5  1 0 1 source -> transit
-        #  8  1 1 1 transit -> transit
-        #  6  1 1 0 transit -> dest
-        #
-        #  0  0 0 0 source -> dest
-        #  1  0 0 1 source -> transit
-        #  3  0 1 1 transit -> transit
-        #  2  0 1 0 transit -> dest
-
-        #  case 4
-        if [[ $verboseExec -eq 1 && \
-              $fromTransitSite -eq 0 && \
-              $toTransitSite -eq 0 \
-        ]]; then
-		echo "tgftp" \
-                     "--source \"$source\"" \
-                     "--target \"$destination\"" \
-		     "--log-filename \"$logfileName\"" \
-                     "-- \"$gsiftpParams\"" | tee "$tgftpTransferCommand"
-
-        #  case 5
-        elif [[ $verboseExec -eq 1 && \
-                $fromTransitSite -eq 0 && \
-                $toTransitSite -eq 1 \
-        ]]; then
-                echo "tgftp" \
-                     "--source \"$source\"" \
-                     "--target \"$destination\"" \
-		     "--log-filename \"$logfileName\"" \
-                     "$tgftpPreCommandParam" \"$tgftpPreCommand\" \
-                     "-- \"$gsiftpParams\"" | tee "$tgftpTransferCommand"
-
-        #  case 8
-        elif [[ $verboseExec -eq 1 && \
-                $fromTransitSite -eq 1 && \
-                $toTransitSite -eq 1 \
-        ]]; then
-                echo "tgftp" \
-                     "--source \"$source\"" \
-                     "--target \"$destination\"" \
-		     "--log-filename \"$logfileName\"" \
-                     "$tgftpPreCommandParam" \"$tgftpPreCommand\" \
-                     "$tgftpPostCommandParam" \"$tgftpPostCommand\" \
-                     "-- \"$gsiftpParams\"" | tee "$tgftpTransferCommand"
-
-        #  case 6
-        elif [[ $verboseExec -eq 1 && \
-                $fromTransitSite -eq 1 && \
-                $toTransitSite -eq 0 \
-        ]]; then
-                echo "tgftp" \
-                     "--source \"$source\"" \
-                     "--target \"$destination\"" \
-		     "--log-filename \"$logfileName\"" \
-                     "$tgftpPostCommandParam" \"$tgftpPostCommand\" \
-                     "-- \"$gsiftpParams\"" | tee "$tgftpTransferCommand"
-
-        #  case 0
-        elif [[ $verboseExec -eq 0 && \
-              $fromTransitSite -eq 0 && \
-              $toTransitSite -eq 0 \
-        ]]; then
-		echo "tgftp" \
-                     "--source \"$source\"" \
-                     "--target \"$destination\"" \
-		     "--log-filename \"$logfileName\"" \
-                     "-- \"$gsiftpParams\"" > "$tgftpTransferCommand"
-
-        #  case 1
-        elif [[ $verboseExec -eq 0 && \
-                $fromTransitSite -eq 0 && \
-                $toTransitSite -eq 1 \
-        ]]; then
-                echo "tgftp" \
-                     "--source \"$source\"" \
-                     "--target \"$destination\"" \
-		     "--log-filename \"$logfileName\"" \
-                     "$tgftpPreCommandParam" \"$tgftpPreCommand\" \
-                     "-- \"$gsiftpParams\"" > "$tgftpTransferCommand"
-
-        #  case 3
-        elif [[ $verboseExec -eq 0 && \
-                $fromTransitSite -eq 1 && \
-                $toTransitSite -eq 1 \
-        ]]; then
-                echo "tgftp" \
-                     "--source \"$source\"" \
-                     "--target \"$destination\"" \
-		     "--log-filename \"$logfileName\"" \
-                     "$tgftpPreCommandParam" \"$tgftpPreCommand\" \
-                     "$tgftpPostCommandParam" \"$tgftpPostCommand\" \
-                     "-- \"$gsiftpParams\"" > "$tgftpTransferCommand"
-
-        #  case 2
-        elif [[ $verboseExec -eq 0 && \
-                $fromTransitSite -eq 1 && \
-                $toTransitSite -eq 0 \
-        ]]; then
-                echo "tgftp" \
-                     "--source \"$source\"" \
-                     "--target \"$destination\"" \
-		     "--log-filename \"$logfileName\"" \
-                     "$tgftpPostCommandParam" \"$tgftpPostCommand\" \
-                     "-- \"$gsiftpParams\"" > "$tgftpTransferCommand"
-
-        fi
-
-        ########################################################################
-
-	if [[ $? -eq 0 ]]; then
-		return 0
-	else
-		return 1
-	fi
+	return
 }
+################################################################################
 
+################################################################################
+#  MAIN
+################################################################################
 
-simulateTransfer()
-{
-	#  creates a specific tgftpTransferCommand that only blocks for 10 secs
-	#+ and then exits.
-	#
-	#  usage:
-	#+ simulateTransfer
-
-	echo "sleep 10" > $tgftpTransferCommand
-}
-
-simulateError()
-{
-	#  creates a specific tgftpTransferCommand that only blocks for 10 secs
-	#+ and then exits with "1", indicating an error.
-	#
-	#  usage:
-	#+ simulateError
-
-	echo "sleep 10;exit 1" > $tgftpTransferCommand
-}
-
-transferData()
-{
-	#  transfers data from source to destination
-	#
-	#  usage:
-	#+ transferData source destination metric tmpLogfileName
-
-	#  TODO:
-	#
-	#  If a source URL ends with "/" or "/*", the destination URL has to end
-	#+ with "/". Make sure this is the case!
-
-	local source="$1"
-	local destination="$2"
-	local dataPathMetric="$3"
-	local tgftpTempLogfileName="$4"
-	local tgftpLogfileName=""
-
-	#  Check if valid URLs are provided
-	if ! isValidUrl $source; then
-		echo "ERROR: Protocol specifier missing in \"$source\" and no local path specified!"
-		exit 1
-	elif ! isValidUrl $destination; then
-		echo "ERROR: Protocol specifier missing in \"$destination\" and no local path specified!"
-		exit 1
-	#  check if destination URL is a "http://" URL
-	elif [[ "$( getProtocolSpecifier $destination )" == "http://" || \
-	        "$( getProtocolSpecifier $destination )" == "https://" \
-	]]; then
-		echo "ERROR: Destination URL cannot be a \"http[s]://\" URL!"
-		exit 1
-	fi
-
-	local sourceWithoutPath=$(getURLWithoutPath "$source")
-	local destinationWithoutPath=$(getURLWithoutPath "$destination")
-
-	local sourceUsernamePortion=$( echo $sourceWithoutPath | grep -o "://.*@" | sed -e 's/:\/\///' )
-	local destinationUsernamePortion=$( echo $destinationWithoutPath | grep -o "://.*@" | sed -e 's/:\/\///' )
-
-	local sourcePath=$(getPathFromURL "$source")
-	local destinationPath=$(getPathFromURL "$destination")
-
-	local sourceFile=$(getFilenameFromURL "$source")
-	local destinationFile=$(getFilenameFromURL "$destination")
-
-	local memToMem=1
-
-	#  is this a memory to memory transfer?
-	if [[ "${sourcePath}${sourceFile}" == "/dev/zero" && \
-	      "${destinationPath}${destinationFile}" == "/dev/null" \
-	]]; then
-		memToMem=0
-	fi
-
-	#  get corresponding data path (and remove any "username@" portions in
-	#+ the URL before hashing).
-	local dataPathFilename="$(hashSourceDestination $( echo $sourceWithoutPath | sed -e 's/:\/\/.*@/:\/\//' ) $( echo $destinationWithoutPath | sed -e 's/:\/\/.*@/:\/\//' ) )"
-
-	if [[ -e "$gtransferDataPathDirectory/$dataPathFilename" ]]; then
-		local dataPathFile="$gtransferDataPathDirectory/$dataPathFilename"
-	elif [[ -e "$gtransferSystemDataPathDirectory/$dataPathFilename" ]]; then
-		local dataPathFile="$gtransferSystemDataPathDirectory/$dataPathFilename"
-	fi
-
-	#  source and destination for transfer step
-	local transferStepSource=""
-	local transferStepDestination=""
-
-	local transferStepSourceWithoutPath=""
-	local transferStepDestinationWithoutPath=""
-
-	#  temporary dir on transit site
-	#
-	#  NOTICE:
-	#+ This contains no leading/trailing "/"!
-	local transitSiteTempDir=$( mktemp -u "transitSiteTempDir.XXXXXXXX" )
-
-	#  default params file and default params
-	local transferStepDefaultParamsFile=""
-	local transferStepDefaultParams=""
-
-	#  data path file existing?
-	if [[ -e "$dataPathFile" && \
-	      $memToMem != 0 \
-	]]; then
-		#  yes, initiate transfers along the path
-
-		echoIfVerbose -e "Data path used:\n$dataPathFile"
-
-		COUNTER=0
-
-		#echoDebug "stdout" "DEBUG1" "before xtract"
-
-		#xtractXMLAttributeValue "path metric=\"$dataPathMetric\"" $dataPathFile
-
-		for transferStep in $(xtractXMLAttributeValue "path metric=\"$dataPathMetric\"" $dataPathFile); do
-
-			#echoDebug "stdout" "DEBUG1" "in for loop"
-
-			#  get source and destination for transfer step
-			#+ source is in the left column, destination in the right column
-
-			echoIfVerbose "Transfer step: $COUNTER"
-
-			transferStepSource=${transferStep%%;*}
-			transferStepDestination=${transferStep##*;}
-
-			transferStepSourceWithoutPath=$(getURLWithoutPath "$transferStepSource")
-			transferStepDestinationWithoutPath=$(getURLWithoutPath "$transferStepDestination")
-
-			#  check if connection to source and destination is possible
-			#  TODO:
-			#+ Change function name to e.g. connectionPossible.
-			if [[ ! -z $__GLOBAL__checkConnection && \
-			           $__GLOBAL__checkConnection -eq 0 \
-			]]; then
-				#  skip connection check
-				:
-			else
-				if ! checkConnection "$transferStepSourceWithoutPath"; then
-					echo "ERROR: Cannot connect to \"$transferStepSourceWithoutPath\"!"
-					exit 1
-				elif ! checkConnection "$transferStepDestinationWithoutPath"; then
-					echo "ERROR: Cannot connect to \"$transferStepDestinationWithoutPath\"!"
-					exit 1
-				fi
-			fi
-
-			#  (0) construct logfilename
-			tgftpLogfileName="${tgftpTempLogfileName/%.log/__step_${COUNTER}.log}"
-
-			#  get default params for the transfer step
-			#+ (1) get filename for default params (and remove any
-			#+ "username@" portions in the URL before hashing).
-			local transferStepDefaultParamsFilename="$(hashSourceDestination $( echo $transferStepSourceWithoutPath | sed -e 's/:\/\/.*@/:\/\//' ) $( echo $transferStepDestinationWithoutPath | sed -e 's/:\/\/.*@/:\/\//' ) )"
-
-			#  if existing prefer user's dparam
-			if [[ -e "$gtransferDefaultParamsDirectory/$transferStepDefaultParamsFilename" ]]; then
-				local transferStepDefaultParamsFile="$gtransferDefaultParamsDirectory/$transferStepDefaultParamsFilename"
-			#  if no user's dparam exists, try the system's one instead
-			elif [[ -e "$gtransferSystemDefaultParamsDirectory/$transferStepDefaultParamsFilename" ]]; then
-				local transferStepDefaultParamsFile="$gtransferSystemDefaultParamsDirectory/$transferStepDefaultParamsFilename"
-			#  if dparam does not exist, the $transferStepDefaultParamsFile variable must be set anyhow.
-			else
-				local transferStepDefaultParamsFile="$gtransferDefaultParamsDirectory/$transferStepDefaultParamsFilename"
-			fi
-
-			#  (2) get default params
-			if [[ -e "$transferStepDefaultParamsFile" && \
-			      -z "$gsiftpUserParams" \
-			]]; then
-				#  default params file available, no user params
-				#+ specified
-				transferStepDefaultParams="$(xtractXMLAttributeValue "gsiftp_params" $transferStepDefaultParamsFile)"
-				echoIfVerbose -e "Default params used:\n$transferStepDefaultParamsFile"
-
-			elif [[ -e "$transferStepDefaultParamsFile" && \
-			        -n "$gsiftpUserParams" \
-			]]; then
-				transferStepDefaultParams="$(xtractXMLAttributeValue "gsiftp_params" $transferStepDefaultParamsFile)"
-
-				grepMatch=$( echo "$gsiftpUserParams" | egrep -o "\-len [[:alnum:]]*|\-partial-length [[:alnum:]]*" )
-				if [[ "$grepMatch" == "$gsiftpUserParams" ]]; then
-					transferStepDefaultParams="$transferStepDefaultParams $gsiftpUserParams"
-				else
-					transferStepDefaultParams="$gsiftpUserParams"
-				fi
-
-				#echoIfVerbose -e "Default params used:\n$transferStepDefaultParamsFile"
-			
-			elif [[ -n "$gsiftpUserParams" ]]; then
-				#  no default params available, use parameters
-				#+ supplied by user or a combination of builtin
-				#+ parameters and "-len"
-				grepMatch=$( echo "$gsiftpUserParams" | egrep -o "\-len [[:alnum:]]*|\-partial-length [[:alnum:]]*" )
-				if [[ "$grepMatch" == "$gsiftpUserParams" ]]; then
-					transferStepDefaultParams="$gsiftpDefaultParams $gsiftpUserParams"
-				else
-					transferStepDefaultParams="$gsiftpUserParams"
-				fi
-
-			else
-				#  no default params available, use builtin
-				#+ default parameters
-				transferStepDefaultParams="$gsiftpDefaultParams"
-			fi
-
-			#  Add given usernames to source and final destination
-			#+ URLs
-			#sourceUsernamePortion
-			#destinationUsernamePortion
-			
-			#  (3) transfer data (various steps possible!)
-			
-			#  TODO:
-			#
-			#  There's also a fourth possible step, where source and
-			#+ destination URLs don't have a path (direct connection
-			#+ possible).
-			#
-			#  DONE:
-			#+ implementation:
-			if [[ "$transferStepSource" == "$(getURLWithoutPath $transferStepSource)" && \
-		      	      "$transferStepDestination" == "$(getURLWithoutPath $transferStepDestination)" \
-			]]; then
-
-				#  handle usernames in URLs
-				transferStepSourceProtoSpec=$( getProtocolSpecifier $transferStepSource )
-				transferStepDestinationProtoSpec=$( getProtocolSpecifier $transferStepDestination )
-				#  replace protocol spec with proto. spec and username (don't forget "@" at the end)
-				#  NOTICE:
-				#+ Please be aware of the fact, that the shell expands the variables in the sed scripts before actually running the sed scripts.
-				#+ As the proto. spec contains "/"es. they must be either escaped (hard!) or one just changes the "/"es of the "s///" command to
-				#+ "|"s.
-				transferStepSource=$( echo $transferStepSource | sed -e "s|${transferStepSourceProtoSpec}|${transferStepSourceProtoSpec}${sourceUsernamePortion}|" )
-				transferStepDestination=$( echo $transferStepDestination | sed -e "s|${transferStepDestinationProtoSpec}|${transferStepDestinationProtoSpec}${destinationUsernamePortion}|" )
-
-				createTgftpTransferCommand \
-                                 "${transferStepSource}${sourcePath}${sourceFile}" \
-                                 "${transferStepDestination}${destinationPath}${destinationFile}" \
-                                 "$transferStepDefaultParams" \
-                                 "$tgftpTransferCommand" \
-				 "$tgftpLogfileName" \
-				 "0" \
-                                 "0" \
-                                 ""
-
-				#simulateTransfer
-
-				if [[ $? != 0 ]]; then
-					echo "ERROR: tgftp transfer command couldn't be created!"
-					exit 1
-				fi
-
-				bash $tgftpTransferCommand &>"${tgftpTransferCommand}Output" &
-				
-			#  initial transfer step
-			#
-			#  The initial transfer step can be detected as follows:
-			#+ The source portion has no path added to the URL.
-			elif [[ "$transferStepSource" == "$(getURLWithoutPath $transferStepSource)" ]]; then
-
-				#  handle usernames in URLs
-				transferStepSourceProtoSpec=$( getProtocolSpecifier $transferStepSource )
-				#  replace protocol spec with proto. spec and username (don't forget "@" at the end)
-				#  NOTICE:
-				#+ Please be aware of the fact, that the shell expands the variables in the sed scripts before actually running the sed scripts.
-				#+ As the proto. spec contains "/"es. they must be either escaped (hard!) or one just changes the "/"es of the "s///" command to
-				#+ "|"s.
-				transferStepSource=$( echo $transferStepSource | sed -e "s|${transferStepSourceProtoSpec}|${transferStepSourceProtoSpec}${sourceUsernamePortion}|" )
-
-				createTgftpTransferCommand \
-                                 "${transferStepSource}${sourcePath}${sourceFile}" \
-                                 "${transferStepDestination}${transitSiteTempDir}/" \
-                                 "$transferStepDefaultParams" \
-                                 "$tgftpTransferCommand" \
-				 "$tgftpLogfileName" \
-				 "0" \
-                                 "1" \
-                                 "${transferStepDestination}${transitSiteTempDir}/"
-
-				#simulateTransfer
-				#simulateError
-
-				if [[ $? != 0 ]]; then
-					echo "ERROR: tgftp transfer command couldn't be created!"
-					exit 1
-				fi
-
-				bash $tgftpTransferCommand &>"${tgftpTransferCommand}Output" &
-
-			#  transfer from transit site to transit site
-			#
-			#  A transfer from transit site to transit site can be
-			#+ detected as follows:
-			#+ A transit address has a temp path added to the URL
-			#+ and therefore should differ from the string printed
-			#+ by getURLWithoutPath().
-			elif [[ "$transferStepDestination" != "$(getURLWithoutPath $transferStepDestination)" ]]; then
-
-				createTgftpTransferCommand \
-                                 "${transferStepSource}${transitSiteTempDir}/${sourceFile}" \
-                                 "${transferStepDestination}${transitSiteTempDir}/" \
-                                 "$transferStepDefaultParams" \
-                                 "$tgftpTransferCommand" \
-				 "$tgftpLogfileName" \
-				 "1" \
-                                 "1" \
-                                 "${transferStepDestination}${transitSiteTempDir}/"
-
-				#simulateTransfer
-
-				bash $tgftpTransferCommand &>${tgftpTransferCommand}Output &
-
-			#  last step
-			#
-			#  The last step is identified by the transfer step
-			#+ destination being identical to the destination of the
-			#+ data path, which itself is identical to the
-			#+ destination without path portion.
-			elif [[ "$transferStepDestination" == "$(getURLWithoutPath $transferStepDestination)" ]]; then
-
-				#  handle usernames in URLs
-				transferStepDestinationProtoSpec=$( getProtocolSpecifier $transferStepDestination )
-				#  replace protocol spec with proto. spec and username (don't forget "@" at the end)
-				#  NOTICE:
-				#+ Please be aware of the fact, that the shell expands the variables in the sed scripts before actually running the sed scripts.
-				#+ As the proto. spec contains "/"es. they must be either escaped (hard!) or one just changes the "/"es of the "s///" command to
-				#+ "|"s.
-				transferStepDestination=$( echo $transferStepDestination | sed -e "s|${transferStepDestinationProtoSpec}|${transferStepDestinationProtoSpec}${destinationUsernamePortion}|" )
-
-				createTgftpTransferCommand \
-                                 "${transferStepSource}${transitSiteTempDir}/${sourceFile}" \
-                                 "${transferStepDestination}${destinationPath}${destinationFile}" \
-                                 "$transferStepDefaultParams" \
-                                 "$tgftpTransferCommand" \
-				 "$tgftpLogfileName" \
-				 "1" \
-                                 "0" \
-                                 ""
-
-				#simulateTransfer
-				#simulateError
-
-				if [[ $? != 0 ]]; then
-					echo "ERROR: tgftp transfer command couldn't be created!"
-					exit 1
-				fi
-
-				bash $tgftpTransferCommand &>${tgftpTransferCommand}Output &
-
-			fi
-
-			tgftpTransferCommandPid="$!"
-
-			#  indicate progress
-			while ps -p$tgftpTransferCommandPid &>/dev/null; do
-				echo -n "."
-				sleep 2
-			done
-
-			echoIfVerbose ""
-
-			wait $tgftpTransferCommandPid
-
-			#  did the current transfer step work?
-			if [[ $? != 0 ]]; then
-				#  no
-				cat ${tgftpTransferCommand}Output
-				echo ""
-				echo "ERROR: Transfer step #$COUNTER failed!" #\
-                                     #"Please see \"${tgftpTransferCommand}Output\" for details!"
-				exit 1
-			else
-				#  yes
-				rm -f "${tgftpTransferCommand}*" &>/dev/null
-			fi
-
-			COUNTER=$(( $COUNTER +1 ))
-		done
-	
-	else
-		#  no data path file available for this transfer, try direct transfer
-		#  get source and destination for transfer step
-		transferStepSource=$source
-		transferStepDestination=$destination
-
-		transferStepSourceWithoutPath=$(getURLWithoutPath "$transferStepSource")
-		transferStepDestinationWithoutPath=$(getURLWithoutPath "$transferStepDestination")
-
-		#  check if connection to source and destination is possible
-		if [[ ! -z $__GLOBAL__checkConnection && \
-			   $__GLOBAL__checkConnection -eq 0 \
-		]]; then
-			#  skip connection check
-			:
-		else
-			if ! checkConnection "$transferStepSourceWithoutPath"; then
-				echo "ERROR: Cannot connect to \"$transferStepSourceWithoutPath\"!"
-				exit 1
-			elif ! checkConnection "$transferStepDestinationWithoutPath"; then
-				echo "ERROR: Cannot connect to \"$transferStepDestinationWithoutPath\"!"
-				exit 1
-			fi
-		fi
-
-		#  (0) construct logfilename
-		tgftpLogfileName="$tgftpTempLogfileName"
-
-		#  get default params for the transfer
-		#+ (1) get filename for default params (and remove any
-		#+ "username@" portions in the URL before hashing).
-		local transferStepDefaultParamsFilename="$(hashSourceDestination $( echo $transferStepSourceWithoutPath | sed -e 's/:\/\/.*@/:\/\//' ) $( echo $transferStepDestinationWithoutPath | sed -e 's/:\/\/.*@/:\/\//' ) )"
-
-		if [[ -e "$gtransferDefaultParamsDirectory/$transferStepDefaultParamsFilename" ]]; then
-			local transferStepDefaultParamsFile="$gtransferDefaultParamsDirectory/$transferStepDefaultParamsFilename"
-		elif [[ -e "$gtransferSystemDefaultParamsDirectory/$transferStepDefaultParamsFilename" ]]; then
-			local transferStepDefaultParamsFile="$gtransferSystemDefaultParamsDirectory/$transferStepDefaultParamsFilename"
-		fi
-
-		#  (2) get default params
-		if [[ -e "$transferStepDefaultParamsFile" && \
-		      -z "$gsiftpUserParams" \
-		]]; then
-			transferStepDefaultParams="$(xtractXMLAttributeValue "gsiftp_params" $transferStepDefaultParamsFile)"
-			echoIfVerbose -e "Default params used:\n$transferStepDefaultParamsFile"
-
-		elif [[ -e "$transferStepDefaultParamsFile" && \
-		        -n "$gsiftpUserParams" \
-		]]; then
-			transferStepDefaultParams="$(xtractXMLAttributeValue "gsiftp_params" $transferStepDefaultParamsFile)"
-
-			grepMatch=$( echo "$gsiftpUserParams" | egrep -o "\-len [[:alnum:]]*|\-partial-length [[:alnum:]]*" )
-
-			if [[ "$grepMatch" == "$gsiftpUserParams" ]]; then
-				transferStepDefaultParams="$transferStepDefaultParams $gsiftpUserParams"
-			else
-				transferStepDefaultParams="$gsiftpUserParams"
-			fi
-
-			#echoIfVerbose -e "Default params used:\n$transferStepDefaultParamsFile"
-			
-		elif [[ -n "$gsiftpUserParams" ]]; then
-			#  no default params available, use parameters
-			#+ supplied by user or a combination of builtin 
-			#+ parameters and "-len"
-			grepMatch=$( echo "$gsiftpUserParams" | egrep -o "\-len [[:alnum:]]*|\-partial-length [[:alnum:]]*" )
-			if [[ "$grepMatch" == "$gsiftpUserParams" ]]; then
-				transferStepDefaultParams="$gsiftpDefaultParams $gsiftpUserParams"
-			else
-				transferStepDefaultParams="$gsiftpUserParams"
-			fi
-
-		else
-			#  no default params available, use builtin
-			#+ default parameters
-			transferStepDefaultParams="$gsiftpDefaultParams"
-		fi
-
-		#  handle usernames in URLs
-		transferStepSourceProtoSpec=$( getProtocolSpecifier $transferStepSource )
-		transferStepDestinationProtoSpec=$( getProtocolSpecifier $transferStepDestination )
-		#  replace protocol spec with proto. spec and username (don't forget "@" at the end)
-		#  NOTICE:
-		#+ Please be aware of the fact, that the shell expands the variables in the sed scripts before actually running the sed scripts.
-		#+ As the proto. spec contains "/"es. they must be either escaped (hard!) or one just changes the "/"es of the "s///" command to
-		#+ "|"s.
-		transferStepSource=$( echo $transferStepSource | sed -e "s|${transferStepSourceProtoSpec}|${transferStepSourceProtoSpec}${sourceUsernamePortion}|" )
-		transferStepDestination=$( echo $transferStepDestination | sed -e "s|${transferStepDestinationProtoSpec}|${transferStepDestinationProtoSpec}${destinationUsernamePortion}|" )
-
-		createTgftpTransferCommand \
-                 "$transferStepSourceWithoutPath${sourcePath}${sourceFile}" \
-                 "$transferStepDestinationWithoutPath${destinationPath}${destinationFile}" \
-                 "$transferStepDefaultParams" \
-                 "$tgftpTransferCommand" \
-		 "$tgftpLogfileName" \
-		 "0" \
-                 "0" \
-                 ""
-
-		#simulateTransfer
-
-		bash $tgftpTransferCommand &>${tgftpTransferCommand}Output &
-
-		tgftpTransferCommandPid="$!"
-
-		#  indicate progress
-		while ps -p$tgftpTransferCommandPid &>/dev/null; do
-			echo -n "."
-			sleep 2
-		done
-
-		echoIfVerbose ""
-
-		wait $tgftpTransferCommandPid
-
-		#  did the current transfer step work?
-		if [[ $? != 0 ]]; then
-			#  no
-			cat ${tgftpTransferCommand}Output
-			echo ""
-			echo "ERROR: The transfer failed!" #\
-                             #"Please see \"${tgftpTransferCommand}Output\" for details!"
-			exit 1
-		else
-			#  yes
-			rm -f "${tgftpTransferCommand}*" &>/dev/null
-		fi
-
-	fi
-
-	if [[ $verboseExec == 1 ]]; then
-		echoIfVerbose -e "INFO: The transfer succeeded!"
-	else
-		echo ""
-	fi
-
-}
-
-#  For testing internal functions:
-#function="$1"
-#shift 1
-#$function $@
-#
-#exit 1
-
-#MAIN###########################################################################
+trap 'onExit' EXIT
 
 #  check that all required tools are available
-use cat grep sed cut sleep tgftp telnet uberftp
+helperFunctions/use cat grep sed cut sleep tgftp telnet uberftp || exit "$_gtransfer_exit_software"
 
 dataPathMetricSet="1"
 tgftpLogfileNameSet="1"
+
+gtMaxRetries="3"
+gucMaxRetries="1"
+gtProgressIndicator="."
+
+#  The temp dir is named after the SHA1 hash of the command line.
+readonly __GLOBAL__gtTmpDirName=$( echo "$0 $@" | sha1sum | cut -d ' ' -f 1 )
+readonly __GLOBAL__gtTmpDir="$HOME/.gtransfer/tmp/$__GLOBAL__gtTmpDirName"
 
 #  correct number of params?
 if [[ "$#" -lt "1" ]]; then
    # no, so output a usage message
    usageMsg
-   exit 1
+   exit $_gtransfer_exit_usage
 fi
 
 # read in all parameters
@@ -1455,11 +347,17 @@ while [[ "$1" != "" ]]; do
 		"$1" != "--auto-clean" && "$1" != "-a" && \
 		"$1" != "--logfile" && "$1" != "-l" && \
 		"$1" != "--configfile" && \
+                "$1" != "--guc-max-retries" && \
+                "$1" != "--gt-max-retries" && \
+                "$1" != "--transfer-list" && "$1" != "-f" && \
+                "$1" != "--gt-progress-indicator" && \
+                "$1" != "--auto-optimize" && "$1" != "-o" && \
+                "$1" != "--recursive" && "$1" != "-r" && \
 		"$1" != "--" \
 	]]; then
 		#  no, so output a usage message
 		usageMsg
-		exit 1   
+		exit $_gtransfer_exit_usage
 	fi
 
 	#  "--"
@@ -1476,12 +374,12 @@ while [[ "$1" != "" ]]; do
 	#  "--help"
 	elif [[ "$1" == "--help" ]]; then
 		helpMsg
-		exit 0
+		exit $_gtransfer_exit_ok
 
 	#  "--version|-V"
 	elif [[ "$1" == "--version" || "$1" == "-V" ]]; then
 		versionMsg
-		exit 0
+		exit $_gtransfer_exit_ok
 
 	#  "--source|-s gsiftpSourceUrl"
 	elif [[ "$1" == "--source" || "$1" == "-s" ]]; then
@@ -1493,7 +391,7 @@ while [[ "$1" != "" ]]; do
 		else
 			#  duplicate usage of this parameter
 			echo "ERROR: The parameter \"--source|-s\" cannot be used multiple times!"
-			exit 1
+			exit $_gtransfer_exit_usage
 		fi
 
 	#  "--destination|-d gsiftpDestinationUrl"
@@ -1506,7 +404,72 @@ while [[ "$1" != "" ]]; do
 		else
 			#  duplicate usage of this parameter
 			echo "ERROR: The parameter \"--destination|-d\" cannot be used multiple times!"
-			exit 1
+			exit $_gtransfer_exit_usage
+		fi
+
+        #  "--transfer-list|-f transferList"
+	elif [[ "$1" == "--transfer-list" || "$1" == "-f" ]]; then
+		if [[ ! $gsiftpTransferListSet -eq 1 ]]; then
+			shift 1
+			gsiftpTransferList="$1"
+			gsiftpTransferListSet=1
+			shift 1
+		else
+			#  duplicate usage of this parameter
+			echo "ERROR: The parameter \"--transfer-list|-f\" cannot be used multiple times!"
+			exit $_gtransfer_exit_usage
+		fi
+
+	#  "--auto-optimize|-o transferMode"
+	elif [[ "$1" == "--auto-optimize" || "$1" == "-o" ]]; then
+		if [[ "$autoOptimizeSet" != "0" ]]; then
+			shift 1
+			transferMode="$1"
+			autoOptimizeSet="0"
+			shift 1
+		else
+			#  duplicate usage of this parameter
+			echo "ERROR: The parameter \"--auto-optimization|-o\" cannot be used multiple times!"
+			exit $_gtransfer_exit_usage
+		fi
+
+        #  "--guc-max-retries gucMaxRetries"
+	elif [[ "$1" == "--guc-max-retries" ]]; then
+		if [[ "$gucMaxRetriesSet" != "0" ]]; then
+			shift 1
+			gucMaxRetries="$1"
+			gucMaxRetriesSet="0"
+			shift 1
+		else
+			#  duplicate usage of this parameter
+			echo "ERROR: The parameter \"--guc-max-retries\" cannot be used multiple times!"
+			exit $_gtransfer_exit_usage
+		fi
+
+        #  "--gt-max-retries gtMaxRetries"
+	elif [[ "$1" == "--gt-max-retries" ]]; then
+		if [[ "$gtMaxRetriesSet" != "0" ]]; then
+			shift 1
+			gtMaxRetries="$1"
+			gtMaxRetriesSet="0"
+			shift 1
+		else
+			#  duplicate usage of this parameter
+			echo "ERROR: The parameter \"--gt-max-retries\" cannot be used multiple times!"
+			exit $_gtransfer_exit_usage
+		fi
+
+        #  "--gt-progress-indicator indicatorCharacter"
+        elif [[ "$1" == "--gt-progress-indicator" ]]; then
+		if [[ "$gtProgressIndicatorSet" != "0" ]]; then
+			shift 1
+			gtProgressIndicator="$1"
+			gtProgressIndicatorSet="0"
+			shift 1
+		else
+			#  duplicate usage of this parameter
+			echo "ERROR: The parameter \"--gt-progress-indicator\" cannot be used multiple times!"
+			exit $_gtransfer_exit_usage
 		fi
 
 	#  "--metric|-m dataPathMetric"
@@ -1519,7 +482,7 @@ while [[ "$1" != "" ]]; do
 		else
 			#  duplicate usage of this parameter
 			echo "ERROR: The parameter \"--metric|-m\" cannot be used multiple times!"
-			exit 1
+			exit $_gtransfer_exit_usage
 		fi
 
 	#  "--verbose|-v"
@@ -1530,7 +493,18 @@ while [[ "$1" != "" ]]; do
 		else
 			#  duplicate usage of this parameter
 			echo "ERROR: The parameter \"--verbose|-v\" cannot be used multiple times!"
-			exit 1
+			exit $_gtransfer_exit_usage
+		fi
+		
+	#  "--recursive|-r"
+	elif [[ "$1" == "--recursive" || "$1" == "-r" ]]; then
+		if [[ $recursiveTransferSet != 0 ]]; then
+			shift 1
+			recursiveTransferSet=0
+		else
+			#  duplicate usage of this parameter
+			echo "ERROR: The parameter \"--recursive|-r\" cannot be used multiple times!"
+			exit $_gtransfer_exit_usage
 		fi
 
 	#  "--auto-clean|-a"
@@ -1542,7 +516,7 @@ while [[ "$1" != "" ]]; do
 		else
 			#  duplicate usage of this parameter
 			echo "ERROR: The parameter \"--auto-clean|-a\" cannot be used multiple times!"
-			exit 1
+			exit $_gtransfer_exit_usage
 		fi
 
 	#  "--logfile|-l"
@@ -1555,7 +529,7 @@ while [[ "$1" != "" ]]; do
 		else
 			#  duplicate usage of this parameter
 			echo "ERROR: The parameter \"--logfile|-l\" cannot be used multiple times!"
-			exit 1
+			exit $_gtransfer_exit_usage
 		fi
 
 	#  "--configfile"
@@ -1568,7 +542,7 @@ while [[ "$1" != "" ]]; do
 		else
 			#  duplicate usage of this parameter
 			echo "ERROR: The parameter \"--configfile\" cannot be used multiple times!"
-			exit 1
+			exit $_gtransfer_exit_usage
 		fi
 
 	fi
@@ -1580,22 +554,17 @@ if [[ -e "$gtransferConfigurationFile" ]]; then
 	. "$gtransferConfigurationFile"
 else
 	echo "ERROR: gtransfer configuration file missing!"
-	exit 1
+	exit $_gtransfer_exit_software
 fi
 
 #  verbose execution needed due to options?
 if [[ $verboseExecSet == 0 ]]; then
-        #  1 true, 0 false
 	verboseExec=1
 fi
 
-#  all mandatory params present?
-if [[ "$gsiftpSourceUrl" == "" || \
-      "$gsiftpDestinationUrl" == "" \
-]]; then
-        #  no, so output a usage message
-        usageMsg
-        exit 1
+#  auto optimization requested?
+if [[ $autoOptimizeSet == 0 ]]; then
+	autoOptimize=1 # 1 on, 0 off
 fi
 
 #  set dpath metric
@@ -1608,7 +577,60 @@ if [[ "$tgftpLogfileNameSet" != "0" ]]; then
 	tgftpLogfileName="$defaultTgftpLogfileName"
 fi
 
-transferData "$gsiftpSourceUrl" "$gsiftpDestinationUrl" "$dataPathMetric" "$tgftpLogfileName"
+#  all mandatory params present?
+if [[ "$gsiftpSourceUrl" == "" || \
+      "$gsiftpDestinationUrl" == "" \
+]]; then
+        if [[ $gsiftpTransferListSet -eq 1 ]]; then
+		#  create directory for temp files
+		mkdir -p "$__GLOBAL__gtTmpDir"
+		
+		#  strip comment lines from transfer list
+		gsiftpTransferListClean="$__GLOBAL__gtTmpDir/$$_transferList.${__GLOBAL__gtTmpSuffix}"		
+		sed -e '/^#.*$/d' "$gsiftpTransferList" > "$gsiftpTransferListClean"
+
+		#  TODO:
+		#  Use temporary dir for temp files (.gtransfer/<transferID>)
+		#  1. Determine transfer id for original transfer list
+		#  2. Create temp dir (e.g. _tempDir=$( echo "$0" "$@" | sha1sum )) and store path in global var
+		if [[ $autoOptimize -eq 1 ]]; then
+			#  only perform auto-optimization if there are at least
+			#+ 100 files in the transfer list. If not perform simple
+			#+ list transfer.
+			if [[ $( listTransfer/getNumberOfFilesFromTransferList "$gsiftpTransferListClean" ) -ge 100 ]]; then
+				autoOptimization/performTransfer "$gsiftpTransferListClean"  "$dataPathMetric" "$tgftpLogfileName" "$chunkConfig" "$transferMode"
+			else
+				listTransfer/performTransfer "$gsiftpTransferListClean" "$dataPathMetric" "$tgftpLogfileName"
+			fi
+		else
+			listTransfer/performTransfer "$gsiftpTransferListClean" "$dataPathMetric" "$tgftpLogfileName"
+		fi
+	else
+		#  no, so output a usage message
+		usageMsg
+		exit $_gtransfer_exit_usage
+	fi
+else
+	#  create directory for temp files
+	mkdir -p "$__GLOBAL__gtTmpDir"
+
+	if [[ $autoOptimize -eq 1 ]]; then
+		gsiftpTransferList=$( listTransfer/createTransferList "$gsiftpSourceUrl" "$gsiftpDestinationUrl" )
+		#  only perform auto-optimization if there are at least
+		#+ 100 files in the transfer list. If not perform simple
+		#+ list transfer.
+		if [[ $( listTransfer/getNumberOfFilesFromTransferList "$gsiftpTransferList" ) -ge 100 ]]; then
+			autoOptimization/performTransfer "$gsiftpTransferList"  "$dataPathMetric" "$tgftpLogfileName" "$chunkConfig" "$transferMode"
+		else
+			rm "$gsiftpTransferList"
+			urlTransfer/transferData "$gsiftpSourceUrl" "$gsiftpDestinationUrl" "$dataPathMetric" "$tgftpLogfileName"
+		fi
+	else
+		urlTransfer/transferData "$gsiftpSourceUrl" "$gsiftpDestinationUrl" "$dataPathMetric" "$tgftpLogfileName"
+	fi
+fi
+
+#transferData "$gsiftpSourceUrl" "$gsiftpDestinationUrl" "$dataPathMetric" "$tgftpLogfileName"
 transferDataReturnValue="$?"
 
 #  automatically remove logfiles if needed
