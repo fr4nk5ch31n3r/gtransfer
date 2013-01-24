@@ -1,3 +1,20 @@
+2013-01-24  Frank Scheiner  <frank.scheiner@web.de>
+
+gtransfer dist 0.1.1:
+
+*0.1.1 (gtransfer):
+The chunk creation in the auto-optimization of gtransfer v0.1.0 did not
+correctly handle cases where no files of specific file size classes existed in
+the list of files to transfer. This is now corrected. Fixes #1. Also added
+functionality to remove the directory for gt temp files after a successful
+transfer.
+
+*0.1.1 (dpath):
+dpath now correctly ignores empty dpath directories. Fixes #2.
+
+*0.2.0 (dparam):
+Updated dparam list logic to dpath counterpart.
+
 2013-01-18  Frank Scheiner  <frank.scheiner@web.de>
 
 gtransfer dist 0.1.0:
