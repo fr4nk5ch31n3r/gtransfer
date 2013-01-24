@@ -28,7 +28,7 @@ contract number RI-222919.
 
 COPYRIGHT
 
-version="0.1.0"
+version="0.2.0"
 
 #  path to configuration files (prefer system paths!)
 #  For native OS packages:
@@ -342,15 +342,16 @@ listDParams()
 	#echo "$@ - $dataPathsDir"
 
 	if [[ -e "$dParamsDir" ]]; then
-		for dParam in $(ls -1 $dParamsDir); do
+		for dParam in "$dParamsDir"/*; do
 			#  don't show links or backups (containing a '~' at the end of
-			#+ the filename)
-			if [[ ! -L "$dParamsDir/$dParam" && \
-			      $( echo $dParam | grep '~' 2>/dev/null ) == "" \
+			#+ the filename) and just continue if there are no dprams available.
+			if [[ ! -L "$dParam" && \
+			      "$dParam" != *~ && \
+      			      "$dParam" != "${dParamsDir}/*" \
 			]]; then
-				source=$(xtractXMLAttributeValue "source" $dParamsDir/$dParam)
-				destination=$(xtractXMLAttributeValue "destination" $dParamsDir/$dParam)
-				dParams=$(xtractXMLAttributeValue "gsiftp_params" $dParamsDir/$dParam)
+				source=$(xtractXMLAttributeValue "source" "$dParam")
+				destination=$(xtractXMLAttributeValue "destination" "$dParam")
+				dParams=$(xtractXMLAttributeValue "gsiftp_params" "$dParam")
 				if [[ $verboseExec == 0 ]]; then
 					hashValue="$(hashSourceDestination $source $destination): "
 				fi
