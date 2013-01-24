@@ -28,7 +28,7 @@ contract number RI-222919.
 
 COPYRIGHT
 
-version="0.1.0"
+version="0.1.1"
 
 #  path to configuration files (prefer system paths!)
 #  For native OS packages:
@@ -411,10 +411,11 @@ listDataPaths()
 	if [[ -e "$dataPathsDir" ]]; then
 		for dataPath in "$dataPathsDir"/*; do
 			#  don't show links or backups (containing a '~' at the end of
-			#+ the filename)
+			#+ the filename) and just continue if there are no dpaths available.
 			if [[ ! -L "$dataPath" && \
 			      "$dataPath" != *~ && \
-			      "$dataPath" != *index \
+			      "$dataPath" != *index && \
+			      "$dataPath" != "${dataPathsDir}/*" \
 			]]; then
 				source=$(xtractXMLAttributeValue "source" "$dataPath")
 				destination=$(xtractXMLAttributeValue "destination" "$dataPath")
@@ -452,10 +453,11 @@ listSources()
 		else
 			for dataPath in "$dataPathsDir"/*; do
 				#  don't show links or backups (containing a '~' at the end of
-				#+ the filename)
+				#+ the filename) and just continue if there are no dpaths available.
 				if [[ ! -L "$dataPath" && \
 				      "$dataPath" != *~ && \
-				      "$dataPath" != *index \
+				      "$dataPath" != *index && \
+				      "$dataPath" != "${dataPathsDir}/*" \
 				]]; then
 					source=$(xtractXMLAttributeValue "source" "$dataPath")
 					#sourceAlias=$(xtractXMLAttributeValue "source-alias" $dataPathsDir/$dataPath)
@@ -491,10 +493,11 @@ listDestinations()
 		else
 			for dataPath in "$dataPathsDir"/*; do
 				#  don't show links or backups (containing a '~' at the end of
-				#+ the filename)
+				#+ the filename) and just continue if there are no dpaths available.
 				if [[ ! -L "$dataPath" && \
 				      "$dataPath" != *~ && \
-				      "$dataPath" != *index \
+				      "$dataPath" != *index && \
+				      "$dataPath" != "${dataPathsDir}/*" \
 				]]; then
 					destination=$(xtractXMLAttributeValue "destination" $dataPathsDir/$dataPath)
 					#destinationAlias=$(xtractXMLAttributeValue "destination-alias" $dataPathsDir/$dataPath)
