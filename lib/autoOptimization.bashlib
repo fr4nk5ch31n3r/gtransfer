@@ -49,7 +49,7 @@ fi
 #  VARIABLES
 ################################################################################
 
-readonly _autoOptimization_Version="0.1.0"
+readonly _autoOptimization_Version="0.1.1"
 
 if [[ ! "$__GLOBAL__gtTmpSuffix" ]]; then
 	readonly __GLOBAL__gtTmpSuffix="#gt#tmp#"
@@ -166,7 +166,9 @@ autoOptimization/createChunk()
 			      
 				break
 			
-			elif [[ $_line -ge $_minFileSizeInBytes && $_chunkStartLineNo == "" ]]; then
+			elif [[ $_line -ge $_minFileSizeInBytes && \
+				$_line -le $_maxFileSizeInBytes && \
+				$_chunkStartLineNo == "" ]]; then
 			
 				_chunkStartLineNo=$_lineNumber
 				#echo "DEBUG: _chunkStartLineNo=\"$_chunkStartLineNo\""
@@ -362,38 +364,43 @@ autoOptimization/performTransfer()
 			local _transferId=$( listTransfer/getTransferIdForTransferList "${_chunkTransferListsArray[$_chunkCount]}" )
 
 			helperFunctions/echoIfVerbose -e "Chunk: ${_chunkCount}"
+
+			if [[ -s "${_chunkTransferListsArray[$_chunkCount]}" ]]; then
+
+				if [[ ! -e "${__GLOBAL__gtTmpDir}/chunk_#${_chunkCount}_${_transferId}.finished" ]]; then
 		
-			if [[ ! -e "${__GLOBAL__gtTmpDir}/chunk_#${_chunkCount}_${_transferId}.finished" ]]; then
-		
-				#echo listTransfer/transferData "${_chunkTransferListsArray[$_chunkCount]}" \
-				#			  "$_metric" \
-				#			  "chunk_#${_chunkCount}__$_tmpTgftpLogFileName" \
-				#			  "${_dpathArray[*]}" \
-				#			  "${_gucParametersArray[$_chunkCount]}" 1>&2
-							  
-				listTransfer/transferData "${_chunkTransferListsArray[$_chunkCount]}" \
-							  "$_metric" \
-							  "chunk_#${_chunkCount}__$_tmpTgftpLogFileName" \
-							  "${_dpathArray[*]}" \
-							  "${_gucParametersArray[$_chunkCount]}"
-							  
-				_retValArray[$_chunkCount]=$?
+					#echo listTransfer/transferData "${_chunkTransferListsArray[$_chunkCount]}" \
+					#			  "$_metric" \
+					#			  "chunk_#${_chunkCount}__$_tmpTgftpLogFileName" \
+					#			  "${_dpathArray[*]}" \
+					#			  "${_gucParametersArray[$_chunkCount]}" 1>&2
+								  
+					listTransfer/transferData "${_chunkTransferListsArray[$_chunkCount]}" \
+								  "$_metric" \
+								  "chunk_#${_chunkCount}__$_tmpTgftpLogFileName" \
+								  "${_dpathArray[*]}" \
+								  "${_gucParametersArray[$_chunkCount]}"
+								  
+					_retValArray[$_chunkCount]=$?
 			
-				if [[ ${_retVal[$_chunkCount]} -eq 0 ]]; then
-					#  save indicator file for finished transfer
-					#+ of current chunk
-					touch "${__GLOBAL__gtTmpDir}/chunk_#${_chunkCount}_${_transferId}.finished"
+					if [[ ${_retVal[$_chunkCount]} -eq 0 ]]; then
+						#  save indicator file for finished transfer
+						#+ of current chunk
+						touch "${__GLOBAL__gtTmpDir}/chunk_#${_chunkCount}_${_transferId}.finished"
 										
-				elif [[ $_retries -gt $__GLOBAL__perChunkRetries ]];then
-					break
+					elif [[ $_retries -gt $__GLOBAL__perChunkRetries ]];then
+						break
+					else
+						_retries=$(( $_retries + 1 ))
+					fi
 				else
-					_retries=$(( $_retries + 1 ))
+					#  already finished, can be skipped
+					helperFunctions/echoIfVerbose "Skipped because already finished!"
 				fi
 			else
-				#  already finished, can be skipped
-				helperFunctions/echoIfVerbose "Skipped because already finished!"
+				helperFunctions/echoIfVerbose -e "Skipped because empty!"
 			fi
-			
+						
 			_chunkCount=$(( $_chunkCount + 1 ))
 		done
 		

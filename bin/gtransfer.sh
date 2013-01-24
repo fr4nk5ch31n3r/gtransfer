@@ -33,7 +33,7 @@ COPYRIGHT
 #  prevent "*" expansion (filename globbing)
 set -f
 
-version="0.1.0"
+version="0.1.1"
 gsiftpUserParams=""
 
 #  path to configuration files (prefer system paths!)
@@ -632,6 +632,11 @@ fi
 
 #transferData "$gsiftpSourceUrl" "$gsiftpDestinationUrl" "$dataPathMetric" "$tgftpLogfileName"
 transferDataReturnValue="$?"
+
+#  if transfer was successful, remove dir for temp files
+if [[ $transferDataReturnValue -eq 0 ]]; then
+	rm -rf "$__GLOBAL__gtTmpDir"
+fi
 
 #  automatically remove logfiles if needed
 if [[ $autoClean == 0 ]]; then
