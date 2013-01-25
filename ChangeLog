@@ -1,3 +1,15 @@
+2013-01-25  Frank Scheiner  <frank.scheiner@web.de>
+
+gtransfer dist v0.1.2:
+
+*0.1.2 (gtransfer):
+gt v0.1.1 always performed recursive transfers. This is now corrected and per
+default gt now performs non-recursive transfers again. Fixes #5. Also defused a
+guc call. Fixes #4.
+
+*(install.sh):
+The installer now also install the exemplary chunkConfig file. Fixes #6. 
+
 2013-01-24  Frank Scheiner  <frank.scheiner@web.de>
 
 gtransfer dist 0.1.1:
