@@ -315,9 +315,11 @@ helperFunctions/use cat grep sed cut sleep tgftp telnet uberftp || exit "$_gtran
 dataPathMetricSet="1"
 tgftpLogfileNameSet="1"
 
+#  Defaults
 gtMaxRetries="3"
 gucMaxRetries="1"
 gtProgressIndicator="."
+recursiveTransferSet=1
 
 #  The temp dir is named after the SHA1 hash of the command line.
 readonly __GLOBAL__gtTmpDirName=$( echo "$0 $@" | sha1sum | cut -d ' ' -f 1 )
