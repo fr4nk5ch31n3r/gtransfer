@@ -45,7 +45,8 @@ if [[ "$(basename $0)" == "install.sh" ]]; then
 	cp ./etc/gtransfer/gtransfer.conf_example \
            ./etc/gtransfer/dpath.conf_example \
            ./etc/gtransfer/dparam.conf_example \
-           ./etc/gtransfer/dpath.template_example "$etcDir"
+           ./etc/gtransfer/dpath.template_example \
+           ./etc/gtransfer/chunkConfig_example "$etcDir"
            
 	cp -r ./etc/bash_completion.d "$etcDir"
 
