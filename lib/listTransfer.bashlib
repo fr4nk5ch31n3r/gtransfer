@@ -1287,7 +1287,7 @@ listTransfer/createTransferList() {
 	fi
 	
 	#  to get the transfer list we use guc with "-do" option
-	globus-url-copy -do "$_transferListFile" "$_recursive" "$_source" "$_destination"
+	globus-url-copy -do "$_transferListFile" $_recursive "$_source" "$_destination"
 
 	if [[ "$?" == "0" && -e "$_transferListFile" ]]; then
 		#  strip comment lines
