@@ -6,7 +6,7 @@
 
 :<<COPYRIGHT
 
-Copyright (C) 2010, 2011 Frank Scheiner, HLRS, Universitaet Stuttgart
+Copyright (C) 2010, 2011, 2013 Frank Scheiner, HLRS, Universitaet Stuttgart
 Copyright (C) 2011, 2012, 2013 Frank Scheiner
 
 The program is distributed under the terms of the GNU General Public License
@@ -33,7 +33,7 @@ COPYRIGHT
 #  prevent "*" expansion (filename globbing)
 set -f
 
-version="0.1.2"
+version="0.2.0"
 gsiftpUserParams=""
 
 #  path to configuration files (prefer system paths!)
@@ -615,6 +615,40 @@ if [[ "$gsiftpSourceUrl" == "" || \
 else
 	#  create directory for temp files
 	mkdir -p "$__GLOBAL__gtTmpDir"
+
+	# dealias URLs	
+	if hash halias &>/dev/null; then
+		# remove everything after and including the first "/". As an alias
+		# mustn't contain any forward slashes, if an alias is used in the URLs,
+		# it's everything from start to the first forward slash.
+		_tmpSourceAlias=${gsiftpSourceUrl%%\/*}
+		_tmpDestinationAlias=${gsiftpDestinationUrl%%\/*}
+	
+		_tmpSourceAliasValue=$( halias --dealias "$_tmpSourceAlias" )
+		if [[ $? != 0 ]]; then
+			echo "E: Dealiasing failed!"
+			exit $_gtransfer_exit_software
+		fi
+		_tmpDestinationAliasValue=$( halias --dealias "$_tmpDestinationAlias" )
+		if [[ $? != 0 ]]; then
+			echo "E: Dealiasing failed!"
+			exit $_gtransfer_exit_software
+		fi
+	
+		# check if the alias value is different from the alias itself
+		if [[ "$_tmpSourceAlias" != "$_tmpSourceAliasValue" ]]; then
+	
+			_tmpSourcePath=${gsiftpSourceUrl#*\/}
+			gsiftpSourceUrl="${_tmpSourceAliasValue}/${_tmpSourcePath}"
+		
+		fi
+	
+		if [[ "$_tmpDestinationAlias" != "$_tmpDestinationAliasValue" ]]; then
+				
+			_tmpDestinationPath=${gsiftpDestinationUrl#*\/}
+			gsiftpDestinationUrl="${_tmpDestinationAliasValue}/${_tmpDestinationPath}"
+		fi
+	fi
 
 	if [[ $autoOptimize -eq 1 ]]; then
 		gsiftpTransferList=$( listTransfer/createTransferList "$gsiftpSourceUrl" "$gsiftpDestinationUrl" )

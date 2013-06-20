@@ -35,6 +35,35 @@ _gtransfer()
 		echo "$path"
 	}
 
+	getPathFromAliasUrl()
+	{
+		local url="$1"
+		
+		# if there's currentl only the alias, assume "/"
+		if ! echo "$url" | grep "/" &>/dev/null; then
+			echo "/"
+			return
+		fi
+		
+		local path=${url#*/}
+		
+		#  strip any file portion from path
+		path=${path%/*}
+		#  strip any file portion from path
+		#path=$(echo $path | grep -o '/.*/')
+		
+		if [[ "$path" != "" ]]; then
+			echo "/$path/"
+		else
+			echo "/"
+		fi
+		#if [[ $path == "" ]]; then
+		#	path="/"
+		#fi	
+		#
+		#echo "$path"
+	}
+
 	getURLWithoutPath()
 	{
 		#  determines the URL portion that consists of the protocol id, the
@@ -160,34 +189,86 @@ _gtransfer()
 			#+ available
 			if hash globus-url-copy &>/dev/null; then
 				#  complete remote paths
-				if echo "$cur" | grep '^gsiftp://.*:.*/.*' &>/dev/null; then
+				if echo "$cur" | grep '^gsiftp://.*:.*' &>/dev/null; then
 			
 					userhost=$( getURLWithoutPath "${cur}" )
-			
+					#echo -e "\n$userhost" 1>&2
 					userpath=$( getPathFromURL "${cur}" )
+					#echo "$userpath" 1>&2
 
-					local remote_paths=( $( globus-url-copy -list "$cur*" | sed -e 's/^\ *//' -e 1d ) )
+					local remote_paths=( $( globus-url-copy -list "${userhost}${userpath}*" | sed -e 's/^\ *//' -e 1d ) )
 
 					local remote_urls=$( for path in "${remote_paths[@]}"; do echo ${userhost}${userpath}${path}; done )
+					
 					COMPREPLY=( $(compgen -W "${remote_urls}" -- ${cur}) )
 					return 0
-                elif echo "$cur" | grep '^ftp://.*:.*/.*' &>/dev/null; then
+					
+                		elif echo "$cur" | grep '^ftp://.*:.*' &>/dev/null; then
+                		
 					userhost=$( getURLWithoutPath "${cur}" )
 					userpath=$( getPathFromURL "${cur}" )
-					local remote_paths=( $( globus-url-copy -list "$cur*" | sed -e 's/^\ *//' -e 1d ) )
+					
+					local remote_paths=( $( globus-url-copy -list "${userhost}${userpath}*" | sed -e 's/^\ *//' -e 1d ) )
+					
 					local remote_urls=$( for path in "${remote_paths[@]}"; do echo ${userhost}${userpath}${path}; done )
+					
 					COMPREPLY=( $(compgen -W "${remote_urls}" -- ${cur}) )
 					return 0
 				fi
+			
+				if hash halias &>/dev/null; then
+					
+					alias="${cur%%/*}" ## remove path
+					#user="${alias%%@*}"
+					#alias="${alias#*@}" ## remove "user@"
+					
+					if halias --is-alias "$alias" &>/dev/null; then						
+				
+						userhost=$( halias --dealias "$alias" )
+						#if [[ "$user" != "" ]]; then
+						#	userhost=${userhost/:\/\//:\/\/$user@}
+						#fi
+						#echo -e "\n$userhost A$alias U$user" 1>&2
+						userpath=$( getPathFromAliasUrl "$cur" )
+						#echo "$userpath" 1>&2
+					
+						local remote_paths=( $( globus-url-copy -list "${userhost}${userpath}*" | sed -e 's/^\ *//' -e 1d ) )
+					
+						#if [[ "$user" != "" ]]; then
+						#	local remote_urls=$( for path in "${remote_paths[@]}"; do echo ${user}@${alias}${userpath}${path}; done )
+						#else
+							local remote_urls=$( for path in "${remote_paths[@]}"; do echo ${alias}${userpath}${path}; done )
+						#fi
+						
+						COMPREPLY=( $(compgen -W "${remote_urls}" -- ${cur}) )
+						return 0
+					fi
+				fi
 			fi
 
-			#  only complete destination URLs if dpath is available
+			#  only complete source URL host parts if dpath is available
 			if hash dpath &>/dev/null; then
-				#  complete source URLs
+				#  complete source URL host parts
 				local sites=$( dpath --list-sources )
-				COMPREPLY=( $(compgen -W "${sites}" -- ${cur}) )
-				return 0
+			else
+				local sites=""
 			fi
+			
+			if hash halias &>/dev/null; then
+				local aliases=$( halias --list )
+			else
+				local aliases=""
+			fi
+			
+			if [[ "$sites" != "" && "$aliases" != "" ]]; then
+				COMPREPLY=( $(compgen -W "${sites} ${aliases}" -- ${cur}) )
+			elif [[ "$sites" != "" ]]; then
+				COMPREPLY=( $(compgen -W "${sites}" -- ${cur}) )
+			elif [[ "$aliases" != "" ]]; then
+				COMPREPLY=( $(compgen -W "${aliases}" -- ${cur}) )
+			fi
+			
+			return 0
 			;;
 
 		--destination|-d)
@@ -195,30 +276,77 @@ _gtransfer()
 			#+ available
 			if hash globus-url-copy &>/dev/null; then
 				#  complete remote paths
-				if echo "$cur" | grep '^gsiftp://.*:.*/.*' &>/dev/null; then
+				if echo "$cur" | grep '^gsiftp://.*:.*' &>/dev/null; then
+			
 					userhost=$( getURLWithoutPath "${cur}" )
+					#echo -e "\n$userhost" 1>&2
 					userpath=$( getPathFromURL "${cur}" )
-					local remote_paths=( $( globus-url-copy -list "$cur*" | sed -e 's/^\ *//' -e 1d ) )
+					#echo "$userpath" 1>&2
+
+					local remote_paths=( $( globus-url-copy -list "${userhost}${userpath}*" | sed -e 's/^\ *//' -e 1d ) )
+
 					local remote_urls=$( for path in "${remote_paths[@]}"; do echo ${userhost}${userpath}${path}; done )
+					
 					COMPREPLY=( $(compgen -W "${remote_urls}" -- ${cur}) )
 					return 0
-                elif echo "$cur" | grep '^ftp://.*:.*/.*' &>/dev/null; then
+					
+                		elif echo "$cur" | grep '^ftp://.*:.*' &>/dev/null; then
+                		
 					userhost=$( getURLWithoutPath "${cur}" )
 					userpath=$( getPathFromURL "${cur}" )
-					local remote_paths=( $( globus-url-copy -list "$cur*" | sed -e 's/^\ *//' -e 1d ) )
+					
+					local remote_paths=( $( globus-url-copy -list "${userhost}${userpath}*" | sed -e 's/^\ *//' -e 1d ) )
+					
 					local remote_urls=$( for path in "${remote_paths[@]}"; do echo ${userhost}${userpath}${path}; done )
+					
 					COMPREPLY=( $(compgen -W "${remote_urls}" -- ${cur}) )
 					return 0
 				fi
+			
+				if hash halias &>/dev/null; then
+					
+					if halias --is-alias "${cur%%/*}" &>/dev/null; then
+				
+						alias="${cur%%/*}"
+				
+						userhost=$( halias --dealias "${cur%%/*}" )
+						#echo -e "\n$userhost" 1>&2
+						userpath=$( getPathFromAliasUrl "$cur" )
+						#echo "$userpath" 1>&2
+					
+						local remote_paths=( $( globus-url-copy -list "${userhost}${userpath}*" | sed -e 's/^\ *//' -e 1d ) )
+					
+						local remote_urls=$( for path in "${remote_paths[@]}"; do echo ${alias}${userpath}${path}; done )
+						
+						COMPREPLY=( $(compgen -W "${remote_urls}" -- ${cur}) )
+						return 0
+					fi
+				fi
 			fi			
 
-			#  only complete destination URLs if dpath is available
+			#  only complete source URL host parts if dpath is available
 			if hash dpath &>/dev/null; then
-				#  complete destination URLs
+				#  complete source URL host parts
 				local sites=$( dpath --list-destinations )
-				COMPREPLY=( $(compgen -W "${sites}" -- ${cur}) )
-				return 0
+			else
+				local sites=""
 			fi
+			
+			if hash halias &>/dev/null; then
+				local aliases=$( halias --list )
+			else
+				local aliases=""
+			fi
+			
+			if [[ "$sites" != "" && "$aliases" != "" ]]; then
+				COMPREPLY=( $(compgen -W "${sites} ${aliases}" -- ${cur}) )
+			elif [[ "$sites" != "" ]]; then
+				COMPREPLY=( $(compgen -W "${sites}" -- ${cur}) )
+			elif [[ "$aliases" != "" ]]; then
+				COMPREPLY=( $(compgen -W "${aliases}" -- ${cur}) )
+			fi
+			
+			return 0
 			;;
 
 		--metric|-m)
