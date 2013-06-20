@@ -1,0 +1,18 @@
+# Aliases configuration file
+
+# Aliases sources can be files or directories. User aliases have precedence over
+# system aliases.
+
+# System aliases
+if [[ -e "$configurationFilesPath" ]]; then
+
+	__GLOBAL__systemAliasesSource="${configurationFilesPath}/aliases"
+# If the system aliases are located elsewhere locally, please configure the next
+# two lines	
+#else
+#	__GLOBAL__systemAliasesSource=<PATH_TO_ALIASES>
+fi
+
+# User aliases
+__GLOBAL__userAliasesSource="$HOME/.gtransfer/aliases"
+

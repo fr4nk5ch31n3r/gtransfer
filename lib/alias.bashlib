@@ -1,0 +1,300 @@
+#  alias.bashlib - library functions to support aliases
+
+:<<COPYRIGHT
+
+Copyright (C) 2013 Frank Scheiner, HLRS, Universitaet Stuttgart
+
+The program is distributed under the terms of the GNU General Public License
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+COPYRIGHT
+
+
+################################################################################
+# DOCUMENTATION
+################################################################################
+
+# Alias definition:
+#
+# * An alias is resolved to a "host part of a URL"*
+#
+# * An alias mustn't have any forward slashes.
+#
+# * An alias has to be a valid file name.
+#
+# * An alias can refer to another alias. (see "alias3")
+#
+# * No looping allowed (neither by referring to itself directly or indirectly)
+#
+# * The keyword "%alias" is expanded to the current alias. (see "alias4")
+# ____________________
+# *) host part of a URL:
+#
+# gsiftp://host.domain.tld:2811/path/to/file
+# |                           |
+# +-----------\ /-------------+
+#              V
+#          host part
+
+# example aliases file  (ignore "\" before "$")
+:<<ALIASES_FILE
+alias1;gsiftp://gridftp1.deimos.mars:2811
+myGridFTP;alias1
+alias3;\$( doSomething )
+alias4;\$( doSomethingWith %alias )
+ALIASES_FILE
+
+# example aliases dir
+:<<ALIASES_DIR
+alias1
+myGridFTP
+alias3
+alias4
+ALIASES_DIR
+
+# file contents (ignore "\" before "$")
+:<<alias1
+gsiftp://gridftp1.deimos.mars:2811
+alias1
+
+:<<myGridFTP
+alias1
+myGridFTP
+
+:<<alias3
+\$( doSomething )
+alias3
+
+:<<alias4
+\$( doSomethingWith %alias )
+alias4
+
+################################################################################
+# INCLUDES
+################################################################################
+
+:<<INCLUDE
+INCLUDE
+
+
+################################################################################
+# VARIABLES
+################################################################################
+
+readonly _alias_Version="0.1.0"
+
+################################################################################
+# FUNCTIONS
+################################################################################
+
+:<<FUNCTIONS
+FUNCTIONS
+
+# isAliasWithFile() - check if given string is an alias with aliases file
+#
+# @_alias: string to be checked
+# @_aliasesSource: list of aliases (file)
+#
+# Returns 0 if @alias is an alias, 1 otherwise.
+alias/isAliasWithFile()
+{
+	local _alias="$1"
+	local _aliasesSource="$2"
+	
+	if [[ ! -e "$_aliasesSource" ]]; then
+		return 1
+	fi
+	
+	if grep "^${_alias};" "$_aliasesSource" &>/dev/null; then
+		return 0
+	else
+		return 1
+	fi
+}
+
+
+# isAliasWithDir() - check if given string is an alias with aliases dir
+#
+# Might be faster than with file as aliases source if many aliases are used.
+#
+# @_alias: string to be checked
+# @_aliasesSource: list of aliases (dir)
+#
+# Returns 0 if @alias is an alias, 1 otherwise.
+alias/isAliasWithDir()
+{
+	local _alias="$1"
+	local _aliasesSource="$2"
+	
+	if [[ ! -e "$_aliasesSource" ]]; then
+		return 1
+	fi
+	
+	if [[ -f "${_aliasesSource}/${_alias}" ]]; then
+		return 0
+	else
+		return 1
+	fi
+}
+
+
+# dealiasWithFile() - dealias a given string with aliases file
+#
+# @_alias: string do be dealiased (string)
+# @_aliasesSource: list of aliases (file)
+#
+# Prints dealiased string or input string if no alias was used there. If
+# dealiased string is again an alias, it is dealiased again and so forth.
+#
+# Returns 0 if dealiasing worked or if no alias was used. Returns 1 on error.
+alias/dealiasWithFile()
+{
+	local _alias="$1"
+	local _aliasesSource="$2"
+
+	local _currentAlias="$_alias"
+	local _value
+	
+	if [[ ! -e "$_aliasesSource" ]]; then
+		return 1
+	fi
+	
+	while alias/isAliasWithFile "$_alias" "$_aliasesSource"; do
+		_currentAlias="$_alias"
+		_value=$( grep "^${_alias};" "$_aliasesSource" | cut -d ';' -f 2 )
+		if [[ "$_value" != "" ]]; then
+			_alias="$_value"
+		fi
+	done
+
+	# replace all occurances of the "%alias" keyword with current alias
+	_alias=${_alias//\%alias/$_currentAlias}
+
+	eval echo "$_alias"
+	
+	return
+}
+
+
+# dealiasWithDir() - dealias a given string with aliases dir
+#
+# @_alias: string do be dealiased (string)
+# @_aliasesSource: list of aliases (dir)
+#
+# Prints dealiased string or input string if no alias was used there. If
+# dealiased string is again an alias, it is dealiased again and so forth.
+#
+# Returns 0 if dealiasing worked or if no alias was used. Returns 1 on error.
+alias/dealiasWithDir()
+{
+	local _alias="$1"
+	local _aliasesSource="$2"
+
+	local _currentAlias="$_alias"
+	local _value
+	
+	if [[ ! -e "$_aliasesSource" ]]; then
+		return 1
+	fi
+	
+	while alias/isAliasWithDir "$_alias" "$_aliasesSource"; do
+		_currentAlias="$_alias"
+		_value=$( cat "${_aliasesSource}/${_alias}" )
+		if [[ "$_value" != "" ]]; then
+			_alias="$_value"
+		fi
+	done
+
+	# replace all occurances of the "%alias" keyword with current alias
+	_alias=${_alias//\%alias/$_currentAlias}
+
+	eval echo "$_alias"
+	
+	return
+}
+
+
+# isAlias - check if given string is an alias (either file or dir)
+#
+# @_alias: string to be checked
+# @_aliasesSource: list of aliases (file/dir)
+#
+# Returns 0 if @alias is an alias, 1 otherwise.
+alias/isAlias()
+{
+	if [[ -f "$2" ]]; then
+		
+		alias/isAliasWithFile "$@"
+		
+	elif [[ -d "$2" ]]; then
+	
+		alias/isAliasWithDir "$@"
+	
+	else
+		return 1
+	fi
+}
+
+
+# dealias() - dealias a given string with either file or dir as aliases source
+#
+# @_alias: string do be dealiased (string)
+# @_aliasesSource: list of aliases (file/dir)
+#
+# Prints dealiased string or input string if no alias was used there. If
+# dealiased string is again an alias, it is dealiased again and so forth.
+#
+# Returns 0 if dealiasing worked or if no alias was used. Returns 1 on error.
+alias/dealias()
+{
+	if [[ -f "$2" ]]; then
+		
+		alias/dealiasWithFile "$@"
+		
+	elif [[ -d "$2" ]]; then
+	
+		alias/dealiasWithDir "$@"
+	
+	else
+		return 1
+	fi
+}
+
+
+# list() - list aliases available in the given aliases source
+#
+# @_aliasSource: list of aliases (file/dir)
+#
+# Prints all aliases available in the given aliases source.
+#
+# Returns 0 if everthing is OK, 1 if the alias source is neither file nor dir.
+alias/list()
+{
+	local _aliasesSource="$1"
+	
+	if [[ -f "$_aliasesSource" ]]; then
+	
+		cat "$_aliasesSource" | cut -d ';' -f 1
+		
+	elif [[ -d "$_aliasesSource" ]]; then
+	
+		ls -1 "$_aliasesSource"		
+	else
+		return 1
+	fi
+	
+	return
+}
+
