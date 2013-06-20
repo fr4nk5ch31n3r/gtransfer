@@ -35,6 +35,7 @@ non-standard user names, use the regular host addresses currently (e.g.
 
 The following characters are not allowed in alias strings:
 
+* `;`
 * `/`
 * ` ` (space)
 
