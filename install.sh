@@ -46,14 +46,17 @@ if [[ "$(basename $0)" == "install.sh" ]]; then
            ./etc/gtransfer/dpath.conf_example \
            ./etc/gtransfer/dparam.conf_example \
            ./etc/gtransfer/dpath.template_example \
-           ./etc/gtransfer/chunkConfig_example "$etcDir"
+           ./etc/gtransfer/chunkConfig_example \
+           ./etc/gtransfer/aliases_example \
+           ./etc/gtransfer/aliases.conf_example "$etcDir"
            
 	cp -r ./etc/bash_completion.d "$etcDir"
 
 	#  copy scripts and...
 	cp ./bin/gtransfer.sh \
 	   ./bin/datapath.sh \
-	   ./bin/defaultparam.sh "$binDir"
+	   ./bin/defaultparam.sh \
+	   ./bin/halias.bash "$binDir"
 	
 	#  ...reconfigure paths inside of the scripts and...
 	#        + reconfigure path to configuration files
@@ -62,6 +65,7 @@ if [[ "$(basename $0)" == "install.sh" ]]; then
 	sed -e "s|<GTRANSFER_BASE_PATH>|$prefixDir/gtransfer|g" -e 's/#sed#//g' -i "$binDir/gtransfer.sh"
 	sed -e "s|<GTRANSFER_BASE_PATH>|$prefixDir/gtransfer|g" -e 's/#sed#//g' -i "$binDir/datapath.sh"
 	sed -e "s|<GTRANSFER_BASE_PATH>|$prefixDir/gtransfer|g" -e 's/#sed#//g' -i "$binDir/defaultparam.sh"
+	sed -e "s|<GTRANSFER_BASE_PATH>|$prefixDir/gtransfer|g" -e 's/#sed#//g' -i "$binDir/halias.bash"
 
 	#  ...make links and...
 	if [[ $userInstall -eq 1 ]]; then
@@ -71,6 +75,7 @@ if [[ "$(basename $0)" == "install.sh" ]]; then
 		ln -s "$binDir/gtransfer.sh" "$linkPath/gt"
 		ln -s "$binDir/datapath.sh" "$linkPath/dpath"
 		ln -s "$binDir/defaultparam.sh" "$linkPath/dparam"
+		ln -s "$binDir/halias.bash" "$linkPath/halias"
 	else
 		linkPath="$binDir"
 		
@@ -79,6 +84,7 @@ if [[ "$(basename $0)" == "install.sh" ]]; then
 		ln -s "gtransfer.sh" "$linkPath/gt"
 		ln -s "datapath.sh" "$linkPath/dpath"
 		ln -s "defaultparam.sh" "$linkPath/dparam"
+		ln -s "halias.bash" "$linkPath/halias"
 	fi
 
 	#  ...copy README and manpages.
@@ -109,6 +115,7 @@ elif [[ "$(basename $0)" == "uninstall.sh" ]]; then
 		rm "$HOME/bin/gt"
 		rm "$HOME/bin/dpath"
 		rm "$HOME/bin/dparam"
+		rm "$HOME/bin/halias"
 
 		#  remove gtransfer dir
 		rm -r "$prefixDir/gtransfer"
