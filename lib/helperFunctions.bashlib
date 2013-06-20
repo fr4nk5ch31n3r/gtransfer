@@ -525,7 +525,7 @@ helperFunctions/isValidUrl()
 
 	#  if the URL starts with an absolute path it's equal to "file://$URL"
 	#+ and therefore valid.
-	if  [[ ${url:0:1} == "/" ]]; then
+	if  [[ ${url:0:1} == "/" || $url =~ file://.* ]]; then
 		return 0
 	#  protocol specifier missing?
 	elif ! echo $url | grep ".*://" &>/dev/null; then
