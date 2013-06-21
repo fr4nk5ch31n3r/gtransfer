@@ -410,13 +410,19 @@ urlTransfer/doTransferStep()
 	else
 		if ! helperFunctions/checkConnection "$transferStepSourceWithoutPath" &&
 		   ! helperFunctions/checkConnection "$transferStepDestinationWithoutPath"; then
-			echo "ERROR: Cannot connect to neither \"$transferStepSourceWithoutPath\" nor \"$transferStepDestinationWithoutPath\"!"
+			echo "ERROR: Cannot connect to neither \"$transferStepSourceWithoutPath\" nor \"$transferStepDestinationWithoutPath\"! Either try again or correct your input!"
+			#  we assume that source and destination strings are correct,
+			#+ and they're just unavailable currently. If the user just used
+			#+ a nonexistent host, he can detect this by reading the error
+			#+ message
 			return 2
 		elif ! helperFunctions/checkConnection "$transferStepSourceWithoutPath"; then
-			echo "ERROR: Cannot connect to \"$transferStepSourceWithoutPath\"!"
+			echo "ERROR: Cannot connect to \"$transferStepSourceWithoutPath\"! Either try again or correct your input!"
+			#  same as above"
 			return 2
 		elif ! helperFunctions/checkConnection "$transferStepDestinationWithoutPath"; then
-			echo "ERROR: Cannot connect to \"$transferStepDestinationWithoutPath\"!"
+			echo "ERROR: Cannot connect to \"$transferStepDestinationWithoutPath\"! Either try again or correct your input!"
+			#  same as above"
 			return 2
 		fi
 	fi
@@ -519,7 +525,7 @@ urlTransfer/doTransferStep()
 
 		if [[ $? != 0 ]]; then
 			echo "ERROR: tgftp transfer command couldn't be created!"
-			exit 1
+			exit $_gtransfer_exit_software
 		fi
 
                 helperFunctions/catIfVerbose "$tgftpTransferCommand"
@@ -555,7 +561,7 @@ urlTransfer/doTransferStep()
 
 		if [[ $? != 0 ]]; then
 			echo "ERROR: tgftp transfer command couldn't be created!"
-			exit 1
+			exit $_gtransfer_exit_software
 		fi
 
                 helperFunctions/catIfVerbose "$tgftpTransferCommand"
@@ -823,11 +829,12 @@ urlTransfer/transferData()
 
 		#  did the current transfer step work?
 		if [[ $? == 2 ]]; then
-			#  no, it failed completely
+			#  no, it failed completely (e.g. hosts couldn't be
+			#+ reached)
 			helperFunctions/echoIfVerbose ""
 			helperFunctions/echoIfVerbose "ERROR: Transfer step #$transferStepNumber failed!" #\
                                  #"Please see \"${tgftpTransferCommand}Output\" for details!"
-			exit 1
+			exit $_gtransfer_exit_tempfail
 
 		elif [[ $RETURN -ne 0 && "$retries" -lt "$maxRetries" ]]; then
                          retries=$(( $retries + 1 ))
@@ -845,7 +852,7 @@ urlTransfer/transferData()
                 elif [[ "$retries" -eq "$maxRetries" ]]; then
                         echo ""
                         echo "ERROR: Transfer step #$transferStepNumber failed after $retries retries! Exiting."
-                        exit 1
+                        exit $_gtransfer_exit_tempfail
 
 		fi
 
