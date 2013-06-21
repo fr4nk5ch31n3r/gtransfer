@@ -107,12 +107,9 @@ usageMsg()
 {
         cat <<USAGE
 
-usage: $(basename $0) [--help] ||
-       $(basename $0) \\
-        --source|-s gsiftpSourceUrl \\
-        --destination|-d gsiftpDestinationUrl \\
-        [optional params] \\
-        [-- gsiftpParameters]
+usage: $(basename $0) --source|-s sourceUrl --destination|-d destinationUrl [additional options]
+       $(basename $0) --transfer-list|-f transferList [additional options]
+       $(basename $0) [--help]
 
 --help gives more information
 
@@ -131,13 +128,9 @@ $(versionMsg)
 
 SYNOPSIS:
 
-$(basename $0) \\
- --source|-s sourceUrl \\
- --destination|-d destinationUrl \\
- [--verbose|-v] \\
- [--metric|-m dataPathMetric] \\
- [--auto-clean|-a] \\
- [-- gsiftpParameters]
+$(basename $0) --source|-s sourceUrl --destination|-d destinationUrl [additional options]
+$(basename $0) --transfer-list|-f transferList [additional options]
+
 
 DESCRIPTION:
 
@@ -235,7 +228,7 @@ The options are as follows:
 			Set the character to use for the progress indicator of
 			gtransfer. By default this is a ".".
 
-[-- gsiftpParameters]	Determine the "globus-url-copy" parameters that should
+[-- gucParameters]	Determine the "globus-url-copy" parameters that should
 			be used for all transfer steps. Notice the space between
 			"--" and the actual parameters. This overwrites any
 			available default parameters and is not recommended for
