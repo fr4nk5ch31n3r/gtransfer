@@ -1,4 +1,4 @@
-.TH GTRANSFER 1 "25 Jan 2013" "version 0.1.2" "User Commands"
+.TH GTRANSFER 1 "21 Jun 2013" "version 0.2.0" "User Commands"
 .SH NAME
 gtransfer \- The GridFTP transfer script
 
@@ -16,7 +16,7 @@ gtransfer \- The GridFTP transfer script
 .BI "[--logfile|-l " "logfile" "]"
 .B [--auto-clean|-a]
 .BI "[--configfile " "configurationFile" "]"
-.BI "[-- " "gsiftpParameters" "]"
+.BI "[-- " "gucParameters" "]"
 
 .SH DESCRIPTION
 .B gtransfer
@@ -96,10 +96,10 @@ gtransfer will then perform a
 .IR "list transfer" " instead of an " "URL transfer" " when using source and destination URLs."
 The format of each line of the transfer list file is as follows:
 
-"<PROTOCOL>://source.domain.tld:<PORT>/path/to/file" "<PROTOCOL>://destination.domain.tld:<PORT>/path/to/file[/]"
+"<PROTOCOL>://<FQDN1>:<PORT>/path/to/file" "<PROTOCOL>://<FQDN2>:<PORT>/path/to/file[/]"
 
-All lines have to use the exact same source and destination host addresses (i.e.
-"gsiftp://host.domain.tld:2811")!
+Throughout all lines the source URL host part (e.g. "<PROTOCOL>://<FQDN1>:<PORT>")
+has to be identical. This is also required for the destination URL host part.
 
 .TP
 .BI "[--auto-optimize|-o " "transferMode" "]"
@@ -166,7 +166,7 @@ Set the name of the configuration file for
 .IR "$HOME/.gtransfer/gtransfer.conf" " in this order."
 
 .TP
-.BI "[-- " "gsiftpParameters" "]"
+.BI "[-- " "gucParameters" "]"
 Set the "globus-url-copy" parameters that should
 be used for all transfer steps. Notice the space between
 "--" and the actual parameters. This overwrites any
