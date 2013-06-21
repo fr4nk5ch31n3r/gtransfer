@@ -577,7 +577,7 @@ listTransfer/transferData()
 			transferStepNumber=$(( $transferStepNumber + 1 ))
 			continue
 
-		elif [[ $RETURN == $_gtransfer_exit_tempfail ]]; then
+		elif [[ $RETURN -eq 2 ]]; then
 			#  no, it failed completely (e.g. hosts couldn't be
 			#+ reached)
 			helperFunctions/echoIfVerbose ""
@@ -699,15 +699,15 @@ listTransfer/doTransferStep()
 			#+ and they're just unavailable currently. If the user just used
 			#+ a nonexistent host, he can detect this by reading the error
 			#+ message
-			return $_gtransfer_exit_tempfail
+			return 2
 		elif ! helperFunctions/checkConnection "$transferStepSourceWithoutPath"; then
 			echo "ERROR: Cannot connect to \"$transferStepSourceWithoutPath\"! Either try again or correct your input!"
 			#  same as above
-			return $_gtransfer_exit_tempfail
+			return 2
 		elif ! helperFunctions/checkConnection "$transferStepDestinationWithoutPath"; then
 			echo "ERROR: Cannot connect to \"$transferStepDestinationWithoutPath\"! Either try again or correct your input!"
 			#  same as above
-			return $_gtransfer_exit_tempfail
+			return 2
 		fi
 	fi
 
