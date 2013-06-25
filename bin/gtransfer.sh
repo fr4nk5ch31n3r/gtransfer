@@ -82,6 +82,7 @@ chunkConfig="$gtransferConfigurationFilesPath/chunkConfig"
 
 #  Set $_LIB so gtransfer and its libraries can find their includes
 readonly _LIB="$gtransferLibPath"
+readonly _gtransfer_libraryPrefix="gtransfer"
 
 readonly __GLOBAL__gtTmpSuffix="#gt#tmp#"
 readonly __GLOBAL__gtCacheSuffix="#gt#cache#"
@@ -90,10 +91,10 @@ readonly __GLOBAL__gtCacheSuffix="#gt#cache#"
 #  INCLUDE LIBRARY FUNCTIONS
 ################################################################################
 
-. "$_LIB"/exitCodes.bashlib
-. "$_LIB"/urlTransfer.bashlib
-. "$_LIB"/listTransfer.bashlib
-. "$_LIB"/autoOptimization.bashlib
+. "$_LIB"/${_gtransfer_libraryPrefix}/exitCodes.bashlib
+. "$_LIB"/${_gtransfer_libraryPrefix}/urlTransfer.bashlib
+. "$_LIB"/${_gtransfer_libraryPrefix}/listTransfer.bashlib
+. "$_LIB"/${_gtransfer_libraryPrefix}/autoOptimization.bashlib
 
 ################################################################################
 

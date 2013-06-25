@@ -23,6 +23,12 @@ The program is distributed under the terms of the GNU General Public License
 COPYRIGHT
 
 ################################################################################
+#  DEFINES
+################################################################################
+
+readonly _autoOptimization_Version="0.1.1"
+
+################################################################################
 #  INCLUDES
 ################################################################################
 
@@ -38,18 +44,16 @@ INCLUDE
 
 #  only source if not already sourced
 if [[ -z "$_exitCodes_Version" ]]; then
-	. "$_LIB"/exitCodes.bashlib
+	. "$_LIB"/${_gtransfer_libraryPrefix}/exitCodes.bashlib
 fi
 
 if [[ -z "$_listTransfer_Version" ]]; then
-	. "$_LIB"/listTransfer.bashlib
+	. "$_LIB"/${_gtransfer_libraryPrefix}/listTransfer.bashlib
 fi
 
 ################################################################################
 #  VARIABLES
 ################################################################################
-
-readonly _autoOptimization_Version="0.1.1"
 
 if [[ ! "$__GLOBAL__gtTmpSuffix" ]]; then
 	readonly __GLOBAL__gtTmpSuffix="#gt#tmp#"

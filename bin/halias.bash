@@ -77,13 +77,14 @@ configurationFile="$configurationFilesPath/aliases.conf"
 
 #  Set $_LIB so halias and its libraries can find their includes
 readonly _LIB="$libPath"
+readonly _gtransfer_libraryPrefix="gtransfer"
 
 ################################################################################
 #  INCLUDE LIBRARY FUNCTIONS
 ################################################################################
 
-. "$_LIB"/exitCodes.bashlib
-. "$_LIB"/alias.bashlib
+. "$_LIB"/${_gtransfer_libraryPrefix}/exitCodes.bashlib
+. "$_LIB"/${_gtransfer_libraryPrefix}/alias.bashlib
 
 ################################################################################
 

@@ -22,6 +22,12 @@ The program is distributed under the terms of the GNU General Public License
 COPYRIGHT
 
 ################################################################################
+#  DEFINES
+################################################################################
+
+readonly _helperFunctions_Version="0.1.0"
+
+################################################################################
 #  INCLUDES
 ################################################################################
 
@@ -31,14 +37,13 @@ INCLUDE
 
 #  only source if not already sourced
 if [[ -z "$_exitCodes_Version" ]]; then
-	. "$_LIB/exitCodes.bashlib"
+	. "$_LIB/${_gtransfer_libraryPrefix}/exitCodes.bashlib"
 fi
 
 ################################################################################
 #  VARIABLES
 ################################################################################
 
-readonly _helperFunctions_Version="0.1.0"
 
 ################################################################################
 #  FUNCTIONS
