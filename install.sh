@@ -21,6 +21,7 @@ binDir="$prefixDir/gtransfer/bin"
 docDir="$prefixDir/gtransfer/share/doc"
 manDir="$prefixDir/gtransfer/share/man"
 libDir="$prefixDir/gtransfer/lib"
+libexecDir="$prefixDir/gtransfer/libexec"
 
 #  installation
 if [[ "$(basename $0)" == "install.sh" ]]; then
@@ -40,15 +41,17 @@ if [[ "$(basename $0)" == "install.sh" ]]; then
 	mkdir -p "$etcDir/dpaths" &>/dev/null
 	mkdir -p "$etcDir/dparams" &>/dev/null
 	mkdir -p "$libDir" &>/dev/null
+	mkdir -p "$libexecDir" &>/dev/null
 
 	#  copy configuration files (also copy bash completion file)
-	cp ./etc/gtransfer/gtransfer.conf_example \
-           ./etc/gtransfer/dpath.conf_example \
-           ./etc/gtransfer/dparam.conf_example \
-           ./etc/gtransfer/dpath.template_example \
-           ./etc/gtransfer/chunkConfig_example \
-           ./etc/gtransfer/aliases_example \
-           ./etc/gtransfer/aliases.conf_example "$etcDir"
+	#cp ./etc/gtransfer/gtransfer.conf_example \
+        #   ./etc/gtransfer/dpath.conf_example \
+        #   ./etc/gtransfer/dparam.conf_example \
+        #   ./etc/gtransfer/dpath.template_example \
+        #   ./etc/gtransfer/chunkConfig_example \
+        #   ./etc/gtransfer/aliases_example \
+        #   ./etc/gtransfer/aliases.conf_example "$etcDir"
+        cp -r ./etc/gtransfer/* "$etcDir"
            
 	cp -r ./etc/bash_completion.d "$etcDir"
 
@@ -101,6 +104,9 @@ if [[ "$(basename $0)" == "install.sh" ]]; then
 	   
 	#  copy libraries
 	cp -r ./lib/* "$libDir"
+	
+	#  copy helper tools
+	cp -r ./libexec/* "$libexecDir"
 
 #  uninstallation
 elif [[ "$(basename $0)" == "uninstall.sh" ]]; then

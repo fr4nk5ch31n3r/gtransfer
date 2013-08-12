@@ -31,7 +31,7 @@ contract number RI-222919.
 COPYRIGHT
 
 #  prevent "*" expansion (filename globbing)
-set -f
+#set -f
 
 version="0.2.0"
 gsiftpUserParams=""
@@ -43,6 +43,7 @@ if [[ -e "/etc/gtransfer" ]]; then
         #  gtransfer is installed in "/usr/bin", hence the base path is "/usr"
         gtransferBasePath="/usr"
         gtransferLibPath="$gtransferBasePath/lib/gtransfer"
+        gtransferLibexecPath="$gtransferBasePath/libexec/gtransfer"
 
 #  For installation with "install.sh".
 #sed#elif [[ -e "<GTRANSFER_BASE_PATH>/etc" ]]; then
@@ -62,18 +63,21 @@ elif [[ -e "/etc/opt/gtransfer" ]]; then
         gtransferConfigurationFilesPath="/etc/opt/gtransfer"
         gtransferBasePath="/opt/gtransfer"
         gtransferLibPath="$gtransferBasePath/lib"
+        gtransferLibexecPath="$gtransferBasePath/libexec"
 
 #  For user install in $HOME:
 elif [[ -e "$HOME/.gtransfer" ]]; then
         gtransferConfigurationFilesPath="$HOME/.gtransfer"
         gtransferBasePath="$HOME/opt/gtransfer"
         gtransferLibPath="$gtransferBasePath/lib"
+        gtransferLibexecPath="$gtransferBasePath/libexec"
 
 #  For git deploy, use $BASH_SOURCE
 elif [[ -e "$( dirname $BASH_SOURCE )/../etc" ]]; then
 	gtransferConfigurationFilesPath="$( dirname $BASH_SOURCE )/../etc"
 	gtransferBasePath="$( dirname $BASH_SOURCE )/../"
 	gtransferLibPath="$gtransferBasePath/lib"
+	gtransferLibexecPath="$gtransferBasePath/libexec"
 fi
 
 gtransferConfigurationFile="$gtransferConfigurationFilesPath/gtransfer.conf"
@@ -82,6 +86,8 @@ chunkConfig="$gtransferConfigurationFilesPath/chunkConfig"
 
 #  Set $_LIB so gtransfer and its libraries can find their includes
 readonly _LIB="$gtransferLibPath"
+readonly _GTRANSFER_LIBEXECPATH="$gtransferLibexecPath"
+
 readonly _gtransfer_libraryPrefix="gtransfer"
 
 readonly __GLOBAL__gtTmpSuffix="#gt#tmp#"
@@ -95,6 +101,7 @@ readonly __GLOBAL__gtCacheSuffix="#gt#cache#"
 . "$_LIB"/${_gtransfer_libraryPrefix}/urlTransfer.bashlib
 . "$_LIB"/${_gtransfer_libraryPrefix}/listTransfer.bashlib
 . "$_LIB"/${_gtransfer_libraryPrefix}/autoOptimization.bashlib
+. "$_LIB"/${_gtransfer_libraryPrefix}/pids/irodsMicroService.bashlib
 
 ################################################################################
 
@@ -318,6 +325,8 @@ recursiveTransferSet=1
 #  The temp dir is named after the SHA1 hash of the command line.
 readonly __GLOBAL__gtTmpDirName=$( echo "$0 $@" | sha1sum | cut -d ' ' -f 1 )
 readonly __GLOBAL__gtTmpDir="$HOME/.gtransfer/tmp/$__GLOBAL__gtTmpDirName"
+
+readonly __GLOBAL__gtCommandLine="$0 $@"
 
 #  correct number of params?
 if [[ "$#" -lt "1" ]]; then
@@ -642,6 +651,67 @@ else
 			_tmpDestinationPath=${gsiftpDestinationUrl#*\/}
 			gsiftpDestinationUrl="${_tmpDestinationAliasValue}/${_tmpDestinationPath}"
 		fi
+	fi
+
+	# Handle persistent identifiers (PIDs) as source
+	if [[ "$gsiftpSourceUrl" =~ 'pid://' ]]; then
+		
+		if hash irule &>/dev/null; then
+			_pid="${gsiftpSourceUrl/pid:\/\/}"
+		
+			# resolve PID
+			_resolvedUrl=$( pids/irodsMicroService/resolvePid "$_pid" )
+		
+			if [[ $? != 0 ]]; then
+				echo "E: Given PID \"$_pid\" couldn't be resolved. Exiting." 1>&2
+				exit $_gtransfer_exit_software
+			fi
+		
+			gsiftpSourceUrl="$_resolvedUrl"
+		else
+			echo "E: Cannot resolve PID without \"irule\" tool. Exiting" 1>&2
+			exit $_gtransfer_exit_software
+		fi
+	# Handle a list of persistent identifiers (PIDs) as source	
+	elif [[ "$gsiftpSourceUrl" =~ 'pidfile://' ]]; then
+	
+		if hash irule &>/dev/null; then
+			_pidFile="${gsiftpSourceUrl/pidfile:\/\/}"
+			
+			if [[ ! -e "$_pidFile" ]]; then
+				echo "E: PID file \"$_pidFile\" cannot be found!" 1>&2
+				exit $_gtransfer_exit_usage
+			fi
+			
+			helperFunctions/echoIfVerbose "I: Resolving PID file..."
+			_resolvedPids=$( pids/irodsMicroService/resolvePidFile "$_pidFile" )
+			
+			if [[ $? -ne 0 ]]; then
+				echo "W: At least one PID could not be resolved."
+			fi 
+			
+			helperFunctions/echoIfVerbose "I: Building transfer list..."
+			gsiftpTransferList=$( pids/irodsMicroService/buildTransferList "$_resolvedPids" "$gsiftpDestinationUrl" )
+			
+			# exchange source URL specification with transfer list
+			# spec
+			_modifiedGtCommandLine="${__GLOBAL__gtCommandLine/$gsiftpSourceUrl/ -f $gsiftpTransferList}"
+			# remove any source option
+			_modifiedGtCommandLine="${_modifiedGtCommandLine/ -s }"
+			_modifiedGtCommandLine="${_modifiedGtCommandLine/ --source }"
+			# remove destination URL spec
+			_modifiedGtCommandLine="${_modifiedGtCommandLine/$gsiftpDestinationUrl}"
+			# remove any destination option
+			_modifiedGtCommandLine="${_modifiedGtCommandLine/ -d }"
+			_modifiedGtCommandLine="${_modifiedGtCommandLine/ --destination }"
+			
+			# call new gt instance to perform a list transfer
+			$_modifiedGtCommandLine
+			exit $?
+		else
+			echo "E: Cannot resolve PIDs without \"irule\" tool. Exiting" 1>&2
+			exit $_gtransfer_exit_software
+		fi	
 	fi
 
 	if [[ $autoOptimize -eq 1 ]]; then

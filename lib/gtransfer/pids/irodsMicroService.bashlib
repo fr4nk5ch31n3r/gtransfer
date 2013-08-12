@@ -1,0 +1,348 @@
+# irodsMicroService.bashlib - interface for PID handling with iRODS micro
+# service
+
+:<<COPYRIGHT
+
+Copyright (C) 2013 Frank Scheiner
+
+The program is distributed under the terms of the GNU General Public License
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+COPYRIGHT
+
+################################################################################
+# DEFINES
+################################################################################
+
+readonly _pids_irodsMicroService_Version="0.2.0"
+if [[ ! -z $__maxParallelJobs ]]; then
+
+	_pids_irodsMicroService_maxParallelJobs=$__maxParallelJobs
+
+elif [[ -e "/sys/devices/system/cpu" ]]; then
+
+	_pids_irodsMicroService_maxParallelJobs=$(( $( ls -1d /sys/devices/system/cpu/cpu* | wc -l ) + 1 ))
+else
+	# maybe going high here is not expensive
+	#readonly _pids_irodsMicroService_maxParallelJobs=11
+	_pids_irodsMicroService_maxParallelJobs=16
+fi
+
+
+################################################################################
+# NEEDED CONFIGURATION FOR STANDALONE OPERATION AND TESTING OF THIS LIB
+################################################################################
+
+if [[ -z $__GLOBAL__gtTmpSuffix ]]; then
+	export __GLOBAL__gtTmpSuffix="#gt#tmp#"
+fi
+
+if [[ -z $__GLOBAL__gtTmpDirName ]]; then
+	export __GLOBAL__gtTmpDirName=$( echo "$0 $@" | sha1sum | cut -d ' ' -f 1 )
+fi
+
+if [[ -z $__GLOBAL__gtTmpDir ]]; then
+	export __GLOBAL__gtTmpDir="$HOME/.gtransfer/tmp/$__GLOBAL__gtTmpDirName"
+	mkdir -p "$__GLOBAL__gtTmpDir"
+fi
+
+if [[ -z $_gtransfer_libraryPrefix ]]; then
+	export _gtransfer_libraryPrefix="gtransfer"
+fi
+
+if [[ -z $_GTRANSFER_LIBEXECPATH ]]; then
+	export _GTRANSFER_LIBEXECPATH="$_LIB/../libexec"
+fi
+
+if [[ -z $gtransferConfigurationFilesPath ]]; then
+	export gtransferConfigurationFilesPath="$HOME/.gtransfer"
+fi
+
+
+################################################################################
+# INCLUDES
+################################################################################
+
+:<<INCLUDE
+helperFunctions.bashlib
+exitCodes.bashlib
+INCLUDE
+
+#  only source if not already sourced
+if [[ -z "$_helperFunctions_Version" ]]; then
+	. "$_LIB/${_gtransfer_libraryPrefix}/helperFunctions.bashlib"
+fi
+
+#  only source if not already sourced
+if [[ -z "$_exitCodes_Version" ]]; then
+	. "$_LIB/${_gtransfer_libraryPrefix}/exitCodes.bashlib"
+fi
+
+################################################################################
+# VARIABLES
+################################################################################
+
+_pids_irodsMicroService_mappingFile="$gtransferConfigurationFilesPath/pids/irodsMicroService_mappingFile"
+
+################################################################################
+# FUNCTIONS
+################################################################################
+
+# getPidWithUrl - Get the PID for the given URL
+#
+# @_url: gsiftp:// URL to get PID for
+#
+# Returns 0 on success, 1 otherwise.
+pids/irodsMicroService/getPidWithUrl()
+{
+	local _gsiftpUrl="$1"
+	
+	local _irodsUrl=""
+	local _pid=""
+
+	if [[ ! "$_gsiftpUrl" =~ "gsiftp://" ]]; then
+		return 1
+	else
+		_irodsUrl=$( pids/irodsMicroService/transformGsiftpUrl "$_gsiftpUrl" ) \
+		|| return 1
+	
+		_pid=$( irule -F ${_GTRANSFER_LIBEXECPATH}/getPidForUrl.r '*url="'$_irodsUrl'"' | cut -d ' ' -f 2 )
+
+		if [[ "$_pid" == "" ]]; then
+			return 1
+		else
+			echo $_pid
+			return
+		fi
+	fi
+}
+
+
+# transformIrodsUrl - Transform irods:// URL to gsiftp:// URL.
+#
+# @_irodsUrl: irods:// URL to transfrom
+#
+# Returns 0 on success, 1 otherwise.
+pids/irodsMicroService/transformIrodsUrl()
+{
+	local _irodsUrl="$1"
+	local _mappingFile="$_pids_irodsMicroService_mappingFile"
+
+	local _gsiftpUrl=""
+	local _irodsUrlHostPart=""
+	local _gsiftpUrlHostPart=""
+	
+	if [[ ! "$_irodsUrl" =~ "irods://" ]]; then
+		return 1
+	fi
+	
+	_irodsUrlHostPart=$( helperFunctions/getURLWithoutPath "$_irodsUrl" )
+	if [[ $? -ne 0 ]]; then
+		return 1
+	fi
+	
+	# transform host part of URL
+	_gsiftpUrlHostPart=$( grep "$_irodsUrlHostPart" "$_mappingFile" 2>/dev/null | cut -d ';' -f 2 )
+	if [[ $? != 0 ]]; then
+		return 1
+	fi
+	
+	_gsiftpUrl=${_irodsUrl/$_irodsUrlHostPart/$_gsiftpUrlHostPart}
+	
+	echo "$_gsiftpUrl"	
+	
+	return
+}
+
+
+# transformGsiftpUrl - Transform gsiftp:// URL to irods:// URL.
+#
+# @_gsiftpUrl: gsiftp:// URL to transfrom
+#
+# Returns 0 on success, 1 otherwise.
+pids/irodsMicroService/transformGsiftpUrl()
+{
+	local _gsiftpUrl="$1"
+	local _mappingFile="$_pids_irodsMicroService_mappingFile"
+
+	local _irodsUrl=""
+	local _irodsUrlHostPart=""
+	local _gsiftpUrlHostPart=""
+	
+	if [[ ! "$_gsiftpUrl" =~ "gsiftp://" ]]; then
+		return 1
+	fi
+	
+	_gsiftpUrlHostPart=$( helperFunctions/getURLWithoutPath "$_gsiftpUrl" ) \
+	|| return 1
+	
+	# transform host part of URL
+	_irodsUrlHostPart=$( grep "$_gsiftpUrlHostPart" "$_mappingFile" 2>/dev/null | cut -d ';' -f 1 )
+	if [[ "$_irodsUrlHostPart" == "" ]]; then
+		return 1
+	fi
+	
+	_irodsUrl=${_gsiftpUrl/$_gsiftpUrlHostPart/$_irodsUrlHostPart}
+	
+	echo "$_irodsUrl"	
+	
+	return
+}
+
+
+# resolvePid - Resolve given PID to one URL
+#
+# @_pid: PID to resolve
+#
+# Returns 0 on success, 1 if the PID couldn't be resolved and 2 if the URL
+# couldn't be transformed to a gsiftp:// URL.
+pids/irodsMicroService/resolvePid()
+{
+	local _pid="$1"
+	
+	local _irodsUrl=""
+	local _gsiftpUrl=""
+
+	#echo "DEBUG: irule -F ${_GTRANSFER_LIBEXECPATH}/URLselecter.r '*pid=\"$_pid\"' | cut -d ' ' -f 2" 1>&2 
+
+	_irodsUrl=$( irule -F ${_GTRANSFER_LIBEXECPATH}/getUrlForPid.r '*pid="'$_pid'"' | cut -d ' ' -f 2 )
+
+	# TODO:
+	# Check if $_url contains an irods:// URL
+	if [[ ! "$_irodsUrl" =~ "irods://" ]]; then
+		return 1
+	else
+		# I assume the returned URL will always be an irods:// URL. It
+		# therefore needs to be transformed to a gsiftp:// URL, so
+		# gtransfer can make use of it.
+		_gsiftpUrl=$( pids/irodsMicroService/transformIrodsUrl "$_irodsUrl" )
+
+		if [[ $? != 0 ]]; then
+			return 2
+		else
+			echo $_gsiftpUrl
+			return
+		fi
+	fi
+}
+
+
+# resolvePidFile - Resolve PIDs provided by the given file to gsiftp:// URLs
+#
+# @_pidFile: PID file to resolve
+#
+# Returns 0 on success, 1 on error and 2 if not all PIDs could be resolved.
+pids/irodsMicroService/resolvePidFile()
+{
+	local _pidFile="$1"
+	
+	local _jobIndex=0
+	
+	local _maxParallelJobs=$_pids_irodsMicroService_maxParallelJobs
+	
+	local -a _jobPids
+	local _allJobPids
+	
+	local _return=0
+	
+	while IFS= read -r _pid; do
+	
+		while [[ 1 ]]; do
+		
+			# start $maxParallelJobs at the same time
+			while [[ $_jobIndex -lt $_maxParallelJobs ]]; do
+				
+				# check if job with current _jobIndex is still
+				# running
+				if ! kill -0 ${_jobPids[$_jobIndex]} &>/dev/null; then
+					
+					#wait ${_jobPids[$_jobIndex]} &>/dev/null
+				
+					pids/irodsMicroService/resolvePid "$_pid" >> "${__GLOBAL__gtTmpDir}/${_jobIndex}.urls.${__GLOBAL__gtTmpSuffix}" &
+				
+					_jobPids[$_jobIndex]=$!
+					_allJobPids="$_allJobPids $!"
+				
+					break 2
+				fi
+			
+				_jobIndex=$(( $_jobIndex + 1 ))
+			done
+			
+			_jobIndex=0
+		done
+			
+	done < "$_pidFile"
+	
+	if [[ $? -ne 0 ]]; then
+		_return=1
+	fi
+	
+	# check if a resolve call didn't work correctly
+	# TODO:
+	# Collect PIDs that couldn't be resolved in a file, so a user can have a
+	# look at those later.
+	for _jobPid in $_allJobPids; do
+		wait $_jobPid &>/dev/null
+		if [[ $? -ne 0 ]]; then
+			_return=2
+			break
+		fi
+	done
+	
+	# create urls files with gt tmp suffix, so they are removed after gt
+	# exits. The removal would otherwise add some extra seconds to the
+	# duration of a call to this function.
+	cat ${__GLOBAL__gtTmpDir}/*urls.${__GLOBAL__gtTmpSuffix} #&& rm *urls
+	
+	return $_return
+}
+
+
+# buildTransferList - Build a transfer list out of resolved PIDs and a
+# destination URL
+#
+# @_resolvedPids   - list of resolved PIDs (String)
+#
+# @_destinationUrl - destination URL to use (String)
+#
+# Returns 0 on success, 1 on error.
+#
+# Prints the name and path of the transfer list created.
+pids/irodsMicroService/buildTransferList()
+{
+	local _resolvedPids="$1"
+	local _destinationUrl="$2"
+	
+	local _transferList="${__GLOBAL__gtTmpDir}/$$_transferList.${__GLOBAL__gtTmpSuffix}"
+	
+	echo "$_resolvedPids" | sed -e 's/^/"/' -e 's/$/"/' -e 's|$| "'$_destinationUrl'"|g' > "$_transferList"
+	
+	if [[ $? -ne 0 ]]; then
+		return 1
+	else
+		echo "$_transferList"
+		return 0
+	fi
+	
+}
+################################################################################
+# INITIALIZATION
+################################################################################
+
+#if ! helperFunctions/use irule; then
+#	exit $_gtransfer_exit_software
+#fi
+
