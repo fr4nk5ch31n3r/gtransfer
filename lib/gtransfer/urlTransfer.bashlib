@@ -689,10 +689,10 @@ urlTransfer/transferData()
 
 	#  Check if valid URLs are provided
 	if ! helperFunctions/isValidUrl $source; then
-		echo "ERROR: Protocol specifier missing in \"$source\" and no local path specified!"
+		echo "ERROR: \"$source\" invalid source URL (check FQDN or protocol part)!" 1>&2
 		exit "$_gtransfer_exit_usage"
 	elif ! helperFunctions/isValidUrl $destination; then
-		echo "ERROR: Protocol specifier missing in \"$destination\" and no local path specified!"
+		echo "ERROR: \"$destination\" invalid destination URL (check FQDN or protocol part)!" 1>&2
 		exit "$_gtransfer_exit_usage"
 	#  check if target URL is a "http://" URL
 	elif [[ "$( helperFunctions/getProtocolSpecifier $destination )" == "http://" || \
