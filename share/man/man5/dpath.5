@@ -1,0 +1,114 @@
+.TH DPATH 5 "Aug 19, 2013" "gtransfer 0.2.0" "Configuration files"
+.SH NAME
+.PP
+data path (dpath) - defines possible paths between source and
+destination of a gtransfer data transfer
+.SH SYNOPSIS
+.PP
+\f[I]$HOME/.gtransfer/dpaths/*\f[]
+.PD 0
+.P
+.PD
+\f[I][\&...]/dpaths/*\f[]
+.SH DESCRIPTION
+.PP
+A data path (dpath) describes possible paths from a specific source
+to a specific destination.
+There exists only one dpath (file) for each source destination
+combination.
+However each dpath (file) can contain multiple distinct paths that
+each route data from source to destination.
+These paths are differentiated by an attribute called
+\f[I]metric\f[].
+The metric attribute of a path is an indicator for the possible
+data transfer performance of a path (somewhat similar to metrics in
+routing).
+Therefore, the fastest path should use the metric \f[B]0\f[].
+Slower paths should use a metric of \f[B]0\ +\ n\f[].
+.PP
+Dpaths can be created either manually or via the \f[B]dpath(1)\f[]
+tool.
+Please see \f[B]dpath(1)\f[] for more information.
+.PP
+Dpaths are named after the SHA1 hash of the corresponding source
+and destination (separated by a \f[B];\f[]) used during creation.
+E.g.
+a dpath with \f[B]gsiftp://host1.domain.tld:2811\f[] as source and
+\f[B]gsiftp://host3.domain.tld:2811\f[] as destination will be
+named \f[B]799f02cde51576d5f620b8450a37e65d48883801\f[].
+This way gt can select the correct dpath for a transfer by
+calculating the SHA1 hash of the source and destination.
+The \f[B]dpath(1)\f[] tool also links the dpath file with an alias
+symlink that makes it easier to inspect specific dpaths.
+.SH PURPOSE
+.PP
+When transferring data from source to destination, gtransfer will
+by default use the path with metric 0 from the corresponding dpath.
+You can change the used metric with the gtransfer option
+\f[B]--metric|-m\f[].
+By providing dpaths gtransfer can bridge different network domains
+\f[I]transparently\f[].
+.SH EXAMPLES
+.PP
+\f[CR]
+      <source>
+      gsiftp://host1.domain.tld:2811
+      </source>
+      <destination>
+      gsiftp://host3.domain.tld:2811
+      </destination>
+      <path\ metric="0">
+      gsiftp://host1.domain.tld:2811;gsiftp://host3.domain.tld:2811
+      </path>
+      <path\ metric="1">
+      gsiftp://host1.domain.tld:2811;gsiftp://host2.domain.tld:2811/tmp/
+      gsiftp://host2.domain.tld:2811/tmp/;gsiftp://host3.domain.tld:2811
+      </path>
+\f[]
+.SH DPATH SYNTAX
+.PP
+A dpath file consists of XML like tags, attributes and values.
+As gt does not make use of a real XML parser, (start and end) tags
+and values have to be written on a single line each as shown in the
+example.
+.SH PATH SYNTAX
+.PP
+A path is a table with two columns separated by \f[B];\f[].
+Each line of the table describes one step of a transfer and
+consists of the source (1st col.)
+and the destination (2nd col.)
+of a transfer step.
+.SS Single step or direct transfers
+.PP
+The one and only line starts with a string identical to the source
+of the data path.
+The destination is identical to the destination of the data path.
+This means that for direct transfers there are not paths added to
+these strings.
+.SS Multistep or indirect transfers
+.PP
+\f[B]A.\f[] The first line either starts with a string identical to
+the source of the data path or a \f[B]file://\f[] URL part, if a
+local transfer is needed first (for example a transfer from a local
+scratch filesystem to another locally mounted remote filesystem).
+The destination (the \f[I]transit site\f[]) is either a
+\f[B]gsiftp://FQDN[:PORT]\f[] URL with a default path (temporary
+storage space for files on transit sites) added, or a
+\f[B]file://\f[] URL part with a default path added.
+.PP
+\f[B]B.\f[] All following lines start with either the destination
+string of the previous line or a \f[B]gsiftp://FQDN[:PORT]\f[] URL
+with a path added, that points to the same directory as the path
+used by the previous destination.
+They end either with a string which is identical to the destination
+of the data path (last step without a path), or a destination as
+described in A (transit step).
+.SH WARNING
+.PP
+Paths with identical metric are not allowed currently!
+.SH SEE ALSO
+.PP
+\f[B]gtransfer(1)\f[], \f[B]dpath(1)\f[], \f[B]sha1sum(1)\f[]
+.SH AUTHORS
+Frank Scheiner.
+

@@ -1,10 +1,10 @@
-# (gtransfer) host aliases #
+# Host aliases #
 
-* [What is a host alias?](https://github.com/fr4nk5ch31n3r/gtransfer/wiki/Host-aliases#what-is-a-host-alias)
-* [Alias syntax](https://github.com/fr4nk5ch31n3r/gtransfer/wiki/Host-aliases#alias-syntax)
-* [Alias mapping](https://github.com/fr4nk5ch31n3r/gtransfer/wiki/Host-aliases#alias-mapping)
-    * [Alias mapping with file](https://github.com/fr4nk5ch31n3r/gtransfer/wiki/Host-aliases#alias-mapping-with-file)
-    * [Alias mapping with directory](https://github.com/fr4nk5ch31n3r/gtransfer/wiki/Host-aliases#alias-mapping-with-directory)
+* [What is a host alias?](#what-is-a-host-alias)
+* [Alias syntax](#alias-syntax)
+* [Alias mapping](#alias-mapping)
+    * [Alias mapping with file](#alias-mapping-with-file)
+    * [Alias mapping with directory](#alias-mapping-with-directory)
 
 ## What is a host alias? ##
 

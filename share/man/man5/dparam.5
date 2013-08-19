@@ -1,0 +1,71 @@
+.TH DPARAM 5 "Aug 19, 2013" "gtransfer 0.2.0" "Configuration files"
+.SH NAME
+.PP
+default param (dparam) - defines optimized data transfer parameters
+between source and destination of a gtransfer data transfer
+.SH SYNOPSIS
+.PP
+\f[I]$HOME/.gtransfer/dparams/*\f[]
+.PD 0
+.P
+.PD
+\f[I][\&...]/dparams/*\f[]
+.SH DESCRIPTION
+.PP
+Default parameters (dparams) can be defined for specific source
+destination combinations, given the fact, they describe
+\f[I]direct\f[] connections.
+A \f[I]direct\f[] connection is defined as having no transit site
+between source and destination.
+The default parameters are usually consisting of the best
+performing parameter configurations for the
+\f[B]globus-url-copy(1)\f[]/\f[B]tgftp(1)\f[] tool for the
+corresponding connection.
+These can be determined by executing data transfer tests between
+the specific source and destination.
+.PP
+Dparams can be created either manually or via the
+\f[B]dparam(1)\f[] tool.
+Please see \f[B]dparam(1)\f[] for more information.
+.PP
+Dparams are named after the SHA1 hash of the corresponding source
+and destination (separated by a \f[B];\f[]) used during creation.
+E.g.
+a dparam with \f[B]gsiftp://host1.domain.tld:2811\f[] as source and
+\f[B]gsiftp://host3.domain.tld:2811\f[] as destination will be
+named \f[B]799f02cde51576d5f620b8450a37e65d48883801\f[].
+This way gt can select the correct dparam for a transfer by
+calculating the SHA1 hash of the source and destination.
+The \f[B]dparam(1)\f[] tool also links the dparam file with an
+alias symlink that makes it easier to inspect specific dparams.
+.SH PURPOSE
+.PP
+When transferring data from source to destination, gtransfer will
+automatically use the corresponding dparam for the specific
+transfer providing optimized performance without user intervention.
+.SH EXAMPLES
+.PP
+\f[CR]
+      <source>
+      gsiftp://host1.domain.tld:2811
+      </source>
+      <destination>
+      gsiftp://host3.domain.tld:2811
+      </destination>
+      <gsiftp_params>
+      -p\ 4\ -tcp-bs\ 16M\ -cc\ 8\ -stripe\ -cd
+      </gsiftp_params>
+\f[]
+.SH DPARAM SYNTAX
+.PP
+A dparam file consists of XML like tags, attributes and values.
+As gt does not make use of a real XML parser, (start and end) tags
+and values have to be written on a single line each as shown in the
+example.
+.SH SEE ALSO
+.PP
+\f[B]gtransfer(1)\f[], \f[B]dparam(1)\f[], \f[B]sha1sum(1)\f[],
+\f[B]tgftp(1)\f[], \f[B]globus-url-copy(1)\f[]
+.SH AUTHORS
+Frank Scheiner.
+

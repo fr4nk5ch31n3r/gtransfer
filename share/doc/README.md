@@ -1,338 +1,170 @@
 # Gtransfer - The GridFTP data transfer script #
 
-## Contents ##
+* [Description](#description)
+* [Features](#features)
+    * [Multi-step data transfers](#multi-step-data-transfers)
+    * [Optimized data transfer performance](#optimized-data-transfer-performance)
+    * [Data transfer interruption and continuation](#data-transfer-interruption-and-continuation)
+    * [Data transfer reliability](#data-transfer-reliability)
+    * [Bash completion](#bash-completion)
+    * [Host aliases](#host-aliases)
+    * [Persistent identifiers (PIDs)](#persistent-identifiers-pids)
+* [Examples](#examples)
+* [Who is using it?](#who-is-using-it)
+* [License](#license)
 
-1. Synopsis  
-    1.1	Data paths  
-    1.2	Default parameters
-2. Creating data paths
-3. Providing data paths
-4. Creating default params
-5. Providing default params
-6. gtransfer usage examples
 
-***
+## Description ##
 
-## (1) Synopsis ##
+Gtransfer is a wrapper script for [tgftp] and provides an advanced command line
+interface for performing GridFTP transfers. The aim of gtransfer is to make
+GridFTP data transfers on the command line as easy as possible for the user.
+Therefore a user only has to provide the source and the destination to perform
+a data transfer:
 
-The _gtransfer_ - or short _gt_ - tool is a wrapper for _tgftp_, enabling
-(GridFTP) transfers along predefined paths by using transit sites. Additionally
-it supports usage of default parameters for specific connections.
-
-Detailed help is provided by the help output of the script and its man page.
-
-There's bash completion available for gtransfer. This supports completion of
-options and URLs. URL completion also expands (remote) paths. For more details, please checkout
-the [video](http://shelr.tv/records/4fd1be0096608036e1000001) at shelr.tv.
-
-### (1.1) Data paths ###
-
-A data path - or short _dpath_ - describes possible paths from a specific source
-to a specific destination. There exists only one data path (file) for each
-source destination combination. However each data path (file) can contain
-multiple paths that each route data from source to destination.
-These paths are differentiated by an attribute called _metric_. The metric
-attribute of a path is an indicator for the performance of a path (somewhat
-similar to routing). Therefore, the fastest path should use the metric `0`.
-Slower paths should use a metric of `0 + n`. By default gt uses the path with
-metric `0` for a transfer (change with `--metric|-m`). More details on this are
-described in (2).
-
-WARNING:
-Paths with identical metric are not allowed currently!
-
-### (1.2) Default parameters ###
-
-Default parameters - or short _dparams_ - can be defined for specific source
-destination combinations, given the fact, they describe _direct_ connections. A
-_direct_ connection is defined as having no transit site between source and
-destination. The default parameters are usually consisting of the best
-performing parameter configurations for the _globus-url-copy_/_tgftp_ tool for
-the corresponding connection. These can be determined by the data services group
-or by an advanced user itself using manual testing or tgftp autotuning.
-
-***
-
-## (2) Creating data paths ##
-
-For data path creation the tool _dpath_ can be used. Data paths are by default
-created in `$HOME/.gtransfer/dpaths`. This can be done for example with the
-following command:
-
-```
-$ dpath --create \  
-        --source file:// \  
-        --destination gsiftp://gridftp-host.domain:2811 \  
-        --alias Local--to--Domain_gridftp-host
+```shell
+$ gt -s <SOURCE> -d <DESTINATION>
 ```
 
-`source` and `destination` have to be URLs (without any path additions) like the
-following examples:
+[tgftp]: https://github.com/fr4nk5ch31n3r/tgftp/
 
-`file://`
 
-`gsiftp://gridftp-host.domain:2811`
+## Features ##
 
-If the environment variable `EDITOR` is set, dpath will open the already created
-data path file for editing with the executable set in `EDITOR`. See the
-documentation on data path files below. For a detailed overview of all features
-of dpath, please check the help with `--help` or the man page.
+### Multi-step data transfers ###
 
-EXAMPLE:
+Gtransfer can transfer files along predefined paths by using transit sites and
+can therefore bridge different network domains.
 
-The source and destination combination...
+Example:
 
-`
-gsiftp://gridftp-host.site-a:2811;gsiftp://gridftp-host.site-b:2811
-`
-
-...will be internally transformed to the following string (actually the SHA1
-hash of the input)...
-
-`
-26883acd4225482d26e588e97df3d1d1c3740d02
-`
-
-...which is used as filename for the specific data path from
-`gridftp-host.site-a` to `gridftp-host.site-b`.
-
-NOTICE:
-
-As the SHA1 hash value is not very meaningful, a link to a specific data path,
-naming the source and destination could be helpful for manual human interaction. 
-Therefore dpath automatically creates one with a user provided alias as name.
-
-EXAMPLE:
-
-```
-$HOME/.gtransfer/dpaths
-|-- 26883acd4225482d26e588e97df3d1d1c3740d02
-|-- ee2824fdccfb55c359b4d40b0370da7b66360026
-|-- Site-b_gridftp-host--to--Site-c_gridftp-host -> ee2824fdccfb55c359b4d40b0370da7b66360026
-`-- Site-a_gridftp-host--to--Site-b_gridftp-host -> 26883acd4225482d26e588e97df3d1d1c3740d02
-
-/etc/gtransfer/dpaths
-|-- 18b0cc9961ad47e7cb2021aa158f86e561e07683
-`-- Local--to--Domain_gridftp-host -> 18b0cc9961ad47e7cb2021aa158f86e561e07683
+```shell
+$ gt -s gsiftp://host1.domain.tld:2811/files/* -d gsiftp://host3.domain.tld:2811/files/
 ```
 
-Naming of the aliases is not restricted, but it is encouraged to use something
-like the following:
+[![multi-step transfer](/share/doc/images/multi-step_transfer_400px.png)](/share/doc/images/multi-step_transfer.png)
 
-`
-{{site|organization}_{resource|hostName|FQDN}|Local}--to--{site|organization}_{resource|hostName|FQDN}
-`
+The host `host1` is located in a private network, `host3` is located in the
+Internet and `host2` has connections to both networks. To transfer files from
+`host1` to `host3` gtransfer copies the files to the transit host `host2` (first
+step) and afterwards from `host2` to `host3` (second step). After the transfer
+has finished temporary files are removed from `host2`.
 
-Example file contents of a data path:
+### Optimized data transfer performance ###
 
-`
-Local--to--Domain_gridftp-host -> 18b0cc9961ad47e7cb2021aa158f86e561e07683:
-`
-```xml
-<source>
-file://
-</source>
-<destination>
-gsiftp://gridftp-host.domain:2811
-</destination>
-<path metric="0">
-file://;gsiftp://gridftp-host.domain:2811
-</path>
-<path metric="1">
-file://;gsiftp://gridftp-host.transit:2811/tmp/
-gsiftp://gridftp-host.transit:2811/tmp/;gsiftp://gridftp-host.domain:2811
-</path>
-```
+Gtransfer supports usage of pre-optimized data transfer parameters for specific
+connections. See [dpath(5)] for details. In addition gtransfer can also
+automatically optimize a data transfer depending on the size of the files.
 
-This data path file defines two paths from the local machine (indicated by the
-`file://` URL part) to the GridFTP host `gridftp-host.domain`. The path with
-metric `0` will use a direct connection to transfer data from the local machine
-to the remote machine and therefore is (usually) the fastest path. The second
-path uses another GridFTP host as transit site. Therefore, if this path is used
-(e.g. by using `--metric|-m 1` as option for gtransfer) the data is first
-transferred to `gridftp-host.transit` and as second step, from there to the
-final destination `gridftp-host.domain`.
+[dpath(5)]: /share/doc/dpath.5.md
 
-NOTICE:
+### Data transfer interruption and continuation ###
 
-### The syntax of a path is as follows ###
+Gtransfer supports interruption and continuation of transfers. You can interrupt
+a transfer by hitting `CTRL+C`. To continue an interrupted transfer simply issue
+the very same command, gtransfer will then continue the transfer where it was
+interrupted. The same procedure also works for a failed transfer.
 
-A path is a table with two columns separated by `;`. Each line of the table
-describes one step of a transfer and consists of the source (1st col.) and the
-destination (2nd col.) of a transfer step.
+### Data transfer reliability ###
 
-### Single step or direct transfers ###
+Gtransfer supports automatic retries of failed transfer steps. The number of
+retries is configurable. See [gtransfer(1)] for details.
 
-The one and only line starts with a string identical to the source of the data
-path. The destination is identical to the destination of the data path. This
-means that there are not paths added to these strings for direct transfers.
+[gtransfer(1)]: /share/doc/gtransfer.1.md
 
-### Multistep or indirect transfers ###
+### Bash completion ###
 
-**A.** The first line either starts with a string identical to the source of the
-data path or a `file://` URL part, if a local transfer is needed first (for
-example a transfer from a local scratch filesystem to another locally mounted
-remote filesystem). The destination is either a `gsiftp://FQDN[:PORT]` URL with
-a default world-writable* path added, or a `file://` URL part with a default
-world-writable* path added.
-__________
-*)_Do I really need a world-writable path?_
+Gtransfer makes use of bash completion to ease usage. This supports completion
+of options and URLs. URL completion also expands (remote) paths directly on the
+command line. Just hit the `TAB` key to see what's possible.
 
-_If a world-writable path is not desirable, it will also work with a_
-_group-writable path, given the fact, that all GridFTP users (that should be able_
-_to use this service) are included in this group. Please dont forget to set the_
-_sticky bit on this directory!_
+### Host aliases ###
 
-**B.** All following lines start with either the destination string of the previous
-line or a `gsiftp://FQDN[:PORT]` URL with a path added, that points to the same
-directory as the path used by the previous destination. They end either with a
-string which is identical to the destination of the data path (last step without
-a path), or a destination as described in A (transit step).
-__________
-FQDN Fully Qualified Domain Name
-[...] values in brackets are optional
+Gtransfer can use host aliases as alternatives to host addresses. E.g. a user
+can use `myGridFTP:` and `gsiftp://host1.domain.tld:2811` synonymically. See
+[host aliases] for more details.
 
-***
+[host aliases]: /share/doc/host_aliases.md
 
-## (3) Providing data paths ##
+### Persistent identifiers (PIDs) ###
 
-Data paths can be maintained in any repository, but preferably one with version
-control enabled (e.g. with git, svn, etc.). To make these data paths useful for
-users, they should be hosted on a web server. The dpath tool can retrieve the
-latest data path distribution from there (currently only http is supported).
-Dpath expects a gzip compressed tar file containing the data paths. All files in
-this tar file must be stored without paths; symbolic links should be preserved
-(default for GNU tar on Ubuntu 10.04). The location and name of the tar file
-must be defined in the dpath configuration file. A user can then retrieve the
-data paths with the following command:
+Gtransfer can use persistent identifiers (PIDs) as used and provided by [EUDAT]
+as source of a data transfer. See [persistent identifiers] for more details.
 
-```
-$ dpath --retrieve
-```
+[persistent identifiers]: /share/doc/persistent_identifiers.md
+[EUDAT]: http://www.eudat.eu/
 
-To spare the user the manual retrieval, it is also possible to preload data
-paths and place them in a convenient location (the location must be defined in
-the gtransfer configuration file). Please notice, that data paths located in
-the home directory of a user (in `$HOME/.gtransfer/dpaths`) take precedence over
-preloaded data paths.
 
-***
+## Examples ##
 
-## (4) Creating default params ##
+...
 
-For creating default params the tool _dparam_ can be used. A default params
-filename is constructed like a data path filename (see above!). This can be done
-for example with the following command:
 
-```
-$ dparam --create \
-         --source file:// \
-         --destination gsiftp://gridftp-host.domain:2811 \
-         --alias Local--to--Domain_gridftp-host
-```
+## Who is using it? ##
 
-`source` and `destination` have to be URLs (without any path additions) like the
-following examples:
+This is a list of HPC centers in Europe that use gtransfer in production:
 
-`file://`
+[![HLRS logo](https://raw.github.com/fscheiner/images/master/site_logos/hlrs_logo.png)](http://www.hlrs.de/)
+  
+[Höchstleistungsrechenzentrum Stuttgart (HLRS - Germany)](http://www.hlrs.de/)
 
-`gsiftp://gridftp-host.domain:2811`
+****
 
-If the environment variable `EDITOR` is set, dparam will open the already created
-default params file for editing with the binary set in `EDITOR`. See the
-documentation on default params files below. For a detailed overview of all
-features of dparam, please check the help with `--help`.
+[![CSC logo](https://raw.github.com/fscheiner/images/master/site_logos/csc_logo_h100.png)](http://www.csc.fi/)
 
-Example file contents:
+[CSC - IT Center for Science (CSC - Finland)](http://www.csc.fi/)
 
-```xml
-<source>
-gsiftp://gridftp-host.site-a:2811
-</source>
-<destination>
-gsiftp://gridftp-host.site-b:2813
-</destination>
-<gsiftp_params>
--vb -p 16 -tcp-bs 16M -pp -cc 8 -cd
-</gsiftp_params>
-```
+****
 
-***
+[![LRZ logo](https://raw.github.com/fscheiner/images/master/site_logos/lrz_logo_h100.png)](http://www.lrz.de/)
 
-## (5) Providing default params ##
+[Leibniz-Rechenzentrum (LRZ) der Bayerischen Akademie der Wissenschaften (LRZ - Germany)](http://www.lrz.de/)
 
-Default params can be maintained in any repository, but preferably one with
-version control enabled (e.g. with git, svn, etc.). To make these default params
-useful for users, they should be hosted on a web server. The dparams tool can
-retrieve the latest default params distribution from there (currently only http
-is supported). Dparam expects a gzip compressed tar file containing the default
-params. All files in this tar file must be stored without paths; symbolic links
-should be preserved (default for GNU tar on Ubuntu 10.04). The location and name
-of the tar file must be defined in the dparam configuration file. A user can
-then retrieve the default params with the following command:
+****
 
-```
-$ dparam --retrieve
-```
+[![ICHEC logo](https://raw.github.com/fscheiner/images/master/site_logos/ichec_logo.png)](http://www.ichec.ie/)
 
-To spare the user the manual retrieval, it is also possible to preload default
-params and place them in a convenient location (the location must be defined in
-the gtransfer configuration file). Please notice, that default params located in
-the home directory of a user (in `$HOME/.gtransfer/dparams`) take precedence
-over preloaded default params.
+[Irish Centre for High-End Computing (ICHEC - Ireland)](http://www.ichec.ie/)
 
-***
+****
 
-## (6) gtransfer usage examples ##
+[![CINECA logo](https://raw.github.com/fscheiner/images/master/site_logos/cineca_logo.png)](http://www.cineca.it/)
 
-Help and usage output is provided by issuing:
+[Centro di supercalcolo, Consorzio di università (CINECA - Italy)](http://www.cineca.it/)
 
-```
-$ gtransfer [--help]
-```
+****
 
-or
+[![SURFSARA logo](https://raw.github.com/fscheiner/images/master/site_logos/surfsara_logo.png)](http://www.surfsara.nl/)
 
-```
-$ gt [--help]
-```
+[SURFsara (SURFsara - The Netherlands)](http://www.surfsara.nl/)
 
-There are also man pages available for gt(ransfer), dpath and dparam.
+****
 
-EXAMPLES:
+[![CINES logo](https://raw.github.com/fscheiner/images/master/site_logos/cines_logo.png)](http://www.cines.fr/)
 
-#1
-This example transfers files from Site-a to Site-b using verbose output (`-v`)
-and the path with metric `1`. This path _reroutes_ data between Site-a and Site-b
-through Site-c.
-After the last step (Site-c to Site-b) has completed, the temporary data at
-Site-c is removed with a tgftp post command
-(`tgftp [...] --post-command "[...]"`):
+[Centre Informatique National de l’Enseignement Supérieur (CINES - France)](http://www.cines.fr/)
 
-```
-$ gt -s gsiftp://gridftp-host.site-a:2811/scratch/32x128MB/ -d gsiftp://gridftp-host.site-b:2812/scratch/32x128MB/ -v -m 1
-Data path used:
-/home/user/.gtransfer/dpaths/26883acd4225482d26e588e97df3d1d1c3740d02
-Transfer step: 0
-Default params used:
-/home/user/.gtransfer/dparams/d86466c97a4eb60f73cbe63bdfca9f65779a915b
-tgftp --source "gsiftp://gridftp-host.site-a:2811/scratch/32x128MB/" --target "gsiftp://gridftp-host.site-c:2813/transit/transitSiteTempDir.AXcwS7T9/" --log-filename "tgftp_transfer_14733__step_0.log" -- "-vb -p 32 -tcp-bs 8M -cc 8 -cd"
-........
-Transfer step: 1
-Default params used:
-/home/user/.gtransfer/dparams/ac684a72756fb8be0dae39c22811dd98da7775e2
-tgftp --source "gsiftp://gridftp-host.site-c:2813/transit/transitSiteTempDir.AXcwS7T9/" --target "gsiftp://gridftp-host.site-b:2812/scratch/32x128MB/" --log-filename "tgftp_transfer_14733__step_1.log" --post-command "uberftp -rm -r gsiftp://gridftp-host.site-c:2813/transit/transitSiteTempDir.AXcwS7T9/ &" -- "-vb -p 32 -tcp-bs 8M -cc 8 -cd"
-.....
-INFO: The transfer succeeded!
-```
 
-#2
-This example does the same as #1 but uses the path with the default metric
-(which is `0`) and default output. This performs a single-step (direct) transfer
-between Site-a and Site-b:
+## License ##
 
-```
-$ gt -s gsiftp://gridftp-host.site-a:2811/scratch/32x128MB/ -d gsiftp://gridftp-host.site-b:2812/scratch/32x128MB/
-...........
-```
+(GPLv3)
 
+Copyright (C) 2010, 2011, 2013 Frank Scheiner, HLRS, Universitaet Stuttgart  
+Copyright (C) 2011, 2012, 2013 Frank Scheiner
+
+The software is distributed under the terms of the GNU General Public License
+
+This software is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This software is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a [copy] of the GNU General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+[copy]: /COPYING
