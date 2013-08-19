@@ -42,7 +42,7 @@ Example:
 $ gt -s gsiftp://host1.domain.tld:2811/files/* -d gsiftp://host3.domain.tld:2811/files/
 ```
 
-[![multi-step transfer](/share/doc/images/multi-step_transfer_400px.png)](../../share/doc/images/multi-step_transfer.png)
+[![multi-step transfer](/share/doc/images/multi-step_transfer_400px.png)](/share/doc/images/multi-step_transfer.png)
 
 The host `host1` is located in a private network, `host3` is located in the
 Internet and `host2` has connections to both networks. To transfer files from
