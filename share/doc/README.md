@@ -1,17 +1,17 @@
 # Gtransfer - The GridFTP data transfer script #
 
-* [Description](README.md#description)
-* [Features](README.md#features)
-    * [Multi-step data transfers](README.md#)
-    * [Optimized data transfer performance](README.md#)
-    * [Data transfer interruption and continuation](README.md#)
-    * [Data transfer reliability](README.md#)
-    * [Bash completion](README.md#)
-    * [Host aliases](README.md#)
-    * [Persistent identifiers (PIDs)](README.md#)
-* [Examples](README.md#)
-* [Who is using it?](README.md#)
-* [License](README.md#)
+* [Description](#description)
+* [Features](#features)
+    * [Multi-step data transfers](#multi-step-data-transfers)
+    * [Optimized data transfer performance](#optimized-data-transfer-performance)
+    * [Data transfer interruption and continuation](#data-transfer-interruption-and-continuation)
+    * [Data transfer reliability](#data-transfer-reliability)
+    * [Bash completion](#bash-completion)
+    * [Host aliases](#host-aliases)
+    * [Persistent identifiers (PIDs)](#persistent-identifiers-pids)
+* [Examples](#examples)
+* [Who is using it?](#who-is-using-it)
+* [License](#license)
 
 
 ## Description ##
