@@ -42,7 +42,7 @@ Example:
 $ gt -s gsiftp://host1.domain.tld:2811/files/* -d gsiftp://host3.domain.tld:2811/files/
 ```
 
-[![multi-step transfer](share/doc/images/multi-step_transfer_400px.png)](share/doc/images/multi-step_transfer.png)
+[![multi-step transfer](/share/doc/images/multi-step_transfer_400px.png)](../../share/doc/images/multi-step_transfer.png)
 
 The host `host1` is located in a private network, `host3` is located in the
 Internet and `host2` has connections to both networks. To transfer files from
@@ -56,7 +56,7 @@ Gtransfer supports usage of pre-optimized data transfer parameters for specific
 connections. See [dpath(5)] for details. In addition gtransfer can also
 automatically optimize a data transfer depending on the size of the files.
 
-[dpath(5)]: share/doc/dpath.5.md
+[dpath(5)]: /share/doc/dpath.5.md
 
 ### Data transfer interruption and continuation ###
 
@@ -70,7 +70,7 @@ interrupted. The same procedure also works for a failed transfer.
 Gtransfer supports automatic retries of failed transfer steps. The number of
 retries is configurable. See [gtransfer(1)] for details.
 
-[gtransfer(1)]: share/doc/gtransfer.1.md
+[gtransfer(1)]: /share/doc/gtransfer.1.md
 
 ### Bash completion ###
 
@@ -84,14 +84,14 @@ Gtransfer can use host aliases as alternatives to host addresses. E.g. a user
 can use `myGridFTP:` and `gsiftp://host1.domain.tld:2811` synonymically. See
 [host aliases] for more details.
 
-[host aliases]: share/doc/host_aliases.md
+[host aliases]: /share/doc/host_aliases.md
 
 ### Persistent identifiers (PIDs) ###
 
 Gtransfer can use persistent identifiers (PIDs) as used and provided by [EUDAT]
 as source of a data transfer. See [persistent identifiers] for more details.
 
-[persistent identifiers]: share/doc/persistent_identifiers.md
+[persistent identifiers]: /share/doc/persistent_identifiers.md
 [EUDAT]: http://www.eudat.eu/
 
 
@@ -167,4 +167,4 @@ GNU General Public License for more details.
 You should have received a [copy] of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-[copy]: COPYING
+[copy]: /COPYING
