@@ -6,7 +6,7 @@
 #  2011-12-18  Frank Scheiner
 #  2012-11-03  Frank Scheiner
 
-set ModulefileVersion "0.4"
+set ModulefileVersion "0.5"
 
 set VERSION [file tail [module-info name]]
 
@@ -53,7 +53,7 @@ if { [module-info shell] == "bash" || [module-info shell] == "sh" } {
 
 if { [module-info mode] != "whatis" } {
    puts stderr "[module-info mode] gtransfer $VERSION (PATH, MANPATH)"
-   puts stderr "In addition to the manual pages (man {gtransfer|gt|dparam|dpath}), there is also a longer README file available (less $GTRANSFER_DIRECTORY_OF_DOCS/README)."
+   puts stderr "In addition to the manual pages (man {gtransfer|gt|dparam|dpath|halias}), there is also a longer README file available (less $GTRANSFER_DIRECTORY_OF_DOCS/README.md)."
 }
 
 
