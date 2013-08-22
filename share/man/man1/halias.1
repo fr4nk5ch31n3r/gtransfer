@@ -1,0 +1,61 @@
+.TH HALIAS 1 "Aug 22, 2013" "gtransfer 0.2.0" "User Commands"
+.SH NAME
+.PP
+halias - host alias helper utility
+.SH SYNOPSIS
+.PP
+\f[B]halias [OPTION] \f[I]STRING\f[]\f[]
+.SH DESCRIPTION
+.PP
+\f[B]halias\f[] (host alias) is a small helper utility providing an
+interface to the alias bashlib.
+It can be used to list or expand host aliases and also to check if
+a given string is an alias.
+You can define system aliases and user aliases.
+When dealiasing strings, user aliases take precedence over system
+aliases.
+.SH OPTIONS
+.PP
+The options are as follows:
+.SS \f[B]-l, \[em]list\f[]
+.PP
+List all available host aliases.
+If a system alias and a user alias are identical, only one of both
+is shown.
+.SS \f[B]-d, \[em]dealias \f[I]STRING\f[]\f[]
+.PP
+Expand a given string.
+If \f[I]STRING\f[] is not a host alias, then \f[I]STRING\f[] is
+just printed to STDOUT.
+.SS \f[B]-i, \[em]is-alias \f[I]STRING\f[]\f[]
+.PP
+Check if a given string is a host alias.
+Returns 0 if yes, 1 otherwise.
+.PP
+General options:
+.SS \f[B][--help]\f[]
+.PP
+Prints out a help message.
+.SS \f[B][-V, --version]\f[]
+.PP
+Prints out version information.
+.SH FILES
+.SS \f[I][\&...]/halias.conf\f[]
+.PP
+The halias configuration file.
+The paths to system and user aliases directories can be configured
+there.
+.SS \f[I][\&...]/aliases[/]\f[]
+.PP
+This file can be a directory or a regular file and contains the
+system aliases.
+.SS \f[I]$HOME/.gtransfer/aliases[/]\f[]
+.PP
+This file can be a directory or a regular file and contains the
+user aliases.
+.SH SEE ALSO
+.PP
+\f[B]gtransfer(1)\f[]
+.SH AUTHORS
+Frank Scheiner.
+

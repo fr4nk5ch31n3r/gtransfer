@@ -1,269 +1,224 @@
-.TH DPATH 1 "24 Jan 2013" "version 0.1.1" "User Commands"
+.TH DPATH 1 "Aug 22, 2013" "gtransfer 0.2.0" "User Commands"
 .SH NAME
-dpath \- The dpath helper script
-
+.PP
+dpath - The dpath helper script
 .SH SYNOPSIS
-.B dpath
-.BI "--create|-c " "[/path/to/files] "
-.BI "--source|-s " "gsiftpSourceUrl"
-.BI "--destination|-d " "gsiftpDestinationUrl"
-.BI "--alias|-a " "alias"
-.BI "[--dpath-template " "dpathTemplate" "]"
-.BI "[--configfile " "configurationFile" "]"
-
-.B dpath
-.BI "--batch-create|-b " "[/path/to/files] "
-.BI "--hosts|-h " "hostsFile"
-.BI "[--dpath-template " "dpathTemplate" "]"
-.BI "[--configfile " "configurationFile" "]"
-
-.B dpath
-.BI "--list|-l " "[/path/to/files] " "[--verbose|-v]"
-.B [--configfile
-.IB configurationFile ]
-
-.B dpath
-.BI "--retrieve|-r " "[/path/to/files] " "[--verbose|-v]"
-.BI "[--configfile " "configurationFile" "]"
-
-.B dpath
-.BI "--reindex " "[/path/to/files] " "[--verbose|-v]"
-.BI "[--configfile " "configurationFile" "]"
-
+.PP
+\f[B]dpath --create|-c \f[I][/path/to/files]\f[] --source|-s \f[I]gsiftpSourceUrl\f[] --destination|-d \f[I]gsiftpDestinationUrl\f[] --alias|-a \f[I]alias\f[] [\[em]dpath-template \f[I]dpathTemplate\f[]] [\[em]configfile \f[I]configurationFile\f[]]\f[]
+.PP
+\f[B]dpath --batch-create|-b \f[I][/path/to/files]\f[] --hosts|-h \f[I]hostsFile\f[] [--dpath-template \f[I]dpathTemplate\f[]] [--configfile \f[I]configurationFile\f[]]\f[]
+.PP
+\f[B]dpath --list|-l \f[I][/path/to/files]\f[] [--verbose|-v] [--configfile \f[I]configurationFile\f[]]\f[]
+.PP
+\f[B]dpath --retrieve|-r \f[I][/path/to/files]\f[] [--verbose|-v] [--configfile \f[I]configurationFile\f[]]\f[]
+.PP
+\f[B]dpath --reindex \f[I][/path/to/files]\f[] [--verbose|-v] [--configfile \f[I]configurationFile\f[]]\f[]
 .SH DESCRIPTION
-.B dpath
-is a helper script for 
-.B gtransfer
-to support users in creating dpaths, listing available dpaths and retrieve the
-latest dpaths from a preconfigured repository.
-
+.PP
+\f[B]dpath\f[] is a helper script for \f[B]gtransfer(1)\f[] to
+support users in creating dpaths, listing available dpaths and
+retrieve the latest dpaths from a preconfigured repository.
 .SH MODES
-
-.B dpath
-has several modes of operation:
-
-.TP 10
-.B CREATE
-Creates a dpath file and a link to it named after the
-.I alias
-that is specified by the user.
-
-.TP
-.B BATCH CREATE
+.PP
+\f[B]dpath\f[] has several modes of operation:
+.SS \f[B]CREATE\f[]
+.PP
+Creates a dpath file and a link to it named after the alias that is
+specified by the user.
+.SS \f[B]BATCH CREATE\f[]
+.PP
 Creates all possible dpaths between host addresses given in a file.
 Corresponding aliases are created automatically.
-
-.TP
-.B LIST
-Lists all available dpaths. Additionally only sources and destinations of dpaths
-can be listed, too.
-
-.TP
-.B RETRIEVE
-Retrieve the latest dpaths available. In this mode
-.B dpath
-updates the local dpaths with data available from a preconfigured repository.
-
-.TP
-.B REINDEX
-Reindex all dpaths. In this mode
-.B dpath 
-updates the sources and destinations index files.
-
+.SS \f[B]LIST\f[]
+.PP
+Lists all available dpaths.
+Additionally only sources and destinations of dpaths can be listed,
+too.
+.SS \f[B]RETRIEVE\f[]
+.PP
+Retrieve the latest dpaths available.
+In this mode dpath updates the local dpaths with data available
+from a preconfigured repository.
+.SS \f[B]REINDEX\f[]
+.PP
+Reindex all dpaths.
+In this mode dpath updates the sources and destinations index
+files.
 .SH OPTIONS
-.TP
+.PP
 The options are as follows:
-
-.TP
-.B CREATE Mode:
-
-.TP
-.BI "--create|-c " "[/path/to/files] "
-Create a new dpath either in the user-provided path or - if no additional path
-is given - in the user dpaths directory in:
-
-.I $HOME/.gtransfer/dpaths
-
-.TP
-.BI "--source|-s " "gsiftpSourceUrl"
-Set the source URL for the dpath without any path portion at the end.
-
-Example:
-
-.I gsiftp://saturn.milkyway.universe:2811
-
-.TP
-.BI "--destination|-d " "gsiftpDestinationUrl"
-Set the destination URL for the dpath without any path portion at the end.
-
-Example:
-
-.I gsiftp://pluto.milkyway.universe:2811
-
-.TP
-.BI "--alias|-a " "alias"
-Set the alias for the created data path.
-.B dpath
-will create a link named "alias" to the dpath file which name is the SHA1 hash
-of the source destination combination.
-
-.B NOTICE: Naming of the aliases is not restricted, but one's encouraged to use
-.B something like the following:
-
-{{site|organization}_{resource|hostName|FQDN}|Local}--to--{site|organization}_{resource|hostName|FQDN}
-
-.TP
-.BI "[--dpath-template " "dpathTemplate" "]"
-When provided, dpath will use the given template for dpath creation. The
-following variables are expanded during dpath creation:
-
-.BR "$sourceWithoutPath " "=> gsiftpSourceUrl => the host address of the source site"
-
-.BR "$destinationWithoutPath " "=> gsiftpDestinationUrl => the host address of the destination site"
-
-
-.TP
-.B BATCH CREATE Mode:
-
-.TP
-.BI "--batch-create|-b " "[/path/to/files]"
-Create dpaths in batch mode either in the user-provided path or - if no
+.PP
+\f[B]CREATE Mode:\f[]
+.SS \f[B]-c, --create \f[I][/path/to/files]\f[]\f[]
+.PP
+Create a new dpath either in the user-provided path or - if no
 additional path is given - in the user dpaths directory in:
-
-.I $HOME/.gtransfer/dpaths
-
-When used dpath will create dpaths for all possible connections between the
-hosts given in the hostsFile and omit connections between the same hosts.
-			
-.TP
-.BI "--hosts|-h " "hostsFile"
-Set the file name for the file containing the host addresses for which dpaths
-should be created. The format of each line in this file is as follows:
-
-<PROTOCOL>://hostname.domain.tld:<PORT>
-
+.PP
+\f[I]$HOME/.gtransfer/dpaths\f[]
+.SS \f[B]-s, --source \f[I]gsiftpSourceUrl\f[]\f[]
+.PP
+Set the source URL for the dpath without any path portion at the
+end.
+.PP
+Example:
+.PP
+gsiftp://saturn.milkyway.universe:2811
+.SS \f[B]-d, --destination|-d \f[I]gsiftpDestinationUrl\f[]\f[]
+.PP
+Set the destination URL for the dpath without any path portion at
+the end.
+.PP
+Example:
+.PP
+gsiftp://pluto.milkyway.universe:2811
+.SS \f[B]-a, --alias \f[I]alias\f[]\f[]
+.PP
+Set the alias for the created dpath.
+\f[B]dpath\f[] will create a link named \f[I]alias\f[] to the dpath
+file which name is the SHA1 hash of the source destination
+combination.
+.PP
+\f[B]NOTICE:\f[] Naming of the aliases is not restricted, but it is
+recommended to use something like the following:
+.PP
+\[lq]{{site|organization}_{resource|hostName|FQDN}|Local}\[em]to\[em]{site|organization}_{resource|hostName|FQDN}\[rq]
+.SS \f[B][--dpath-template \f[I]dpathTemplate\f[]]\f[]
+.PP
+When provided, dpath will use the given template for dpath
+creation.
+The following variables are expanded during dpath creation:
+.PP
+$sourceWithoutPath => gsiftpSourceUrl => the host address of the
+source site
+.PP
+$destinationWithoutPath => gsiftpDestinationUrl => the host address
+of the destination site
+.PP
+\f[B]BATCH CREATE Mode:\f[]
+.SS \f[B]-b, --batch-create \f[I][/path/to/files]\f[]\f[]
+.PP
+Create dpaths in batch mode either in the user-provided path or -
+if no additional path is given - in the user dpaths directory in:
+.PP
+$HOME/.gtransfer/dpaths
+.PP
+When used dpath will create dpaths for all possible connections
+between the hosts given in the hostsFile and omit connections
+between the same hosts.
+.SS \f[B]-h, \[em]hosts \f[I]hostsFile\f[]\f[]
+.PP
+Set the file name for the file containing the host addresses for
+which dpaths should be created.
+The format of each line in this file is as follows:
+.PP
+://hostname.domain.tld:
+.PP
 Example contents:
-
-gsiftp://gridftp.omicron.mercury:2811
-.br
-gsiftp://gridftp.gamma.mars:2812
-.br
-[...]
-
-.TP
-.BI "[--dpath-template " "dpathTemplate" "]"
-When provided, dpath will use the given template for dpath creation. The
-following variables are expanded during dpath creation:
-
-.BR "$sourceWithoutPath " "=> gsiftpSourceUrl => the host address of the source site"
-
-.BR "$destinationWithoutPath " "=> gsiftpDestinationUrl => the host address of the destination site"
-
-
-.TP
-.B LIST Mode:
-
-.TP
-.BI "--list|-l " "[/path/to/files] "  "[--verbose|-v]"
-List all dpaths available in the user-provided path or - if no additional path
-is given - in the user and system dpaths directories.
-
-.TP
-.BI "--list-sources " "[/path/to/dataPaths]"
-List all sources from the dpaths in the user provided path or - if no additional
-path is given - in the user and system dpaths directories.
-			
-.TP
-.BI "--list-destinations " "[/path/to/dataPaths]"
-List all destinations from the dpaths in the user provided path or - if no
-additional path is given - in the user and system dpaths directories.
-
-
-.TP
-.B RETRIEVE Mode:
-
-.TP
-.BI "--retrieve|-r " "[/path/to/files] " "[--quiet|-q]"
-Retrieve the latest dpaths available on the preconfigured repository and store
-them in the user-provided path or - if no additional path is given - in the user
-dpaths directory. If a "--quiet|-q" is provided, then output is omitted and
-success/failure is only reported by the exit value. 
-
-
-.TP
-.B REINDEX Mode:
-
-.TP
-.BI "--reindex " "[/path/to/files]"
-Reindex all dpaths in the user provided path or - if no additional path is
-given - in the user dpaths directory.
-
-
-.TP
-.B General options:
-
-.TP
-.BI "[--configfile " "configurationFile" "]"
-Set the name of the configuration file for
-.BR "dpath" ". If not set, this defaults to:"
-
-.IR "/etc/gtransfer/dpath.conf" " or"
-
-.IR "<GTRANSFER_BASE_PATH>/etc/dpath.conf" " or"
-
-.IR "/etc/opt/gtransfer/dpath.conf" " or"
-
-.IR "$HOME/.gtransfer/dpath.conf" " or"
-
-.IR "$( dirname $BASH_SOURCE )/../etc" " in this order."
-
-.TP
-.B [--help]
+.PP
+\f[CR]
+      gsiftp://gridftp.omicron.mercury:2811
+      gsiftp://gridftp.gamma.mars:2812
+      [...]
+\f[]
+.SS \f[B][--dpath-template \f[I]dpathTemplate\f[]]\f[]
+.PP
+When provided, dpath will use the given template for dpath
+creation.
+The following variables are expanded during dpath creation:
+.PP
+$sourceWithoutPath => gsiftpSourceUrl => the host address of the
+source site
+.PP
+$destinationWithoutPath => gsiftpDestinationUrl => the host address
+of the destination site
+.PP
+\f[B]LIST Mode:\f[]
+.SS \f[B]-l, --list \f[I][/path/to/files]\f[] [-v, --verbose]\f[]
+.PP
+List all dpaths available in the user-provided path or - if no
+additional path is given - in the user and system dpaths
+directories.
+.SS \f[B]--list-sources \f[I][/path/to/dataPaths]\f[]\f[]
+.PP
+List all sources from the dpaths in the user provided path or - if
+no additional path is given - in the user and system dpaths
+directories.
+.SS \f[B]--list-destinations \f[I][/path/to/dataPaths]\f[]\f[]
+.PP
+List all destinations from the dpaths in the user provided path or
+- if no additional path is given - in the user and system dpaths
+directories.
+.PP
+\f[B]RETRIEVE Mode:\f[]
+.SS \f[B]-r, --retrieve \f[I][/path/to/files]\f[] [-q, --quiet]\f[]
+.PP
+Retrieve the latest dpaths available on the preconfigured
+repository and store them in the user-provided path or - if no
+additional path is given - in the user dpaths directory.
+If a \[lq]\[em]quiet|-q\[rq] is provided, then output is omitted
+and success/failure is only reported by the exit value.
+.PP
+\f[B]REINDEX Mode:\f[]
+.SS \f[B]--reindex \f[I][/path/to/files]\f[]\f[]
+.PP
+Reindex all dpaths in the user provided path or - if no additional
+path is given - in the user dpaths directory.
+.PP
+General options:
+.SS \f[B][--configfile \f[I]configurationFile\f[]]\f[]
+.PP
+Set the name of the configuration file for dpath.
+If not set, this defaults to:
+.IP "1." 3
+\f[I]/etc/gtransfer/dpath.conf\f[] or
+.IP "2." 3
+_<GTRANSFER_BASE\f[I]PATH>/etc/dpath.conf\f[] or
+.IP "3." 3
+\f[I]/etc/opt/gtransfer/dpath.conf\f[] or
+.IP "4." 3
+\f[I]$HOME/.gtransfer/dpath.conf\f[] or
+.IP "5." 3
+_$( dirname $BASH\f[I]SOURCE )/../etc\f[] in this order.
+.SS \f[B][--help]\f[]
+.PP
 Prints out a help message.
-
-.TP
-.B [--version|-V]
+.SS \f[B][-V, --version]\f[]
+.PP
 Prints out version information.
-
 .SH FILES
-.TP 10
-.I [...]/dpath.conf
-The
-.B dpath
-configuration file.
-
-.TP
-.I [...]/dpaths/
-This dir contains the system dpaths usable by
-.BR "gtransfer" " and is configurable. Can be created with " "dpath" "."
-
-.TP
-.I $HOME/.gtransfer/dpaths/
-This dir contains the user dpaths usable by
-.BR "gtransfer" ". Can be created with " "dpath" "."
-
-.TP
-.I [...]/dpaths/sources.index
-These files (there can be a system one and a user one!) contain all source host
-addresses available in the respective dpaths directories. 
-
-.TP
-.I [...]/dpaths/destinations.index
-These files (there can be a system one and a user one!) contain all destination
-host addresses available in the respective dpaths directories.
-
-The index files enable for faster lookup when used by gtransfer's bash
-completion. Index files are automatically created and extended when creating
-dpaths. The format of each line in these files is as follows:
-
+.SS \f[I][\&...]/dpath.conf\f[]
+.PP
+The dpath configuration file.
+.SS \f[I][\&...]/dpaths/\f[]
+.PP
+This dir contains the system dpaths usable by gtransfer and is
+configurable.
+Can be created with \f[B]dpath\f[].
+.SS \f[I]$HOME/.gtransfer/dpaths/\f[]
+.PP
+This dir contains the user dpaths usable by gtransfer.
+Can be created with \f[B]dpath\f[].
+.SS \f[I][\&...]/dpaths/sources.index\f[]
+.PP
+These files (there can be a system one and a user one!) contain all
+source host addresses available in the respective dpaths
+directories.
+.SS \f[I][\&...]/dpaths/destinations.index\f[]
+.PP
+These files (there can be a system one and a user one!) contain all
+destination host addresses available in the respective dpaths
+directories.
+.PP
+The index files enable for faster lookup when used by gtransfer's
+bash completion.
+Index files are automatically created and extended when creating
+dpaths.
+The format of each line in these files is as follows:
+.PP
 <PROTOCOL>://hostname.domain.tld:<PORT>
-
-.SH AUTHOR
-Frank Scheiner
-
-.SH "SEE ALSO"
-.BR dparam (1),
-.BR sha1sum (1),
-.BR tgftp (1),
-.BR gtransfer (1)
+.SH SEE ALSO
+.PP
+\f[B]dpath(5)\f[], \f[B]sha1sum(1)\f[], \f[B]gtransfer(1)\f[]
+.SH AUTHORS
+Frank Scheiner.
 
