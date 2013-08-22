@@ -5,7 +5,7 @@
 
 # NAME #
 
-dpath - The dpath helper script
+**dpath** - The dpath helper script
 
 
 # SYNOPSIS #
@@ -209,11 +209,11 @@ General options:
 
 Set the name of the configuration file for dpath. If not set, this defaults to:
 
-1. _/etc/gtransfer/dpath.conf_ or
-2. _<GTRANSFER_BASE_PATH>/etc/dpath.conf_ or
-3. _/etc/opt/gtransfer/dpath.conf_ or
-4. _$HOME/.gtransfer/dpath.conf_ or
-5. _$( dirname $BASH_SOURCE )/../etc_ in this order.
+1. "/etc/gtransfer/dpath.conf" or
+2. "<GTRANSFER_BASE_PATH>/etc/dpath.conf" or
+3. "/etc/opt/gtransfer/dpath.conf" or
+4. "$HOME/.gtransfer/dpath.conf" or
+5. "$( dirname $BASH_SOURCE )/../etc" in this order.
 
 
 ## **[\--help]** ##

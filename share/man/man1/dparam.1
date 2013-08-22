@@ -1,7 +1,7 @@
 .TH DPARAM 1 "Aug 22, 2013" "gtransfer 0.2.0" "User Commands"
 .SH NAME
 .PP
-dparam - The dparam helper script
+\f[B]dparam\f[] - The dparam helper script
 .SH SYNOPSIS
 .PP
 \f[B]dparam --create|-c \f[I][/path/to/files]\f[] --source|-s \f[I]gsiftpSourceUrl\f[] --destination|-d \f[I]gsiftpDestinationUrl\f[] --alias|-a \f[I]alias\f[] [--configfile \f[I]configurationFile\f[]]\f[]
@@ -90,15 +90,15 @@ General options:
 Set the name of the configuration file for dparam.
 If not set, this defaults to:
 .IP "1." 3
-\f[I]/etc/gtransfer/dparam.conf\f[] or
+\[lq]/etc/gtransfer/dparam.conf\[rq] or
 .IP "2." 3
-_<GTRANSFER_BASE\f[I]PATH>/etc/dparam.conf\f[] or
+\[lq]<GTRANSFER_BASE_PATH>/etc/dparam.conf\[rq] or
 .IP "3." 3
-\f[I]/etc/opt/gtransfer/dparam.conf\f[] or
+\[lq]/etc/opt/gtransfer/dparam.conf\[rq] or
 .IP "4." 3
-\f[I]$HOME/.gtransfer/dparam.conf\f[] or
+\[lq]$HOME/.gtransfer/dparam.conf\[rq] or
 .IP "5." 3
-_$( dirname $BASH\f[I]SOURCE )/../etc\f[] in this order.
+\[lq]$( dirname $BASH_SOURCE )/../etc\[rq] in this order.
 .SS \f[B][--help]\f[]
 .PP
 Prints out a help message.

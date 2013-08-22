@@ -5,7 +5,7 @@
 
 # NAME #
 
-gtransfer - The GridFTP transfer script
+**gtransfer** - The GridFTP data transfer script
 
 
 # SYNOPSIS #
@@ -27,34 +27,45 @@ gtransfer - The GridFTP transfer script
 
 # DESCRIPTION #
 **gtransfer** is a wrapper script for the **tgftp(1)** tool and provides an
-advanced command line interface for performing GridFTP transfers.
+advanced command line interface for performing GridFTP data transfers.
 
 **gtransfer** has the following features:
 
 ## Multi-step data transfers ##
-It can transfer files along predefined paths by using transit sites and can
-therefore bridge different network domains.
+**gtransfer** can transfer files along predefined paths by using transit sites
+and can therefore bridge different network domains. See **dpath(5)** for more
+details.
 
 ## Optimized data transfer performance ##
-It supports usage of pre-optimized data transfer parameters for specific
-connections. Therefore this tool is also helpful for single step transfers. In
-addition **gtransfer** can also automatically optimize a data transfer depending
-on the size of the files.
+**gtransfer** supports usage of pre-optimized data transfer parameters for
+specific connections. See dparam(5) for more details. In addition **gtransfer**
+can also automatically optimize a data transfer depending on the size of the
+files.
 
 ## Data transfer interruption and continuation ##
-It supports interruption and continuation of transfers. You can interrupt a
-transfer by hitting `CTRL+C`. To continue an interrupted transfer simply issue
-the very same command, **gtransfer** will then continue the transfer where it
-was interrupted. The same procedure works for a failed transfer.
+**gtransfer** supports interruption and continuation of transfers. You can
+interrupt a transfer by hitting `CTRL+C`. To continue an interrupted transfer
+simply issue the very same command, **gtransfer** will then continue the
+transfer where it was interrupted. The same procedure works for a failed
+transfer.
 
 ## Data transfer reliability ##
-It supports automatic retries of failed transfer steps. The number of retries is
-configurable.
+**gtransfer** supports automatic retries of failed transfer steps. The number of
+retries is configurable.
 
 ## Bash completion ##
-It makes use of bash completion to ease usage. This supports completion of
-options and URLs. URL completion also expands (remote) paths. Just hit the `TAB`
-key to see what's possible.
+**gtransfer** makes use of bash completion to ease usage. This supports
+completion of options and URLs. URL completion also expands (remote) paths. Just
+hit the `TAB` key to see what's possible.
+
+## Host aliases ##
+**gtransfer** can use host aliases as alternatives to host addresses. E.g. a
+user can use "myGridFTP:" and "gsiftp://host1.domain.tld:2811" synonymically.
+
+## Persistent identifiers (PIDs) ##
+**gtransfer** can use persistent identifiers (PIDs) as used by EUDAT and
+provided by EPIC as source of a data transfer.
+
 
 # OPTIONS #
 
@@ -159,22 +170,23 @@ Remove logfiles automatically after the transfer completed.
 Set the name of the configuration file for gtransfer. If not set, this defaults
 to:
 
-1. _/etc/gtransfer/gtransfer.conf_ or
-2. _\<GTRANSFER_BASE_PATH\>/etc/gtransfer.conf_ or
-3. _/etc/opt/gtransfer/gtransfer.conf_ or
-4. _$HOME/.gtransfer/gtransfer.conf_ in this order.
+1. "/etc/gtransfer/gtransfer.conf" or
+2. "<GTRANSFER_BASE_PATH>/etc/gtransfer.conf" or
+3. "/etc/opt/gtransfer/gtransfer.conf" or
+4. "$HOME/.gtransfer/gtransfer.conf" in this order.
 
 
 ## **[\-- _gucParameters_]** ##
 
 Set the **globus-url-copy(1)** parameters that should be used for all transfer
-steps. Notice the space between "--" and the actual parameters. This overwrites
+steps. Notice the space between "\--" and the actual parameters. This overwrites
 any available default parameters and is not recommended for regular usage. There
 exists one exception for the `-len|-partial-length X` option. If this is
-provided, it will only be added to the default parameters for a connection or -
-if no default parameters are availble - to the builtin default parameters.
+provided, it will only be added to the transfer parameters from a dparam for a
+connection or - if no dparam is available - to the builtin default transfer
+parameters.
 
-**NOTICE:** If specified, this option must be the last one in a gtransfer
+**NOTICE:** If specified, this option must be the last one in a **gtransfer**
 command line.
 
 
@@ -195,7 +207,7 @@ Prints out version information.
        
 ## _[...]/gtransfer.conf_ ##
 
-The gtransfer configuration file.
+The **gtransfer** configuration file.
 
 
 ## _[...]/chunkConfig_ ##
@@ -205,8 +217,8 @@ size classes for the auto-optimization. Practically the file is a table with
 three columns: **MIN_SIZE_IN_MB**, **MAX_SIZE_IN_MB** and **GUC_PARAMETERS**
 separated by a semicolon.
 
-Each line defines a size class. The value for MIN_SIZE_IN_MB is not included in
-the class. The value for **MAX_SIZE_IN_MB** is included in the class. Use the
+Each line defines a size class. The value for **MIN_SIZE_IN_MB** is not included
+in the class. The value for **MAX_SIZE_IN_MB** is included in the class. Use the
 keyword "min" in the column **MIN_SIZE_IN_MB** to default to the size of the
 smallest file available in a transfer list. Files of this size will be included
 in this class then. Use the keyword "max" in the column **MAX_SIZE_IN_MB** to
@@ -224,29 +236,30 @@ Example:
 
 ## _[...]/dpaths/_ ##
 
-This directory contains the system dpaths usable by gtransfer and is
+This directory contains the system dpaths usable by **gtransfer** and is
 configurable.
 
 
 ## _[...]/dparams/_ ##
 
-This directory contains the system dparams usable by gtransfer and is
+This directory contains the system dparams usable by **gtransfer** and is
 configurable.
 
 
 ## _$HOME/.gtransfer/dpaths/_ ##
 
-This directory contains the user dpaths usable by gtransfer. Can be created with
-dpath. If existing, dpaths in this directory have precedence.
+This directory contains the user dpaths usable by **gtransfer**. Can be created
+with **dpath(1)**. If existing, dpaths in this directory have precedence.
 
 
 ## _$HOME/.gtransfer/dparams/_ ##
 
-This directory contains the user dparams usable by gtransfer. Can be created
-with dparam. If existing, dparams in this directory have precedence.
+This directory contains the user dparams usable by **gtransfer**. Can be created
+with **dparam(1)**. If existing, dparams in this directory have precedence.
 
 
 # SEE ALSO #
 
-**dpath(5)** , **dparam(5)**, **tgftp(1)**, **uberftp(1C)**
+**dparam(1)**, **dparam(5)**, **dpath(1)**, **dpath(5)**,
+**globus-url-copy(1)**, **tgftp(1)**, **uberftp(1C)**
 

@@ -1,7 +1,7 @@
 .TH GTRANSFER 1 "Aug 22, 2013" "gtransfer 0.2.0" "User Commands"
 .SH NAME
 .PP
-gtransfer - The GridFTP transfer script
+\f[B]gtransfer\f[] - The GridFTP data transfer script
 .SH SYNOPSIS
 .PP
 \f[B]{gtransfer|gt} [--source|-s \f[I]sourceUrl\f[]] [--destination|-d \f[I]destinationUrl\f[]] [--transfer-list|-f \f[I]transferList\f[]] [--auto-optimize|-o \f[I]transferMode\f[]] [--guc-max-retries \f[I]gucMaxRetries\f[]] [--gt-max-retries \f[I]gtMaxRetries\f[]] [--gt-progress-indicator \f[I]indicatorCharacter\f[]] [--verbose|-v] [--metric|-m \f[I]dataPathMetric\f[]] [--logfile|-l \f[I]logfile\f[]] [--auto-clean|-a] [--configfile \f[I]configurationFile\f[]] [-- \f[I]gucParameters\f[]]\f[]
@@ -9,23 +9,26 @@ gtransfer - The GridFTP transfer script
 .PP
 \f[B]gtransfer\f[] is a wrapper script for the \f[B]tgftp(1)\f[]
 tool and provides an advanced command line interface for performing
-GridFTP transfers.
+GridFTP data transfers.
 .PP
 \f[B]gtransfer\f[] has the following features:
 .SS Multi-step data transfers
 .PP
-It can transfer files along predefined paths by using transit sites
-and can therefore bridge different network domains.
+\f[B]gtransfer\f[] can transfer files along predefined paths by
+using transit sites and can therefore bridge different network
+domains.
+See \f[B]dpath(5)\f[] for more details.
 .SS Optimized data transfer performance
 .PP
-It supports usage of pre-optimized data transfer parameters for
-specific connections.
-Therefore this tool is also helpful for single step transfers.
+\f[B]gtransfer\f[] supports usage of pre-optimized data transfer
+parameters for specific connections.
+See dparam(5) for more details.
 In addition \f[B]gtransfer\f[] can also automatically optimize a
 data transfer depending on the size of the files.
 .SS Data transfer interruption and continuation
 .PP
-It supports interruption and continuation of transfers.
+\f[B]gtransfer\f[] supports interruption and continuation of
+transfers.
 You can interrupt a transfer by hitting \f[B]CTRL+C\f[].
 To continue an interrupted transfer simply issue the very same
 command, \f[B]gtransfer\f[] will then continue the transfer where
@@ -33,14 +36,26 @@ it was interrupted.
 The same procedure works for a failed transfer.
 .SS Data transfer reliability
 .PP
-It supports automatic retries of failed transfer steps.
+\f[B]gtransfer\f[] supports automatic retries of failed transfer
+steps.
 The number of retries is configurable.
 .SS Bash completion
 .PP
-It makes use of bash completion to ease usage.
+\f[B]gtransfer\f[] makes use of bash completion to ease usage.
 This supports completion of options and URLs.
 URL completion also expands (remote) paths.
 Just hit the \f[B]TAB\f[] key to see what's possible.
+.SS Host aliases
+.PP
+\f[B]gtransfer\f[] can use host aliases as alternatives to host
+addresses.
+E.g.
+a user can use \[lq]myGridFTP:\[rq] and
+\[lq]gsiftp://host1.domain.tld:2811\[rq] synonymically.
+.SS Persistent identifiers (PIDs)
+.PP
+\f[B]gtransfer\f[] can use persistent identifiers (PIDs) as used by
+EUDAT and provided by EPIC as source of a data transfer.
 .SH OPTIONS
 .PP
 The options are as follows:
@@ -137,28 +152,28 @@ Remove logfiles automatically after the transfer completed.
 Set the name of the configuration file for gtransfer.
 If not set, this defaults to:
 .IP "1." 3
-\f[I]/etc/gtransfer/gtransfer.conf\f[] or
+\[lq]/etc/gtransfer/gtransfer.conf\[rq] or
 .IP "2." 3
-_<GTRANSFER_BASE\f[I]PATH>/etc/gtransfer.conf\f[] or
+\[lq]<GTRANSFER_BASE_PATH>/etc/gtransfer.conf\[rq] or
 .IP "3." 3
-\f[I]/etc/opt/gtransfer/gtransfer.conf\f[] or
+\[lq]/etc/opt/gtransfer/gtransfer.conf\[rq] or
 .IP "4." 3
-\f[I]$HOME/.gtransfer/gtransfer.conf\f[] in this order.
+\[lq]$HOME/.gtransfer/gtransfer.conf\[rq] in this order.
 .SS \f[B][-- \f[I]gucParameters\f[]]\f[]
 .PP
 Set the \f[B]globus-url-copy(1)\f[] parameters that should be used
 for all transfer steps.
-Notice the space between \[lq]\[em]\[rq] and the actual parameters.
+Notice the space between \[lq]--\[rq] and the actual parameters.
 This overwrites any available default parameters and is not
 recommended for regular usage.
 There exists one exception for the \f[B]-len|-partial-length\ X\f[]
 option.
-If this is provided, it will only be added to the default
-parameters for a connection or - if no default parameters are
-availble - to the builtin default parameters.
+If this is provided, it will only be added to the transfer
+parameters from a dparam for a connection or - if no dparam is
+available - to the builtin default transfer parameters.
 .PP
 \f[B]NOTICE:\f[] If specified, this option must be the last one in
-a gtransfer command line.
+a \f[B]gtransfer\f[] command line.
 .PP
 General options:
 .SS \f[B][--help]\f[]
@@ -170,7 +185,7 @@ Prints out version information.
 .SH FILES
 .SS \f[I][\&...]/gtransfer.conf\f[]
 .PP
-The gtransfer configuration file.
+The \f[B]gtransfer\f[] configuration file.
 .SS \f[I][\&...]/chunkConfig\f[]
 .PP
 The chunk configuration file.
@@ -181,7 +196,7 @@ Practically the file is a table with three columns:
 \f[B]GUC_PARAMETERS\f[] separated by a semicolon.
 .PP
 Each line defines a size class.
-The value for MIN_SIZE_IN_MB is not included in the class.
+The value for \f[B]MIN_SIZE_IN_MB\f[] is not included in the class.
 The value for \f[B]MAX_SIZE_IN_MB\f[] is included in the class.
 Use the keyword \[lq]min\[rq] in the column \f[B]MIN_SIZE_IN_MB\f[]
 to default to the size of the smallest file available in a transfer
@@ -203,25 +218,28 @@ Example:
 \f[]
 .SS \f[I][\&...]/dpaths/\f[]
 .PP
-This directory contains the system dpaths usable by gtransfer and
-is configurable.
+This directory contains the system dpaths usable by
+\f[B]gtransfer\f[] and is configurable.
 .SS \f[I][\&...]/dparams/\f[]
 .PP
-This directory contains the system dparams usable by gtransfer and
-is configurable.
+This directory contains the system dparams usable by
+\f[B]gtransfer\f[] and is configurable.
 .SS \f[I]$HOME/.gtransfer/dpaths/\f[]
 .PP
-This directory contains the user dpaths usable by gtransfer.
-Can be created with dpath.
+This directory contains the user dpaths usable by
+\f[B]gtransfer\f[].
+Can be created with \f[B]dpath(1)\f[].
 If existing, dpaths in this directory have precedence.
 .SS \f[I]$HOME/.gtransfer/dparams/\f[]
 .PP
-This directory contains the user dparams usable by gtransfer.
-Can be created with dparam.
+This directory contains the user dparams usable by
+\f[B]gtransfer\f[].
+Can be created with \f[B]dparam(1)\f[].
 If existing, dparams in this directory have precedence.
 .SH SEE ALSO
 .PP
-\f[B]dpath(5)\f[] , \f[B]dparam(5)\f[], \f[B]tgftp(1)\f[],
+\f[B]dparam(1)\f[], \f[B]dparam(5)\f[], \f[B]dpath(1)\f[],
+\f[B]dpath(5)\f[], \f[B]globus-url-copy(1)\f[], \f[B]tgftp(1)\f[],
 \f[B]uberftp(1C)\f[]
 .SH AUTHORS
 Frank Scheiner.

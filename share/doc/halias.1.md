@@ -5,7 +5,7 @@
 
 # NAME #
 
-halias - host alias helper utility
+**halias** - host alias helper utility
 
 
 # SYNOPSIS #
