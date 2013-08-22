@@ -39,8 +39,14 @@ can therefore bridge different network domains.
 Example:
 
 ```shell
-$ gt -s gsiftp://host1.domain.tld:2811/files/* -d gsiftp://host3.domain.tld:2811/files/
+$ gt -s host1:/files/* -d host3:/files/
 ```
+
+> **NOTICE:** This examples uses two [host aliases] (`host1:` and `host3:`) 
+> which can point to ordinary host addresses like
+> `gsiftp://host1.domain.tld:2811`.
+
+[host aliases]: #host-aliases
 
 ![multi-step transfer](/share/doc/images/multi-step_transfer.png)
 
