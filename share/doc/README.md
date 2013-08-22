@@ -76,7 +76,10 @@ retries is configurable. See [gtransfer(1)] for details.
 
 Gtransfer makes use of bash completion to ease usage. This supports completion
 of options and URLs. URL completion also expands (remote) paths directly on the
-command line. Just hit the `TAB` key to see what's possible.
+command line. Just hit the `TAB` key to see what's possible. For a demo, please
+checkout the [shelr cast] on shelr.tv.
+
+[shelr cast]: http://shelr.tv/records/4fd1be0096608036e1000001
 
 ### Host aliases ###
 
