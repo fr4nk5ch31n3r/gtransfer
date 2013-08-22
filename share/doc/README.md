@@ -119,8 +119,8 @@ the description should be already suitable for most users.
 
 [simple example]: #description
 
-You can find more detailed examples in the [gtransfer wiki] on GitHub. More
-examples will be made available occasionally.
+You can find more detailed examples in the [gtransfer wiki] on GitHub.
+Additional examples will be made available occasionally.
 
 [gtransfer wiki]: https://github.com/fr4nk5ch31n3r/gtransfer/wiki/Gtransfer-explained
 
