@@ -97,7 +97,16 @@ as source of a data transfer. See [persistent identifiers] for more details.
 
 ## Examples ##
 
-...
+The aim of gtransfer is to allow well-performing data transfers without detailed
+knowledge about the underlying facilities. Therefore the [simple example] in the
+description should be already suitable for most users.
+
+[simple example]: #description
+
+More detailed examples will be made available occasionally in the [gtransfer 
+wiki] on GitHub.
+
+[gtransfer wiki]: https://github.com/fr4nk5ch31n3r/gtransfer/wiki/Gtransfer-explained
 
 
 ## Who is using it? ##
