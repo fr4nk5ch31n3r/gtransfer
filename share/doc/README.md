@@ -48,15 +48,18 @@ The host `host1` is located in a private network, `host3` is located in the
 Internet and `host2` has connections to both networks. To transfer files from
 `host1` to `host3` gtransfer copies the files to the transit host `host2` (first
 step) and afterwards from `host2` to `host3` (second step). After the transfer
-has finished temporary files are removed from `host2`.
+has finished temporary files are removed from `host2`. See [dpath(5)] for
+details.
+
+[dpath(5)]: /share/doc/dpath.5.md
 
 ### Optimized data transfer performance ###
 
 Gtransfer supports usage of pre-optimized data transfer parameters for specific
-connections. See [dpath(5)] for details. In addition gtransfer can also
+connections. See [dparam(5)] for details. In addition gtransfer can also
 automatically optimize a data transfer depending on the size of the files.
 
-[dpath(5)]: /share/doc/dpath.5.md
+[dparam(5)]: /share/doc/dparam.5.md
 
 ### Data transfer interruption and continuation ###
 
@@ -91,11 +94,13 @@ can use `myGridFTP:` and `gsiftp://host1.domain.tld:2811` synonymically. See
 
 ### Persistent identifiers (PIDs) ###
 
-Gtransfer can use persistent identifiers (PIDs) as used and provided by [EUDAT]
-as source of a data transfer. See [persistent identifiers] for more details.
+Gtransfer can use persistent identifiers (PIDs) as used by [EUDAT] and provided 
+by [EPIC] as source of a data transfer. See [persistent identifiers] for more
+details.
 
 [persistent identifiers]: /share/doc/persistent_identifiers.md
 [EUDAT]: http://www.eudat.eu/
+[EPIC]: http://www.pidconsortium.eu/
 
 
 ## Examples ##
@@ -106,8 +111,8 @@ description should be already suitable for most users.
 
 [simple example]: #description
 
-More detailed examples will be made available occasionally in the [gtransfer 
-wiki] on GitHub.
+You can find more detailed examples in the [gtransfer wiki] on GitHub. More
+examples will be made available occasionally.
 
 [gtransfer wiki]: https://github.com/fr4nk5ch31n3r/gtransfer/wiki/Gtransfer-explained
 
