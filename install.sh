@@ -42,7 +42,7 @@ if [[ "$(basename $0)" == "install.sh" ]]; then
 	mkdir -p "$etcDir/dparams" &>/dev/null
 	mkdir -p "$libDir" &>/dev/null
 	mkdir -p "$libexecDir" &>/dev/null
-
+	
 	#  copy configuration files (also copy bash completion file)
 	#cp ./etc/gtransfer/gtransfer.conf_example \
         #   ./etc/gtransfer/dpath.conf_example \
@@ -51,7 +51,7 @@ if [[ "$(basename $0)" == "install.sh" ]]; then
         #   ./etc/gtransfer/chunkConfig_example \
         #   ./etc/gtransfer/aliases_example \
         #   ./etc/gtransfer/aliases.conf_example "$etcDir"
-        cp -r ./etc/gtransfer/* "$etcDir"
+        cp -r --backup=numbered ./etc/gtransfer/* "$etcDir"
            
 	cp -r ./etc/bash_completion.d "$etcDir"
 
@@ -90,6 +90,9 @@ if [[ "$(basename $0)" == "install.sh" ]]; then
 		ln -s "halias.bash" "$linkPath/halias"
 	fi
 
+	# TODO:
+	# copy additional new files, too.
+	
 	#  ...copy README and manpages.
 	cp ./share/doc/README.md \
 	   ./share/doc/gtransfer.1.pdf \
