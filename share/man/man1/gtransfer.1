@@ -4,7 +4,7 @@
 \f[B]gtransfer\f[] - The GridFTP data transfer script
 .SH SYNOPSIS
 .PP
-\f[B]{gtransfer|gt} [--source|-s \f[I]sourceUrl\f[]] [--destination|-d \f[I]destinationUrl\f[]] [--transfer-list|-f \f[I]transferList\f[]] [--auto-optimize|-o \f[I]transferMode\f[]] [--guc-max-retries \f[I]gucMaxRetries\f[]] [--gt-max-retries \f[I]gtMaxRetries\f[]] [--gt-progress-indicator \f[I]indicatorCharacter\f[]] [--verbose|-v] [--metric|-m \f[I]dataPathMetric\f[]] [--logfile|-l \f[I]logfile\f[]] [--auto-clean|-a] [--configfile \f[I]configurationFile\f[]] [-- \f[I]gucParameters\f[]]\f[]
+\f[B]{gtransfer|gt} [--source|-s \f[I]sourceUrl\f[]] [--destination|-d \f[I]destinationUrl\f[]] [--transfer-list|-f \f[I]transferList\f[]] [--auto-optimize|-o \f[I]transferMode\f[]] [--recursive|-r] [--guc-max-retries \f[I]gucMaxRetries\f[]] [--gt-max-retries \f[I]gtMaxRetries\f[]] [--gt-progress-indicator \f[I]indicatorCharacter\f[]] [--verbose|-v] [--metric|-m \f[I]dataPathMetric\f[]] [--logfile|-l \f[I]logfile\f[]] [--auto-clean|-a] [--configfile \f[I]configurationFile\f[]] [-- \f[I]gucParameters\f[]]\f[]
 .SH DESCRIPTION
 .PP
 \f[B]gtransfer\f[] is a wrapper script for the \f[B]tgftp(1)\f[]
@@ -112,6 +112,9 @@ transferred sequentially) is possible.
 To define different file size classes use the file
 \f[I][\&...]/chunkConfig\f[].
 See \f[B]FILES\f[] section below for more details.
+.SS \f[B][-r, --recursive]\f[]
+.PP
+Transfer files recursively.
 .SS \f[B][--guc-max-retries \f[I]gucMaxRetries\f[]]\f[]
 .PP
 This option sets the maximum number of retries globus-url-copy

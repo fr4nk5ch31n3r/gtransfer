@@ -14,6 +14,7 @@
 [\--destination|-d _destinationUrl_] 
 [\--transfer-list|-f _transferList_] 
 [\--auto-optimize|-o _transferMode_] 
+[\--recursive|-r]
 [\--guc-max-retries _gucMaxRetries_] 
 [\--gt-max-retries _gtMaxRetries_] 
 [\--gt-progress-indicator _indicatorCharacter_] 
@@ -123,6 +124,11 @@ command line options. The _transferMode_ controls how files of different size
 classes are transferred. Currently "seq[uential]" (different size classes are
 transferred sequentially) is possible. To define different file size classes use
 the file _[...]/chunkConfig_. See **FILES** section below for more details.
+
+
+## **[-r, \--recursive]** ##
+
+Transfer files recursively.
 
 
 ## **[\--guc-max-retries _gucMaxRetries_]** ##
