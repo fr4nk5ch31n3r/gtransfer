@@ -35,7 +35,7 @@ advanced command line interface for performing GridFTP transfers.
 It can transfer files along predefined paths by using transit sites and can
 therefore bridge different network domains.
 
-###Optimized data transfer performance ###
+## Optimized data transfer performance ##
 It supports usage of pre-optimized data transfer parameters for specific
 connections. Therefore this tool is also helpful for single step transfers. In
 addition **gtransfer** can also automatically optimize a data transfer depending
