@@ -17,10 +17,10 @@
 ## Description ##
 
 Gtransfer is a wrapper script for [tgftp] and provides an advanced command line
-interface for performing GridFTP transfers. The aim of gtransfer is to make
-GridFTP data transfers on the command line as easy as possible for the user.
-Therefore a user only has to provide the source and the destination to perform
-a data transfer:
+interface for performing GridFTP data transfers. The primary aim of gtransfer is
+to make GridFTP data transfers on the command line as easy as possible for the
+user. Therefore a user only has to provide the source and the destination to
+perform a data transfer:
 
 ```shell
 $ gt -s <SOURCE> -d <DESTINATION>
@@ -42,7 +42,7 @@ Example:
 $ gt -s gsiftp://host1.domain.tld:2811/files/* -d gsiftp://host3.domain.tld:2811/files/
 ```
 
-[![multi-step transfer](/share/doc/images/multi-step_transfer_400px.png)](/share/doc/images/multi-step_transfer.png)
+![multi-step transfer](/share/doc/images/multi-step_transfer.png)
 
 The host `host1` is located in a private network, `host3` is located in the
 Internet and `host2` has connections to both networks. To transfer files from
@@ -55,9 +55,11 @@ details.
 
 ### Optimized data transfer performance ###
 
-Gtransfer supports usage of pre-optimized data transfer parameters for specific
-connections. See [dparam(5)] for details. In addition gtransfer can also
-automatically optimize a data transfer depending on the size of the files.
+Another aim of gtransfer is to allow well-performing data transfers without
+detailed knowledge about the underlying facilities. Therefore gtransfer supports
+usage of pre-optimized data transfer parameters for specific connections. See
+[dparam(5)] for details. In addition gtransfer can also automatically optimize a
+data transfer depending on the size of the files.
 
 [dparam(5)]: /share/doc/dparam.5.md
 
@@ -105,9 +107,9 @@ details.
 
 ## Examples ##
 
-The aim of gtransfer is to allow well-performing data transfers without detailed
-knowledge about the underlying facilities. Therefore the [simple example] in the
-description should be already suitable for most users.
+As said, the primary aim of gtransfer is to make GridFTP data transfers on the
+command line as easy as possible for the user. Therefore the [simple example] in
+the description should be already suitable for most users.
 
 [simple example]: #description
 
