@@ -42,11 +42,11 @@ Example:
 $ gt -s host1:/files/* -d host3:/files/
 ```
 
-> **NOTICE:** This examples uses two [host aliases] - `host1:` and `host3:` -
+> **NOTICE:** This examples uses two [host aliases][aliases] - `host1:` and `host3:` -
 > which can point to ordinary host addresses like
 > `gsiftp://host1.domain.tld:2811`.
 
-[host aliases]: #host-aliases
+[aliases]: #host-aliases
 
 ![multi-step transfer](/share/doc/images/multi-step_transfer.png)
 
