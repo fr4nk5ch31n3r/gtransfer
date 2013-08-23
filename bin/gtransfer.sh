@@ -430,6 +430,10 @@ while [[ "$1" != "" ]]; do
 		if [[ "$autoOptimizeSet" != "0" ]]; then
 			shift 1
 			transferMode="$1"
+			# By default use "seq" transfer mode
+			if [[ -z "$transferMode" ]]; then
+				transferMode="seq"
+			fi
 			autoOptimizeSet="0"
 			shift 1
 		else
