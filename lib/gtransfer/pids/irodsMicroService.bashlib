@@ -70,7 +70,6 @@ if [[ -z $gtransferConfigurationFilesPath ]]; then
 	export gtransferConfigurationFilesPath="$HOME/.gtransfer"
 fi
 
-
 ################################################################################
 # INCLUDES
 ################################################################################
@@ -144,6 +143,8 @@ pids/irodsMicroService/transformIrodsUrl()
 	local _irodsUrlHostPart=""
 	local _gsiftpUrlHostPart=""
 	
+	local _match=""
+
 	if [[ ! "$_irodsUrl" =~ "irods://" ]]; then
 		return 1
 	fi
@@ -154,7 +155,14 @@ pids/irodsMicroService/transformIrodsUrl()
 	fi
 	
 	# transform host part of URL
-	_gsiftpUrlHostPart=$( grep "$_irodsUrlHostPart" "$_mappingFile" 2>/dev/null | cut -d ';' -f 2 )
+	# check if there's a matching line in the mapping file
+	_match=$( grep "$_irodsUrlHostPart" "$_mappingFile" 2>/dev/null )
+	if [[ $? != 0 ]]; then
+		return 1
+	fi
+
+	# select gsiftp:// host address
+	_gsiftpUrlHostPart=$( echo "$_match" | cut -d ';' -f 2 )
 	if [[ $? != 0 ]]; then
 		return 1
 	fi
@@ -180,7 +188,9 @@ pids/irodsMicroService/transformGsiftpUrl()
 	local _irodsUrl=""
 	local _irodsUrlHostPart=""
 	local _gsiftpUrlHostPart=""
-	
+
+	local _match=""
+
 	if [[ ! "$_gsiftpUrl" =~ "gsiftp://" ]]; then
 		return 1
 	fi
@@ -189,7 +199,14 @@ pids/irodsMicroService/transformGsiftpUrl()
 	|| return 1
 	
 	# transform host part of URL
-	_irodsUrlHostPart=$( grep "$_gsiftpUrlHostPart" "$_mappingFile" 2>/dev/null | cut -d ';' -f 1 )
+	# check if there's a matching line in the mapping file
+	_match=$( grep "$_gsiftpUrlHostPart" "$_mappingFile" 2>/dev/null )
+	if [[ $? != 0 ]]; then
+		return 1
+	fi
+
+	# select irods:// host address
+	_irodsUrlHostPart=$( echo "$_match" | cut -d ';' -f 1 )
 	if [[ "$_irodsUrlHostPart" == "" ]]; then
 		return 1
 	fi
@@ -269,7 +286,9 @@ pids/irodsMicroService/resolvePidFile()
 				if ! kill -0 ${_jobPids[$_jobIndex]} &>/dev/null; then
 					
 					#wait ${_jobPids[$_jobIndex]} &>/dev/null
-				
+
+					# create urls files with gt tmp suffix,
+					# so they are removed after gt exits. 
 					pids/irodsMicroService/resolvePid "$_pid" >> "${__GLOBAL__gtTmpDir}/${_jobIndex}.urls.${__GLOBAL__gtTmpSuffix}" &
 				
 					_jobPids[$_jobIndex]=$!
@@ -302,10 +321,7 @@ pids/irodsMicroService/resolvePidFile()
 		fi
 	done
 	
-	# create urls files with gt tmp suffix, so they are removed after gt
-	# exits. The removal would otherwise add some extra seconds to the
-	# duration of a call to this function.
-	cat ${__GLOBAL__gtTmpDir}/*urls.${__GLOBAL__gtTmpSuffix} #&& rm *urls
+	cat ${__GLOBAL__gtTmpDir}/*urls.${__GLOBAL__gtTmpSuffix}
 	
 	return $_return
 }
