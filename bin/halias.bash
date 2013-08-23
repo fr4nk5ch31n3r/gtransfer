@@ -1,3 +1,4 @@
+#!/bin/bash
 # halias - (gtransfer) host aliases cli interface
 
 :<<COPYRIGHT
