@@ -434,7 +434,7 @@ urlTransfer/doTransferStep()
 	#  get default params for the transfer step
 	#+ (1) get filename for default params
         ########################################################################
-        local transferStepDefaultParamsFilename="$(helperFunctions/hashSourceDestination $( echo $transferStepSourceWithoutPath | sed -e 's/:\/\/.*@/:\/\//' ) $( echo $transferStepDestinationWithoutPath | sed -e 's/:\/\/.*@/:\/\//' ) )"
+        local transferStepDefaultParamsFilename=$(helperFunctions/hashSourceDestination $( echo "$transferStepSourceWithoutPath" | sed -e 's/:\/\/.*@/:\/\//' ) $( echo "$transferStepDestinationWithoutPath" | sed -e 's/:\/\/.*@/:\/\//' ) )
 
         #  if existing prefer user's dparam
 	if [[ -e "$gtransferDefaultParamsDirectory/$transferStepDefaultParamsFilename" ]]; then
@@ -454,14 +454,14 @@ urlTransfer/doTransferStep()
 	]]; then
 		#  default params file available, no user params
 		#+ specified
-		transferStepDefaultParams="$(helperFunctions/xtractXMLAttributeValue "gsiftp_params" $transferStepDefaultParamsFile)"
+		transferStepDefaultParams=$(helperFunctions/xtractXMLAttributeValue "gsiftp_params" "$transferStepDefaultParamsFile")
 		helperFunctions/echoIfVerbose -e "Default params used:\n$transferStepDefaultParamsFile"
 
 	elif [[ -e "$transferStepDefaultParamsFile" && \
 	        -n "$gsiftpUserParams" \
 	]]; then
                 #  user params specified
-		transferStepDefaultParams="$(helperFunctions/xtractXMLAttributeValue "gsiftp_params" $transferStepDefaultParamsFile)"
+		transferStepDefaultParams=$(helperFunctions/xtractXMLAttributeValue "gsiftp_params" "$transferStepDefaultParamsFile")
 
                 #  if user only provided "-len|-partial-length [...]", then just add it to the default gsiftp params,
                 #+ if not only use the user provided params.
@@ -497,19 +497,19 @@ urlTransfer/doTransferStep()
 	#  (3) transfer data (various steps possible!)
         ########################################################################
 	#  direct transfer
-	if [[ "$transferStepSource" == "$(helperFunctions/getURLWithoutPath $transferStepSource)" && \
-	      "$transferStepDestination" == "$(helperFunctions/getURLWithoutPath $transferStepDestination)" \
+	if [[ "$transferStepSource" == $(helperFunctions/getURLWithoutPath "$transferStepSource") && \
+	      "$transferStepDestination" == $(helperFunctions/getURLWithoutPath "$transferStepDestination") \
 	]]; then
 		#  handle usernames in URLs
-		transferStepSourceProtoSpec=$( helperFunctions/getProtocolSpecifier $transferStepSource )
-		transferStepDestinationProtoSpec=$( helperFunctions/getProtocolSpecifier $transferStepDestination )
+		transferStepSourceProtoSpec=$( helperFunctions/getProtocolSpecifier "$transferStepSource" )
+		transferStepDestinationProtoSpec=$( helperFunctions/getProtocolSpecifier "$transferStepDestination" )
 		#  replace protocol spec with proto. spec and username (don't forget "@" at the end)
 		#  NOTICE:
 		#+ Please be aware of the fact, that the shell expands the variables in the sed scripts before actually running the sed scripts.
 		#+ As the proto. spec contains "/"es. they must be either escaped (hard!) or one just changes the "/"es of the "s///" command to
 		#+ "|"s.
-		transferStepSource=$( echo $transferStepSource | sed -e "s|${transferStepSourceProtoSpec}|${transferStepSourceProtoSpec}${sourceUsernamePortion}|" )
-		transferStepDestination=$( echo $transferStepDestination | sed -e "s|${transferStepDestinationProtoSpec}|${transferStepDestinationProtoSpec}${destinationUsernamePortion}|" )
+		transferStepSource=$( echo "$transferStepSource" | sed -e "s|${transferStepSourceProtoSpec}|${transferStepSourceProtoSpec}${sourceUsernamePortion}|" )
+		transferStepDestination=$( echo "$transferStepDestination" | sed -e "s|${transferStepDestinationProtoSpec}|${transferStepDestinationProtoSpec}${destinationUsernamePortion}|" )
 
 		local tgftpTransferCommand=$( urlTransfer/createTgftpTransferCommand \
                                               "${transferStepSource}${sourcePath}${sourceFile}" \
@@ -536,15 +536,15 @@ urlTransfer/doTransferStep()
 	#
 	#  The initial transfer step can be detected as follows:
 	#+ The source portion has no path added to the URL.
-	elif [[ "$transferStepSource" == "$(helperFunctions/getURLWithoutPath $transferStepSource)" ]]; then
+	elif [[ "$transferStepSource" == $(helperFunctions/getURLWithoutPath "$transferStepSource") ]]; then
 		#  handle usernames in URLs
-		transferStepSourceProtoSpec=$( helperFunctions/getProtocolSpecifier $transferStepSource )
+		transferStepSourceProtoSpec=$( helperFunctions/getProtocolSpecifier "$transferStepSource" )
 		#  replace protocol spec with proto. spec and username (don't forget "@" at the end)
 		#  NOTICE:
 		#+ Please be aware of the fact, that the shell expands the variables in the sed scripts before actually running the sed scripts.
 		#+ As the proto. spec contains "/"es. they must be either escaped (hard!) or one just changes the "/"es of the "s///" command to
 		#+ "|"s.
-		transferStepSource=$( echo $transferStepSource | sed -e "s|${transferStepSourceProtoSpec}|${transferStepSourceProtoSpec}${sourceUsernamePortion}|" )
+		transferStepSource=$( echo "$transferStepSource" | sed -e "s|${transferStepSourceProtoSpec}|${transferStepSourceProtoSpec}${sourceUsernamePortion}|" )
 
 		local tgftpTransferCommand=$( urlTransfer/createTgftpTransferCommand \
                                               "${transferStepSource}${sourcePath}${sourceFile}" \
@@ -575,7 +575,7 @@ urlTransfer/doTransferStep()
 	#+ A transit address has a temp path added to the URL
 	#+ and therefore should differ from the string printed
 	#+ by getURLWithoutPath().
-	elif [[ "$transferStepDestination" != "$(helperFunctions/getURLWithoutPath $transferStepDestination)" ]]; then
+	elif [[ "$transferStepDestination" != $(helperFunctions/getURLWithoutPath "$transferStepDestination") ]]; then
 
 		local tgftpTransferCommand=$( urlTransfer/createTgftpTransferCommand \
                                               "${transferStepSource}${transitSiteTempDir}/${sourceFile}" \
@@ -599,16 +599,16 @@ urlTransfer/doTransferStep()
 	#+ target being identical to the target of the data
 	#+ path, which itself is identical to the target without
 	#+ path portion.
-	elif [[ "$transferStepDestination" == "$(helperFunctions/getURLWithoutPath $transferStepDestination)" ]]; then
+	elif [[ "$transferStepDestination" == $(helperFunctions/getURLWithoutPath "$transferStepDestination") ]]; then
 
 		#  handle usernames in URLs
-		transferStepDestinationProtoSpec=$( helperFunctions/getProtocolSpecifier $transferStepDestination )
+		transferStepDestinationProtoSpec=$( helperFunctions/getProtocolSpecifier "$transferStepDestination" )
 		#  replace protocol spec with proto. spec and username (don't forget "@" at the end)
 		#  NOTICE:
 		#+ Please be aware of the fact, that the shell expands the variables in the sed scripts before actually running the sed scripts.
 		#+ As the proto. spec contains "/"es. they must be either escaped (hard!) or one just changes the "/"es of the "s///" command to
 		#+ "|"s.
-		transferStepDestination=$( echo $transferStepDestination | sed -e "s|${transferStepDestinationProtoSpec}|${transferStepDestinationProtoSpec}${destinationUsernamePortion}|" )
+		transferStepDestination=$( echo "$transferStepDestination" | sed -e "s|${transferStepDestinationProtoSpec}|${transferStepDestinationProtoSpec}${destinationUsernamePortion}|" )
 
 		local tgftpTransferCommand=$( urlTransfer/createTgftpTransferCommand \
                                               "${transferStepSource}${transitSiteTempDir}/${sourceFile}" \
@@ -688,15 +688,15 @@ urlTransfer/transferData()
         local retries=0
 
 	#  Check if valid URLs are provided
-	if ! helperFunctions/isValidUrl $source; then
+	if ! helperFunctions/isValidUrl "$source"; then
 		echo "ERROR: \"$source\" invalid source URL (check FQDN or protocol part)!" 1>&2
 		exit "$_gtransfer_exit_usage"
-	elif ! helperFunctions/isValidUrl $destination; then
+	elif ! helperFunctions/isValidUrl "$destination"; then
 		echo "ERROR: \"$destination\" invalid destination URL (check FQDN or protocol part)!" 1>&2
 		exit "$_gtransfer_exit_usage"
 	#  check if target URL is a "http://" URL
-	elif [[ "$( helperFunctions/getProtocolSpecifier $destination )" == "http://" || \
-	        "$( helperFunctions/getProtocolSpecifier $destination )" == "https://" \
+	elif [[ $( helperFunctions/getProtocolSpecifier "$destination" ) == "http://" || \
+	        $( helperFunctions/getProtocolSpecifier "$destination" ) == "https://" \
 	]]; then
 		echo "ERROR: Target URL cannot be a \"http[s]://\" URL!"
 		exit "$_gtransfer_exit_usage"
@@ -711,8 +711,8 @@ urlTransfer/transferData()
 	local sourceFile=$(helperFunctions/getFilenameFromURL "$source")
 	local destinationFile=$(helperFunctions/getFilenameFromURL "$destination")
 
-        local sourceUsernamePortion=$( echo $sourceWithoutPath | grep -o "://.*@" | sed -e 's/:\/\///' )
-	local destinationUsernamePortion=$( echo $destinationWithoutPath | grep -o "://.*@" | sed -e 's/:\/\///' )
+        local sourceUsernamePortion=$( echo "$sourceWithoutPath" | grep -o "://.*@" | sed -e 's/:\/\///' )
+	local destinationUsernamePortion=$( echo "$destinationWithoutPath" | grep -o "://.*@" | sed -e 's/:\/\///' )
 
 	local memToMem=1
 
@@ -737,7 +737,7 @@ urlTransfer/transferData()
 
 	#  get corresponding data path (and remove any "username@" portions in
 	#+ the URL before hashing).
-	local dataPathFilename="$(helperFunctions/hashSourceDestination $( echo $sourceWithoutPath | sed -e 's/:\/\/.*@/:\/\//' ) $( echo $destinationWithoutPath | sed -e 's/:\/\/.*@/:\/\//' ) )"
+	local dataPathFilename=$(helperFunctions/hashSourceDestination $( echo "$sourceWithoutPath" | sed -e 's/:\/\/.*@/:\/\//' ) $( echo "$destinationWithoutPath" | sed -e 's/:\/\/.*@/:\/\//' ) )
 
 	if [[ -e "$gtransferDataPathDirectory/$dataPathFilename" ]]; then
 		local dataPathFile="$gtransferDataPathDirectory/$dataPathFilename"
@@ -795,8 +795,8 @@ urlTransfer/transferData()
                 local transferStep=${transferStepArray[$transferStepNumber]}
 
                 #  source and destination for transfer step
-                local transferStepSource=${transferStep%%;*}
-                local transferStepDestination=${transferStep##*;}
+                local transferStepSource="${transferStep%%;*}"
+                local transferStepDestination="${transferStep##*;}"
 
                 #echo "($$) DEBUG: transferStepSource=\"$transferStepSource\""
                 #echo "($$) DEBUG: transferStepDestination=\"$transferStepDestination\""
@@ -812,14 +812,14 @@ urlTransfer/transferData()
                         continue
                 else
                         helperFunctions/echoIfVerbose "Transfer step: $transferStepNumber"
-                        urlTransfer/doTransferStep $transferStepSource \
-                                                   $transferStepDestination \
+                        urlTransfer/doTransferStep "$transferStepSource" \
+                                                   "$transferStepDestination" \
                                                    $transferStepNumber \
                                                    $transitSiteTempDir \
-                                                   $sourcePath \
-                                                   $destinationPath \
-                                                   ${sourceFile:-" "} \
-                                                   ${destinationFile:-" "} \
+                                                   "$sourcePath" \
+                                                   "$destinationPath" \
+                                                   "${sourceFile:-" "}" \
+                                                   "${destinationFile:-" "}" \
                                                    "$sourceUsernamePortion" \
                                                    "$destinationUsernamePortion" \
                                                    $transferId
