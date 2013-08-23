@@ -197,8 +197,10 @@ autoOptimization/createChunk()
 		if [[ ! -z "$_chunkStartLineNo" && \
 		      ! -z "$_chunkEndLineNo" ]]; then
 
-			#  select part ($_lineMin to $_lineMax) of sorted transfer list
-			sed -n "$_chunkStartLineNo,${_chunkEndLineNo}p;${_chunkEndLineNo}q;" "$_sortedTransferList" > "$_transferListChunk"
+			# TODO:
+			# make sure this is not executed if a class is empty.
+			#  select part ($_lineMin to $_lineMax) of sorted transfer list                                                     ignore sed errors for now!
+			sed -n "$_chunkStartLineNo,${_chunkEndLineNo}p;${_chunkEndLineNo}q;" "$_sortedTransferList" > "$_transferListChunk" 2>/dev/null
 		else
 			touch "$_transferListChunk"
 		fi
