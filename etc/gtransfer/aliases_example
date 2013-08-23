@@ -1,6 +1,0 @@
-alias;gsiftp://host.domain.tld:2812/path/to/file
-alias2;alias
-alias3;$( date )
-alias4;$( echo %alias )
-alias5;alias2
-

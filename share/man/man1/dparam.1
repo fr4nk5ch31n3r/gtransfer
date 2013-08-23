@@ -1,170 +1,126 @@
-.TH DPARAM 1 "24 Jan 2013" "version 0.2.0" "User Commands"
+.TH DPARAM 1 "Aug 22, 2013" "gtransfer 0.2.0" "User Commands"
 .SH NAME
-dparam \- The dparam helper script
-
+.PP
+\f[B]dparam\f[] - The dparam helper script
 .SH SYNOPSIS
-.B dparam
-.BI "--create|-c " "[/path/to/files] " "[--automatic]"
-.BI "--source|-s " "gsiftpSourceUrl"
-.BI "--destination|-d " "gsiftpDestinationUrl"
-.BI "--alias|-a " "alias"
-.B [--configfile
-.IB configurationFile ]
-
-.B dparam
-.BI "--list|-l " "[/path/to/files] " "[--verbose|-v]"
-.B [--configfile
-.IB configurationFile ]
-
-.B dparam
-.BI "--retrieve|-r " "[/path/to/files] " "[--quiet|-q]"
-.B [--configfile
-.IB configurationFile ]
-
+.PP
+\f[B]dparam --create|-c \f[I][/path/to/files]\f[] --source|-s \f[I]gsiftpSourceUrl\f[] --destination|-d \f[I]gsiftpDestinationUrl\f[] --alias|-a \f[I]alias\f[] [--configfile \f[I]configurationFile\f[]]\f[]
+.PP
+\f[B]dparam --list|-l \f[I][/path/to/files]\f[] [--verbose|-v] [--configfile \f[I]configurationFile\f[]]\f[]
+.PP
+\f[B]dparam --retrieve|-r \f[I][/path/to/files]\f[] [--quiet|-q] [--configfile \f[I]configurationFile\f[]]\f[]
 .SH DESCRIPTION
-.B dparam
-is a helper script for 
-.B gtransfer
-to support users in creating dparams, listing available dparams and retrieve the
-latest dparams from a preconfigured repository.
-
+.PP
+\f[B]dparam\f[] is a helper script for \f[B]gtransfer(1)\f[] to
+support users in creating dparams, listing available dparams and
+retrieve the latest dparams from a preconfigured repository.
 .SH MODES
-
-.B dparam
-has several modes of operation:
-
-.TP 10
-.B CREATE
-Creates a dparam file and a link to it named after the
-.I alias
-that is specified by the user.
-
-.TP
-.B LIST
+.PP
+\f[B]dparam\f[] has several modes of operation:
+.SS \f[B]CREATE\f[]
+.PP
+Creates a dparam file and a link to it named after the alias that
+is specified by the user.
+.SS \f[B]LIST\f[]
+.PP
 Lists all available dparams files.
-
-.TP
-.B RETRIEVE
-Retrieve the latest dparams available. In this mode
-.B dparam
-updates the local dparams with data available from a preconfigured repository.
-
+.SS \f[B]RETRIEVE\f[]
+.PP
+Retrieve the latest dparams available.
+In this mode \f[B]dparam\f[] updates the local dparams with data
+available from a preconfigured repository.
 .SH OPTIONS
-.TP
+.PP
 The options are as follows:
-
-.TP
-.B CREATE Mode:
-
-.TP
-.BI "--create|-c " "[/path/to/files] " "[--automatic]"
-Create a new default param either in the user-provided path or - if no
-additional path is given - in the user dparams directory:
-
-.I $HOME/.gtransfer/dparams
-
-If 
-.B --automatic
-is provided,
-.B tgftp
-auto-tuning will be used to determine the default param.
-
-.TP
-.BI "--source|-s " "gsiftpSourceUrl"
-Set the source URL for the dparam without any path portion at the end.
-
+.PP
+\f[B]CREATE Mode:\f[]
+.SS \f[B]-c, --create \f[I][/path/to/files]\f[]\f[]
+.PP
+Create a new dparam either in the user-provided path or - if no
+additional path is given - in the user dpaths directory in:
+.PP
+\f[I]$HOME/.gtransfer/dpaths\f[]
+.SS \f[B]-s, --source \f[I]gsiftpSourceUrl\f[]\f[]
+.PP
+Set the source URL for the dparam without any path portion at the
+end.
+.PP
 Example:
-
-.I gsiftp://saturn.milkyway.universe:2811
-
-.TP
-.BI "--destination|-d " "gsiftpDestinationUrl"
-Set the destination URL for the dparam without any path portion at the end.
-
+.PP
+gsiftp://saturn.milkyway.universe:2811
+.SS \f[B]-d, --destination|-d \f[I]gsiftpDestinationUrl\f[]\f[]
+.PP
+Set the destination URL for the dparam without any path portion at
+the end.
+.PP
 Example:
-
-.I gsiftp://pluto.milkyway.universe:2811
-
-.TP
-.BI "--alias|-a " "alias"
-Set the alias for the created default param.
-.B dparam
-will create a link named "alias" to the dparam file which name is the SHA1 hash
-of the source destination combination.
-
-.B NOTICE: Naming of the aliases is not restricted, but one's encouraged to use
-.B something like the following:
-
-{{site|organization}_{resource|hostName|FQDN}|Local}--to--{site|organization}_{resource|hostName|FQDN}
-
-.TP
-.B LIST Mode:
-
-.TP
-.BI "--list|-l " "[/path/to/files] "  "[--verbose|-v]"
+.PP
+gsiftp://pluto.milkyway.universe:2811
+.SS \f[B]-a, --alias \f[I]alias\f[]\f[]
+.PP
+Set the alias for the created dparam.
+\f[B]dparam\f[] will create a link named \f[I]alias\f[] to the
+dparam file which name is the SHA1 hash of the source destination
+combination.
+.PP
+\f[B]NOTICE:\f[] Naming of the aliases is not restricted, but it is
+recommended to use something like the following:
+.PP
+\[lq]{{site|organization}_{resource|hostName|FQDN}|Local}\[em]to\[em]{site|organization}_{resource|hostName|FQDN}\[rq]
+.PP
+\f[B]LIST Mode:\f[]
+.SS \f[B]-l, --list \f[I][/path/to/files]\f[] [-v, --verbose]\f[]
+.PP
 List all dparams available in the user-provided path or - if no
-additional path is given - in the user and system dparams directories.
-
-.TP
-.B RETRIEVE Mode:
-
-.TP
-.BI "--retrieve|-r " "[/path/to/files] " "[--quiet|-q]"
-Retrieve the latest dparams available on a preconfigured repository and
-store them in the user-provided path or - if no additional path is given
-- in the user dparams directory. If a "--quiet|-q" is provided, then output is
-omitted and success/failure is only reported by the exit value. 
-
-.TP
-.B General options:
-
-.TP
-.BI "[--configfile " "configurationFile" "]"
-Set the name of the configuration file for
-.BR "dparam" ". If not set, this defaults to:"
-
-.IR "/etc/gtransfer/dparam.conf" " or"
-
-.IR "<GTRANSFER_BASE_PATH>/etc/dparam.conf" " or"
-
-.IR "/etc/opt/gtransfer/dparam.conf" " or"
-
-.IR "$HOME/.gtransfer/dparam.conf" " or"
-
-.IR "$( dirname $BASH_SOURCE )/../etc" " in this order."
-
-.TP
-.B [--help]
+additional path is given - in the user and system dparams
+directories.
+.PP
+\f[B]RETRIEVE Mode:\f[]
+.SS \f[B]-r, --retrieve \f[I][/path/to/files]\f[] [-q, --quiet]\f[]
+.PP
+Retrieve the latest dparams available on the preconfigured
+repository and store them in the user-provided path or - if no
+additional path is given - in the user dparams directory.
+If a \[lq]\[em]quiet|-q\[rq] is provided, then output is omitted
+and success/failure is only reported by the exit value.
+.PP
+General options:
+.SS \f[B][--configfile \f[I]configurationFile\f[]]\f[]
+.PP
+Set the name of the configuration file for dparam.
+If not set, this defaults to:
+.IP "1." 3
+\[lq]/etc/gtransfer/dparam.conf\[rq] or
+.IP "2." 3
+\[lq]<GTRANSFER_BASE_PATH>/etc/dparam.conf\[rq] or
+.IP "3." 3
+\[lq]/etc/opt/gtransfer/dparam.conf\[rq] or
+.IP "4." 3
+\[lq]$HOME/.gtransfer/dparam.conf\[rq] or
+.IP "5." 3
+\[lq]$( dirname $BASH_SOURCE )/../etc\[rq] in this order.
+.SS \f[B][--help]\f[]
+.PP
 Prints out a help message.
-
-.TP
-.B [--version|-V]
+.SS \f[B][-V, --version]\f[]
+.PP
 Prints out version information.
-
 .SH FILES
-.TP 10
-.I [...]/dparam.conf
-The
-.B dparam
-configuration file.
-
-.TP
-.I [...]/dparams/
-This dir contains the system dparams usable by
-.BR "gtransfer" " and is configurable. Can be created with " "dparam" "."
-
-.TP
-.I $HOME/.gtransfer/dparams/
-This dir contains the user dparams usable by
-.BR "gtransfer" ". Can be created with " "dparam" "."
-
-
-.SH AUTHOR
-Frank Scheiner
-
-.SH "SEE ALSO"
-.BR dpath (1),
-.BR sha1sum (1),
-.BR tgftp (1),
-.BR gtransfer (1)
+.SS \f[I][\&...]/dparam.conf\f[]
+.PP
+The dpath configuration file.
+.SS \f[I][\&...]/dparams/\f[]
+.PP
+This dir contains the system dpaths usable by gtransfer and is
+configurable.
+Can be created with \f[B]dparam\f[].
+.SS \f[I]$HOME/.gtransfer/dparams/\f[]
+.PP
+This dir contains the user dpaths usable by gtransfer.
+Can be created with \f[B]dparam\f[].
+.SH SEE ALSO
+.PP
+\f[B]dparam(5)\f[], \f[B]sha1sum(1)\f[], \f[B]gtransfer(1)\f[]
+.SH AUTHORS
+Frank Scheiner.
 

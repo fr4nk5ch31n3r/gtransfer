@@ -42,7 +42,7 @@ if [[ "$(basename $0)" == "install.sh" ]]; then
 	mkdir -p "$etcDir/dparams" &>/dev/null
 	mkdir -p "$libDir" &>/dev/null
 	mkdir -p "$libexecDir" &>/dev/null
-
+	
 	#  copy configuration files (also copy bash completion file)
 	#cp ./etc/gtransfer/gtransfer.conf_example \
         #   ./etc/gtransfer/dpath.conf_example \
@@ -51,8 +51,7 @@ if [[ "$(basename $0)" == "install.sh" ]]; then
         #   ./etc/gtransfer/chunkConfig_example \
         #   ./etc/gtransfer/aliases_example \
         #   ./etc/gtransfer/aliases.conf_example "$etcDir"
-        cp -r ./etc/gtransfer/* "$etcDir"
-           
+        cp -r --backup=numbered ./etc/gtransfer/* "$etcDir"
 	cp -r ./etc/bash_completion.d "$etcDir"
 
 	#  copy scripts and...
@@ -91,16 +90,21 @@ if [[ "$(basename $0)" == "install.sh" ]]; then
 	fi
 
 	#  ...copy README and manpages.
-	cp ./share/doc/README.md \
-	   ./share/doc/gtransfer.1.pdf \
-	   ./share/doc/dpath.1.pdf \
-	   ./share/doc/dparam.1.pdf \
-	   ./COPYING "$docDir"
+	#cp ./share/doc/README.md \
+	#   ./share/doc/gtransfer.1.pdf \
+	#   ./share/doc/dpath.1.pdf \
+	#   ./share/doc/dparam.1.pdf \
+	#   ./COPYING "$docDir"
+	cp -r ./share/doc/* ./README.md ./COPYING "$docDir"
+	
+	# Update paths in README.md
+	sed -e 's|/share/doc/||g' -e 's|/COPYING|COPYING|' -i "$docDir/README.md"
 
-	cp ./share/man/man1/gtransfer.1 \
-	   ./share/man/man1/gt.1 \
-	   ./share/man/man1/dpath.1 \
-	   ./share/man/man1/dparam.1 "$manDir/man1"
+	#cp ./share/man/man1/gtransfer.1 \
+	#   ./share/man/man1/gt.1 \
+	#   ./share/man/man1/dpath.1 \
+	#   ./share/man/man1/dparam.1 "$manDir/man1"
+	cp -r ./share/man/* "$manDir/"
 	   
 	#  copy libraries
 	cp -r ./lib/* "$libDir"
