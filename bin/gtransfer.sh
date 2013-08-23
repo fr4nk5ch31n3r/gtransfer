@@ -630,6 +630,9 @@ else
 		# it's everything from start to the first forward slash.
 		_tmpSourceAlias=${gsiftpSourceUrl%%\/*}
 		_tmpDestinationAlias=${gsiftpDestinationUrl%%\/*}
+		
+		_originalGsiftpSourceUrl="$gsiftpSourceUrl"
+		_originalGsiftpDestinationUrl="$gsiftpDestinationUrl"
 	
 		_tmpSourceAliasValue=$( halias --dealias "$_tmpSourceAlias" )
 		if [[ $? != 0 ]]; then
@@ -704,7 +707,8 @@ else
 			_modifiedGtCommandLine="${_modifiedGtCommandLine/ -s }"
 			_modifiedGtCommandLine="${_modifiedGtCommandLine/ --source }"
 			# remove destination URL spec
-			_modifiedGtCommandLine="${_modifiedGtCommandLine/$gsiftpDestinationUrl}"
+			#_modifiedGtCommandLine="${_modifiedGtCommandLine/$gsiftpDestinationUrl}"
+			_modifiedGtCommandLine="${_modifiedGtCommandLine/$_originalGsiftpDestinationUrl}"
 			# remove any destination option
 			_modifiedGtCommandLine="${_modifiedGtCommandLine/ -d }"
 			_modifiedGtCommandLine="${_modifiedGtCommandLine/ --destination }"
