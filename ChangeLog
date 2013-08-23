@@ -1,3 +1,29 @@
+2013-08-23  Frank Scheiner  <frank.scheiner@web.de>
+
+gtransfer dist v0.2.0:
+
+*0.2.0 (gtransfer):
+Added the following functionality:
+
+- Support for host aliases.
+
+Gtransfer can use host aliases as alternatives to host addresses. E.g. a user
+can now use "myGridFTP:" and "gsiftp://host1.domain.tld:2811" synonymically.
+
+- Support for persistent identifiers (EUDAT/EPIC) as source URL
+
+Gtransfer can use persistent identifiers (PIDs) as used by EUDAT and provided by
+EPIC as source of a data transfer.
+
+Many thanks to Giuseppe Fiameni (CINECA) and Johannes Reetz (RZG) for explaining
+the background and ideas of persistent identifiers (PIDs) and especially to
+Giacomo Mariani (CINECA) for providing a test environment, the iRODS micro
+services and helpful code examples that allowed me to get this extension to work
+with gtransfer.
+
+Also updated and reworked the documentation. Now using Markdown formatted files
+as sources for manpages and PDFs.
+
 2013-01-25  Frank Scheiner  <frank.scheiner@web.de>
 
 gtransfer dist v0.1.2:
