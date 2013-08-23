@@ -179,7 +179,7 @@ _gtransfer()
 	prev="${COMP_WORDS[COMP_CWORD-1]}"
 
 	#  all available gtransfer options/switches/parameters	
-	opts="--source -s --destination -d --help --verbose -v --version -V --metric -m --logfile -l --auto-clean -a --configfile --"
+	opts="--source -s --destination -d --transfer-list --auto-optimize -o --recursive -r -f --help --verbose -v --version -V --metric -m --logfile -l --auto-clean -a --configfile --guc-max-retries --gt-max-retries --"
 
 	#  parameter completion
 	case "${prev}" in

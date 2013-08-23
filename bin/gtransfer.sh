@@ -670,7 +670,7 @@ else
 			_resolvedUrl=$( pids/irodsMicroService/resolvePid "$_pid" )
 		
 			if [[ $? != 0 ]]; then
-				echo "E: Given PID \"$_pid\" couldn't be resolved. Exiting." 1>&2
+				echo "E: Given PID \"$_pid\" could not be resolved. Exiting." 1>&2
 				exit $_gtransfer_exit_software
 			fi
 		
@@ -686,7 +686,7 @@ else
 			_pidFile="${gsiftpSourceUrl/pidfile:\/\/}"
 			
 			if [[ ! -e "$_pidFile" ]]; then
-				echo "E: PID file \"$_pidFile\" cannot be found!" 1>&2
+				echo "E: PID file \"$_pidFile\" cannot be found! Exiting." 1>&2
 				exit $_gtransfer_exit_usage
 			fi
 			
@@ -695,7 +695,12 @@ else
 			
 			if [[ $? -ne 0 ]]; then
 				echo "W: At least one PID could not be resolved."
-			fi 
+			fi
+			
+			if [[ -z "$_resolvedPids" ]]; then
+				echo "E: PIDs in PID file \"$_pidFile\" could not be resolved! Exiting." 1>&2
+				exit $_gtransfer_exit_software
+			fi
 			
 			helperFunctions/echoIfVerbose "I: Building transfer list..."
 			gsiftpTransferList=$( pids/irodsMicroService/buildTransferList "$_resolvedPids" "$gsiftpDestinationUrl" )
