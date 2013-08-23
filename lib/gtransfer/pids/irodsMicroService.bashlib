@@ -232,19 +232,26 @@ pids/irodsMicroService/resolvePid()
 	local _irodsUrl=""
 	local _gsiftpUrl=""
 
-	#echo "DEBUG: irule -F ${_GTRANSFER_LIBEXECPATH}/URLselecter.r '*pid=\"$_pid\"' | cut -d ' ' -f 2" 1>&2 
+	#echo "DEBUG: PID resolving started [$( date +%H:%M:%S:%Nh )]" 1>&2
 
+	#echo "DEBUG: irule -F ${_GTRANSFER_LIBEXECPATH}/URLselecter.r '*pid=\"$_pid\"' | cut -d ' ' -f 2" 1>&2 
 	_irodsUrl=$( irule -F ${_GTRANSFER_LIBEXECPATH}/getUrlForPid.r '*pid="'$_pid'"' | cut -d ' ' -f 2 )
+
+	#echo "DEBUG: PID resolving ended [$( date +%H:%M:%S:%Nh )]" 1>&2
 
 	# TODO:
 	# Check if $_url contains an irods:// URL
 	if [[ ! "$_irodsUrl" =~ "irods://" ]]; then
 		return 1
 	else
+		#echo "DEBUG: URL transformation started [$( date +%H:%M:%S:%Nh )]" 1>&2
+	
 		# I assume the returned URL will always be an irods:// URL. It
 		# therefore needs to be transformed to a gsiftp:// URL, so
 		# gtransfer can make use of it.
 		_gsiftpUrl=$( pids/irodsMicroService/transformIrodsUrl "$_irodsUrl" )
+
+		#echo "DEBUG: URL transformation ended [$( date +%H:%M:%S:%Nh )]" 1>&2
 
 		if [[ $? != 0 ]]; then
 			return 2
@@ -343,6 +350,10 @@ pids/irodsMicroService/buildTransferList()
 	local _destinationUrl="$2"
 	
 	local _transferList="${__GLOBAL__gtTmpDir}/$$_transferList.${__GLOBAL__gtTmpSuffix}"
+	
+	#echo "DEBUG: ${__GLOBAL__gtTmpDir}" 1>&2
+	#echo "DEBUG: $$_transferList.${__GLOBAL__gtTmpSuffix}" 1>&2
+	#echo -e "DEBUG: \n$_resolvedPids" 1>&2
 	
 	echo "$_resolvedPids" | sed -e 's/^/"/' -e 's/$/"/' -e 's|$| "'$_destinationUrl'"|g' > "$_transferList"
 	
