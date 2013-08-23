@@ -328,6 +328,8 @@ pids/irodsMicroService/resolvePidFile()
 		fi
 	done
 	
+	wait
+
 	cat ${__GLOBAL__gtTmpDir}/*urls.${__GLOBAL__gtTmpSuffix}
 	
 	return $_return
@@ -348,6 +350,8 @@ pids/irodsMicroService/buildTransferList()
 {
 	local _resolvedPids="$1"
 	local _destinationUrl="$2"
+	
+	#echo "DEBUG: __GLOBAL__gtTmpDir=\"$__GLOBAL__gtTmpDir\"" 1>&2
 	
 	local _transferList="${__GLOBAL__gtTmpDir}/$$_transferList.${__GLOBAL__gtTmpSuffix}"
 	
