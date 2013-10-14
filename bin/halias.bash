@@ -30,7 +30,7 @@ readonly _false=0
 
 readonly __GLOBAL__programName=$( basename "$0" )
 
-readonly __GLOBAL__version="0.1.0"
+readonly __GLOBAL__version="0.1.1"
 
 version="$__GLOBAL__version"
 
@@ -46,7 +46,7 @@ if [[ -e "/etc/gtransfer" ]]; then
 #sed#elif [[ -e "<GTRANSFER_BASE_PATH>/etc" ]]; then
 #sed#	configurationFilesPath="<GTRANSFER_BASE_PATH>/etc"
 #sed#	basePath=<GTRANSFER_BASE_PATH>
-#sed#	libPath="$gtransferBasePath/lib"
+#sed#	libPath="$basePath/lib"
 
 #  According to FHS 2.3, configuration files for packages located in "/opt" have
 #+ to be placed here (if you use a provider super dir below "/opt" for the
