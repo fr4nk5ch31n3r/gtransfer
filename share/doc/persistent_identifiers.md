@@ -52,7 +52,7 @@ resolved by some service. A PID looks like this:
 
 `847/e4ac5caa-f556-11e2-82f1-0024e845a970`
 
-where '847' is the so called prefix, a uniq number referring to a given community.  
+where '847' is the so called prefix, a unique number referring to a given community.  
 
 Coming back to the scientists in the example above: Assume they had used PIDs
 from the start. Now every time the location of the file mentioned above changes,
