@@ -36,8 +36,9 @@ scripts and tools that include the old URL hard-coded somewhere they will also
 have to change these, too.
 
 A better approach would be to use a _persistent_ URL, which will stay the same
-even if the file that it is (finally) pointing to, moves to a different
-location. And this is what persistent identifiers (PI(D)s) are there for. They
+even if the file that it is pointing to moves to a different location or is 
+duplicated to a second storage system. 
+And this is what persistent identifiers (PIDs) are there for. They
 add an additional level of abstraction which allows the file(s) they are
 pointing to, to move to a different location and still be found with the same
 PID.
@@ -50,6 +51,8 @@ without affecting the PID itself. To access the file(s) behind a PID it is
 resolved by some service. A PID looks like this:
 
 `847/e4ac5caa-f556-11e2-82f1-0024e845a970`
+
+where '847' is the so called prefix, a unique number referring to a given community.  
 
 Coming back to the scientists in the example above: Assume they had used PIDs
 from the start. Now every time the location of the file mentioned above changes,
@@ -77,7 +80,7 @@ $ gt -s pid://847/fc158422-d9c0-11e2-82d6-0024e845a970 -d plx-ext:/~/tmp/file/
 [...]
 ```
 
-#### Multiple PIDs with a PID file ####
+#### Multiple PIDs within a PID file ####
 
 ```shell
 $ gt -s pidfile:///path/to/pidFile -d plx-ext:/~/tmp/files/
@@ -120,10 +123,11 @@ As you can see, the result is an iRODS URL, which could be used by iRODS client
 tools, but not by gtransfer. Therefore the protocol, host and port need to be
 mapped to a GridFTP URL (`gsiftp://`) which gtransfer can use as source of a
 transfer. Usually the iRODS installations in EUDAT have an integrated GridFTP
-server ( _griffin_ ) available that operates on the same directory tree. This
-means an iRODS URL can be mapped to a GridFTP URL by simply exchanging the
-protocol and the port of a URL, e.g. `irods://host.domain.tld:1247/[...]` could
-be mapped to `gsiftp://host.domain.tld:2811/[...]`. 
+server ( _iRODS DSI_ module for the _globus-gridftp-server_) available that 
+operates on the same directory tree. This means an iRODS URL can be mapped 
+to a GridFTP URL by simply exchanging the protocol and the port of a URL, 
+e.g. `irods://host.domain.tld:1247/[...]` could be mapped to 
+`gsiftp://host.domain.tld:2811/[...]`. 
 
 Gtransfer ships with some default mappings valid for EUDAT hosts, which can be
 easily extended by adding a mapping between iRODS and GridFTP URL to the

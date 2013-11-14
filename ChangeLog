@@ -1,3 +1,14 @@
+2013-10-14  Frank Scheiner  <frank.scheiner@web.de>
+
+gtransfer dist v0.2.1:
+
+*0.1.1 (halias):
+Fixed [issue #21]. This fix corrects a wrong variable name in halias that
+prevented correct functioning after doing a system installation.
+
+[issue #21]: https://github.com/fr4nk5ch31n3r/gtransfer/issues/21
+
+
 2013-08-23  Frank Scheiner  <frank.scheiner@web.de>
 
 gtransfer dist v0.2.0:
