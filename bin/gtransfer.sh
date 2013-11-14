@@ -33,7 +33,7 @@ COPYRIGHT
 #  prevent "*" expansion (filename globbing)
 #set -f
 
-version="0.2.0"
+version="0.2.1"
 gsiftpUserParams=""
 
 #  path to configuration files (prefer system paths!)
@@ -42,14 +42,15 @@ if [[ -e "/etc/gtransfer" ]]; then
         gtransferConfigurationFilesPath="/etc/gtransfer"
         #  gtransfer is installed in "/usr/bin", hence the base path is "/usr"
         gtransferBasePath="/usr"
-        gtransferLibPath="$gtransferBasePath/lib/gtransfer"
-        gtransferLibexecPath="$gtransferBasePath/libexec/gtransfer"
+        gtransferLibPath="$gtransferBasePath/lib"
+        gtransferLibexecPath="$gtransferBasePath/libexec"
 
 #  For installation with "install.sh".
 #sed#elif [[ -e "<GTRANSFER_BASE_PATH>/etc" ]]; then
 #sed#	gtransferConfigurationFilesPath="<GTRANSFER_BASE_PATH>/etc"
 #sed#	gtransferBasePath=<GTRANSFER_BASE_PATH>
 #sed#	gtransferLibPath="$gtransferBasePath/lib"
+#sed#	gtransferLibexecPath="$gtransferBasePath/libexec"
 
 #  According to FHS 2.3, configuration files for packages located in "/opt" have
 #+ to be placed here (if you use a provider super dir below "/opt" for the
