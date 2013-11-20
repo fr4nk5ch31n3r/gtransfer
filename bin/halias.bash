@@ -30,7 +30,7 @@ readonly _false=0
 
 readonly __GLOBAL__programName=$( basename "$0" )
 
-readonly __GLOBAL__version="0.1.2"
+readonly __GLOBAL__version="0.1.3"
 
 version="$__GLOBAL__version"
 
@@ -218,7 +218,7 @@ halias/dealias()
 	
 	# If _string is a user alias, _dealiasedString will differ from it and
 	# we can return, as user aliases take precedence.
-	if [[ "$_dealiasedString" != "$_string" ]]; then
+	if [[ $? -ne 1 && "$_dealiasedString" != "$_string" ]]; then
 		echo "$_dealiasedString"
 		return 0
 	fi
@@ -226,7 +226,7 @@ halias/dealias()
 	_dealiasedString=$( alias/dealias "$_string" "$__GLOBAL__systemAliasesSource" )
 	
 	# If _string is a system alias, _dealiasedString will differ from it...
-	if [[ "$_dealiasedString" != "$_string" ]]; then
+	if [[ $? -ne 1 && "$_dealiasedString" != "$_string" ]]; then
 		echo "$_dealiasedString"
 		return 0
 	fi
