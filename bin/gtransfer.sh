@@ -33,7 +33,7 @@ COPYRIGHT
 #  prevent "*" expansion (filename globbing)
 #set -f
 
-version="0.2.1"
+version="0.3.0"
 gsiftpUserParams=""
 
 #  path to configuration files (prefer system paths!)
@@ -42,7 +42,7 @@ if [[ -e "/etc/gtransfer" ]]; then
         gtransferConfigurationFilesPath="/etc/gtransfer"
         #  gtransfer is installed in "/usr/bin", hence the base path is "/usr"
         gtransferBasePath="/usr"
-        gtransferLibPath="$gtransferBasePath/lib"
+        gtransferLibPath="$gtransferBasePath/share"
         gtransferLibexecPath="$gtransferBasePath/libexec"
 
 #  For installation with "install.sh".

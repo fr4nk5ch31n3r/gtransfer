@@ -30,7 +30,7 @@ readonly _false=0
 
 readonly __GLOBAL__programName=$( basename "$0" )
 
-readonly __GLOBAL__version="0.1.3"
+readonly __GLOBAL__version="0.2.0"
 
 version="$__GLOBAL__version"
 
@@ -40,7 +40,7 @@ if [[ -e "/etc/gtransfer" ]]; then
         configurationFilesPath="/etc/gtransfer"
         #  gtransfer is installed in "/usr/bin", hence the base path is "/usr"
         basePath="/usr"
-        libPath="$basePath/lib"
+        libPath="$basePath/share"
 
 #  For installation with "install.sh".
 #sed#elif [[ -e "<GTRANSFER_BASE_PATH>/etc" ]]; then

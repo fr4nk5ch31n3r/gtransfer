@@ -1,3 +1,12 @@
+2013-12-00  Frank Scheiner <frank.scheiner@web.de>
+
+gtransfer dist v0.3.0:
+
+For native OS packages (like RPMs) all tools now use `/usr/share/gtransfer` as
+base path for bash libraries. This fixes [issue #26].
+
+[issue #26]: https://github.com/fr4nk5ch31n3r/gtransfer/issues/26
+
 2013-10-14  Frank Scheiner  <frank.scheiner@web.de>
 
 gtransfer dist v0.2.1:

@@ -4,7 +4,7 @@
 
 :<<COPYRIGHT
 
-Copyright (C) 2011 Frank Scheiner, HLRS, Universitaet Stuttgart
+Copyright (C) 2011, 2013 Frank Scheiner, HLRS, Universitaet Stuttgart
 Copyright (C) 2011, 2012, 2013 Frank Scheiner
 
 The program is distributed under the terms of the GNU General Public License
@@ -28,7 +28,7 @@ contract number RI-222919.
 
 COPYRIGHT
 
-version="0.2.0"
+version="0.3.0"
 
 #  path to configuration files (prefer system paths!)
 #  For native OS packages:
@@ -36,7 +36,7 @@ if [[ -e "/etc/gtransfer" ]]; then
         gtransferConfigurationFilesPath="/etc/gtransfer"
         #  gtransfer is installed in "/usr/bin", hence the base path is "/usr"
         gtransferBasePath="/usr"
-        gtransferLibPath="$gtransferBasePath/lib/gtransfer"
+        gtransferLibPath="$gtransferBasePath/share"
 
 #  For installation with "install.sh".
 #sed#elif [[ -e "<GTRANSFER_BASE_PATH>/etc" ]]; then
