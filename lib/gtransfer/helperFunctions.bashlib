@@ -25,7 +25,7 @@ COPYRIGHT
 #  DEFINES
 ################################################################################
 
-readonly _helperFunctions_Version="0.1.0"
+readonly _helperFunctions_Version="0.2.0"
 
 ################################################################################
 #  INCLUDES
@@ -545,7 +545,7 @@ helperFunctions/isValidUrl()
 		#+ to indicate a general problem.
 		hostName=$( helperFunctions/getFQDNFromURL "$url" )
 		if [[ "$hostName" != "" ]]; then
-			ping -c 1 "$hostName" &>/dev/null
+			ping -w 1 -c 1 "$hostName" &>/dev/null
 			
 			if [[ $? -eq 2 ]]; then
 				return 1
