@@ -6,7 +6,7 @@
 
 :<<COPYRIGHT
 
-Copyright (C) 2010, 2011, 2013 Frank Scheiner, HLRS, Universitaet Stuttgart
+Copyright (C) 2010, 2011, 2013, 2014 Frank Scheiner, HLRS, Universitaet Stuttgart
 Copyright (C) 2011, 2012, 2013 Frank Scheiner
 
 The program is distributed under the terms of the GNU General Public License
@@ -29,6 +29,9 @@ www.deisa.org. DEISA is an EU FP7 integrated infrastructure initiative under
 contract number RI-222919. 
 
 COPYRIGHT
+
+# Reset the signal handler (possibly inherited from the caller) for SIGINT
+trap - SIGINT
 
 #  prevent "*" expansion (filename globbing)
 #set -f
@@ -75,7 +78,7 @@ elif [[ -e "$HOME/.gtransfer" ]]; then
 
 #  For git deploy, use $BASH_SOURCE
 elif [[ -e "$( dirname $BASH_SOURCE )/../etc" ]]; then
-	gtransferConfigurationFilesPath="$( dirname $BASH_SOURCE )/../etc"
+	gtransferConfigurationFilesPath="$( dirname $BASH_SOURCE )/../etc/gtransfer"
 	gtransferBasePath="$( dirname $BASH_SOURCE )/../"
 	gtransferLibPath="$gtransferBasePath/lib"
 	gtransferLibexecPath="$gtransferBasePath/libexec"

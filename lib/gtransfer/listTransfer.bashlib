@@ -571,7 +571,11 @@ listTransfer/transferData()
 		local RETURN="$?"
 
 		#  did the current transfer step work?
-		if [[ $RETURN -eq 4 ]]; then
+		if [[ $RETURN -eq 130 ]]; then
+			# no, it was interrupted
+			kill -SIGINT $$
+
+		elif [[ $RETURN -eq 4 ]]; then
 			#  already finished, can be skipped
 			helperFunctions/echoIfVerbose "Skipped because already finished!"
 			transferStepNumber=$(( $transferStepNumber + 1 ))
@@ -979,6 +983,8 @@ listTransfer/doTransferStep()
 		touch "${__GLOBAL__gtTmpDir}/${_tmpTransferId}.finished"
 		rm -f "$tgftpTransferCommand" &>/dev/null
 		rm -f "${tgftpTransferCommand}Output" &>/dev/null
+	elif [[ $RETURN == 130 ]]; then
+		:
 	else
 		#  if transfer step failed print the output of the tgftp command
 		cat ${tgftpTransferCommand}Output
