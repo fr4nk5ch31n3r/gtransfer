@@ -58,7 +58,7 @@ elif [[ -e "/etc/opt/gtransfer" ]]; then
         gtransferLibPath="$gtransferBasePath/lib"
 
 #  For user install in $HOME:
-elif [[ -e "$HOME/.gtransfer" ]]; then
+elif [[ -e "$HOME/opt/gtransfer" ]]; then
         gtransferConfigurationFilesPath="$HOME/.gtransfer"
         gtransferBasePath="$HOME/opt/gtransfer"
         gtransferLibPath="$gtransferBasePath/lib"
