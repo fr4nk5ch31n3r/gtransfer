@@ -277,7 +277,7 @@ helperFunctions/xtractXMLAttributeValue()
 	#  attribute may contain arguments ('attribute arg="0"') or can be
 	#+ without
 
-	local attributeOpen="<$1>"
+	local attributeOpen="<${1}.*>"
 	
 	#echoDebug "stderr" "DEBUG1" "Open: $attributeOpen"
 
