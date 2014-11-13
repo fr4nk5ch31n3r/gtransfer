@@ -731,19 +731,27 @@ else
 		fi	
 	fi
 
+	#                     automatically strips commend lines!
+	gsiftpTransferList=$( listTransfer/createTransferList "$gsiftpSourceUrl" "$gsiftpDestinationUrl" )
+
 	if [[ $autoOptimize -eq 1 ]]; then
-		gsiftpTransferList=$( listTransfer/createTransferList "$gsiftpSourceUrl" "$gsiftpDestinationUrl" )
+
 		#  only perform auto-optimization if there are at least
 		#+ 100 files in the transfer list. If not perform simple
 		#+ list transfer.
 		if [[ $( listTransfer/getNumberOfFilesFromTransferList "$gsiftpTransferList" ) -ge 100 ]]; then
+
 			autoOptimization/performTransfer "$gsiftpTransferList"  "$dataPathMetric" "$tgftpLogfileName" "$chunkConfig" "$transferMode"
 		else
-			rm "$gsiftpTransferList"
-			urlTransfer/transferData "$gsiftpSourceUrl" "$gsiftpDestinationUrl" "$dataPathMetric" "$tgftpLogfileName"
+			# Only perform list transfers from now on
+			#rm "$gsiftpTransferList"
+			#urlTransfer/transferData "$gsiftpSourceUrl" "$gsiftpDestinationUrl" "$dataPathMetric" "$tgftpLogfileName"
+			listTransfer/performTransfer "$gsiftpTransferList" "$dataPathMetric" "$tgftpLogfileName"
 		fi
 	else
-		urlTransfer/transferData "$gsiftpSourceUrl" "$gsiftpDestinationUrl" "$dataPathMetric" "$tgftpLogfileName"
+		# Only perform list transfers from now on
+		#urlTransfer/transferData "$gsiftpSourceUrl" "$gsiftpDestinationUrl" "$dataPathMetric" "$tgftpLogfileName"
+		listTransfer/performTransfer "$gsiftpTransferList" "$dataPathMetric" "$tgftpLogfileName"
 	fi
 fi
 
