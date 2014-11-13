@@ -69,7 +69,7 @@ elif [[ -e "$HOME/opt/gtransfer" ]]; then
 
 #  For git deploy, use $BASH_SOURCE
 elif [[ -e "$( dirname $BASH_SOURCE )/../etc" ]]; then
-	configurationFilesPath="$( dirname $BASH_SOURCE )/../etc"
+	configurationFilesPath="$( dirname $BASH_SOURCE )/../etc/gtransfer"
 	basePath="$( dirname $BASH_SOURCE )/../"
 	libPath="$basePath/lib"
 fi
