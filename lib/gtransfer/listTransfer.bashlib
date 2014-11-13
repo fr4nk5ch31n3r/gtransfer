@@ -170,7 +170,7 @@ listTransfer/getDpathData()
 	
 		#helperFunctions/echoIfVerbose -e "Dpath used:\n$_dPathFile"
 		
-		local -a _dpathArray=( $( helperFunctions/xtractXMLAttributeValue "path.*metric=\"$_metric\"" $_dpathFile ) )
+		local -a _dpathArray=( $( helperFunctions/xtractXMLAttributeValue "path .*metric=\"$_metric\"" $_dpathFile ) )
 		
 		echo ${_dpathArray[@]}
 		
