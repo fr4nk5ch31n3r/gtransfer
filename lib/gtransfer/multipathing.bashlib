@@ -1,0 +1,289 @@
+#!/bin/bash
+
+# multipathing.bashlib - library functions for gtransfer multipathing support
+
+:<<COPYRIGHT
+
+Copyright (C) 2014 Frank Scheiner, HLRS, Universitaet Stuttgart
+
+The program is distributed under the terms of the GNU General Public License
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+COPYRIGHT
+
+################################################################################
+# DEFINES
+################################################################################
+
+readonly _gtransfer_multipathing_version="0.1.0"
+readonly _gtransfer_multipathing_selfName="gtransfer/multipathing"
+
+readonly __GLOBAL__proportionsFileName="bandwidthProportions"
+readonly __GLOBAL__proportionsFile="$__GLOBAL__gtTmpDir/$__GLOBAL__proportionsFileName"
+
+################################################################################
+# EXTERNAL VARIABLES
+################################################################################
+
+# _LIB
+# _program
+
+################################################################################
+# INCLUDES
+################################################################################
+
+# None
+
+################################################################################
+# FUNCTIONS
+################################################################################
+
+# Determine if given value contains multiple metrics
+#
+# $1 (_value) - The value to check for multiple metrics
+#
+# Returns 0 if multiple metrics are set, 1 otherwise.
+multipathing/multipleMetricsSet()
+{
+	local _value="$1"
+	
+	local _metrics
+	
+	_metrics=( $( echo "$_value" | tr ',' ' ' ) )
+	
+	if [[ ${#_metrics[@]} -gt 1 ]]; then
+
+		return 0
+	else
+		return 1
+	fi
+}
+
+
+# Return the names of the transfer lists created by the multipathing
+# functionality for the given metrics value
+#
+# $1 (_metrics)            - The metrics value (e.g. "1,2,3" or "all")
+multipathing/getTransferLists()
+{
+	local _inputTransferList="$1"
+	local _metrics="$2"
+	
+	echo "${_transferLists[@]}"
+	
+	return
+}
+
+
+# Create distinct transfer lists with bin packing
+#
+# $1 (_inputTransferList) - The transfer list to split up with multipathing
+# $2 (_dpath)             - The dpath file name (string)
+# $3 (_metrics)           - The metrics value (e.g. "1,2,3" or "1")
+multipathing/createTransferLists()
+{
+	local _inputTransferList="$1"
+	local _dpath="$2"
+	local _metrics="$3"
+	
+	local -a _bandwidths=( $( multipathing/getNormalizedBandwidths "$_dpath" "$_metrics" ) )
+	
+	local -a _proportions=( $( multipathing/normalizeProportions "${_bandwidths[*]}" ) )
+
+	> "$__GLOBAL__proportionsFile"
+	
+	for _proportion in "${_proportions[@]}"; do
+
+		echo "$_proportion" >> "$__GLOBAL__proportionsFile"
+	done
+	
+	# forward both transfer list and proportions file to the bin packing script
+	local -a _transferListNames=( $( $_GTRANSFER_LIBEXECPATH/packBinsNew.py "$_inputTransferList" "$__GLOBAL__proportionsFile" ) )
+	
+	#$_GTRANSFER_LIBEXECPATH/packBinsNew.py "$_inputTransferList" "$__GLOBAL__proportionsFile"
+	
+	for _transferListName in "${_transferListNames[@]}"; do
+
+		echo -n "$__GLOBAL__gtTmpDir/$_transferListName "
+	done
+	
+	echo ""
+	
+	return
+}
+
+
+# Get bandwidths from dpath
+#
+# $1 (_dpath)   - The dpath file name (string)
+# $2 (_metrics) - The metrics value (e.g. "1,2,3" or "all")
+multipathing/getNormalizedBandwidths()
+{
+	local _dpath="$1"
+	local _metrics="$2"
+	
+	local -a _arrayOfMetrics
+	local -a _arrayOfBandwidths
+	
+	local _bandwidth=""
+	
+	local _index=0
+	
+	if [[ "$_metrics" != "all" ]]; then
+		_arrayOfMetrics=( $( echo "$_metrics" | tr ',' ' ' ) )
+		
+		for _metric in "${_arrayOfMetrics[@]}"; do
+
+			_arrayOfBandwidths[$_index]=$( grep '^<path .*metric="'$_metric'"' < "$_dpath" | grep -o 'bandwidth="[[:alnum:]]*"' | sed -e 's/^bandwidth="//' -e 's/"$//' )
+			
+			_index=$(( $_index + 1 ))
+		done
+		
+	else
+		#                      returns all bandwidth values of a dpath, one per line
+		_arrayOfBandwidths=( $( grep '^<path .*bandwidth=' < "$_dpath" | grep -o 'bandwidth="[[:alnum:]]*"' | sed -e 's/^bandwidth="//' -e 's/"$//' ) )
+	fi
+	
+	# Normalize to Mb
+	_index=0
+	for _bandwidth in "${_arrayOfBandwidths[@]}"; do
+		_arrayOfBandwidths[$_index]=$( multipathing/normalizeBandwidthToMb "$_bandwidth" )
+		
+		_index=$(( $_index + 1 ))
+	done
+	
+	
+	echo "${_arrayOfBandwidths[@]}"
+	
+	return
+}
+
+
+multipathing/normalizeBandwidthToMb()
+{
+	local _bandwidth="$1"
+	
+	local _bandwidthValue="${_bandwidth%%[[:alpha:]]*}"
+	local _bandwidthUnit="${_bandwidth##[[:digit:]]}"
+	
+	if [[ "$_bandwidthUnit" == "Gb" ]]; then
+	
+		_bandwidth="$(( $_bandwidthValue * 1000 ))"
+	else
+		_bandwidth="$_bandwidthValue"
+	fi
+	
+	echo "$_bandwidth"
+	
+	return
+}
+
+
+# "Normalize" proportions to percent values. Use it like that:
+#
+# multipathing/normalizeProportions "${_arrayOfProportions[*]}"
+#
+# NOTICE: The result is not exact and the biggest percentage gets added 1
+# percent to compensate for the rounding errors. This because the biggest
+# percentage resembles the path with the greatest bandwidth.
+#
+# $1 (_proportions) - The given proportions (array of numbers)
+multipathing/normalizeProportions()
+{
+	local -a _proportions=($1)
+
+	local -a _proportionsInPercent
+	
+	local _totalValue=0
+	local _maxProportion=0
+	local _indexOfMaxProportion=0
+
+	local _index=0
+	
+	for _proportion in "${_proportions[@]}"; do
+	
+		_totalValue=$(( $_totalValue + $_proportion ))
+
+		# Remember max proportion
+		if [[ $_proportion -gt $_maxProportion ]]; then
+			_maxProportion=$_proportion
+			_indexOfMaxProportion=$_index
+		fi
+		
+		_index=$(( $index + 1 ))
+	done
+	
+	_index=0
+	
+	for _proportion in "${_proportions[@]}"; do
+
+		_proportionsInPercent[$_index]=$(( ( $_proportion * 100 ) / $_totalValue ))
+		
+		_index=$(( $_index + 1 ))
+	done
+
+	# Increase value of max proportion by one, to compensate for the
+	# rounding errors
+	_proportionsInPercent[$_indexOfMaxProportion]=$(( _proportionsInPercent[$_indexOfMaxProportion] + 1 ))
+	
+	echo "${_proportionsInPercent[@]}"
+	
+	return
+}
+
+
+# Return the maximum value from the given array.
+#
+# helperFunctions/getMax "${_arrayOfValues[*]}"
+#
+# $1 (_values) - The given values (array of positive numbers)
+helperFunctions/getMax()
+{
+	local -a _values=($1)
+	
+	local _max=0
+	
+	for _value in "${_values[@]}"; do
+
+		if [[ $_value -gt $_max ]]; then
+			_max=$_value
+		fi
+	done
+	
+	echo "$_max"
+	
+	return
+}
+
+
+:<<comment
+
+# Determine proportions #
+
+* Allow Mb (Megabit) and Gb (Gigabit) as possible units for bandwidths
+
+* "Normalize" all bandwidths to Mb
+
+* The numbers give the proportions, but they should be transformed to smaller
+  numbers, i.e. percentage values
+
+# Forward proportions to bin packing script #
+
+* save all proportions to a file
+
+* call bin packing script with this file and the transfer list as arguments
+
+comment
+
