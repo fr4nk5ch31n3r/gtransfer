@@ -25,7 +25,7 @@ COPYRIGHT
 #  DEFINES
 ################################################################################
 
-readonly _listTransfer_Version="0.1.1"
+readonly _listTransfer_Version="0.2.0"
 
 ################################################################################
 #  INCLUDES
@@ -769,6 +769,10 @@ listTransfer/doTransferStep()
 			#  ...just return "4" (SKIP_TRANSFER_STEP),
 			return 4
 		else
+			if [[ -e "${__GLOBAL__gtTmpDir}/${_tmpTransferId}.dumpfile" && \
+			      ! -s "${__GLOBAL__gtTmpDir}/${_tmpTransferId}.dumpfile" ]]; then
+				rm -f "${__GLOBAL__gtTmpDir}/${_tmpTransferId}.dumpfile"
+			fi
 			# ...if not, rename temporary copy
 			mv "$_tempTransferList" "${__GLOBAL__gtTmpDir}/${_tmpTransferId}.transferList"
 
@@ -821,6 +825,10 @@ listTransfer/doTransferStep()
 			#  ...just return "4" (SKIP_TRANSFER_STEP),
 			return 4
 		else
+			if [[ -e "${__GLOBAL__gtTmpDir}/${_tmpTransferId}.dumpfile" && \
+			      ! -s "${__GLOBAL__gtTmpDir}/${_tmpTransferId}.dumpfile" ]]; then
+				rm -f "${__GLOBAL__gtTmpDir}/${_tmpTransferId}.dumpfile"
+			fi
 			# ...if not, rename temporary copy
 			mv "$_tempTransferList" "${__GLOBAL__gtTmpDir}/${_tmpTransferId}.transferList"
 
@@ -874,6 +882,10 @@ listTransfer/doTransferStep()
 			#  ...just return "4" (SKIP_TRANSFER_STEP),
 			return 4
 		else
+			if [[ -e "${__GLOBAL__gtTmpDir}/${_tmpTransferId}.dumpfile" && \
+			      ! -s "${__GLOBAL__gtTmpDir}/${_tmpTransferId}.dumpfile" ]]; then
+				rm -f "${__GLOBAL__gtTmpDir}/${_tmpTransferId}.dumpfile"
+			fi
 			# ...if not, rename temporary copy
 			mv "$_tempTransferList" "${__GLOBAL__gtTmpDir}/${_tmpTransferId}.transferList"
 
@@ -925,9 +937,15 @@ listTransfer/doTransferStep()
 
 		#  if this transferStep was already finished,
 		if [[ -e "${__GLOBAL__gtTmpDir}/${_tmpTransferId}.finished" ]]; then
+
 			#  ...just return "4" (SKIP_TRANSFER_STEP),
 			return 4
 		else
+			if [[ -e "${__GLOBAL__gtTmpDir}/${_tmpTransferId}.dumpfile" && \
+			      ! -s "${__GLOBAL__gtTmpDir}/${_tmpTransferId}.dumpfile" ]]; then
+				rm -f "${__GLOBAL__gtTmpDir}/${_tmpTransferId}.dumpfile"
+			fi
+
 			# ...if not, rename temporary copy
 			mv "$_tempTransferList" "${__GLOBAL__gtTmpDir}/${_tmpTransferId}.transferList"
 
