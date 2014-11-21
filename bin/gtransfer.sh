@@ -612,8 +612,8 @@ if [[ "$gsiftpSourceUrl" == "" || \
 
 		if [[ $_activateMultipathing -eq 1 ]]; then
 
-			_transferListSource=$( listTransfer/getSourceFromTransferList "$transferListClean" )
-			_transferListDestination=$( listTransfer/getDestinationFromTransferList "$transferListClean" )
+			_transferListSource=$( listTransfer/getSourceFromTransferList "$gsiftpTransferListClean" )
+			_transferListDestination=$( listTransfer/getDestinationFromTransferList "$gsiftpTransferListClean" )
 			_dpath=$( listTransfer/dpathAvailable "$_transferListSource" "$_transferListDestination" )
 
 			#multipathing/createTransferLists
