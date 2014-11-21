@@ -27,7 +27,7 @@ COPYRIGHT
 # DEFINES
 ################################################################################
 
-readonly _gtransfer_multipathing_version="0.1.0"
+readonly _gtransfer_multipathing_version="0.2.0"
 readonly _gtransfer_multipathing_selfName="gtransfer/multipathing"
 
 readonly __GLOBAL__proportionsFileName="bandwidthProportions"
@@ -99,8 +99,12 @@ multipathing/createTransferLists()
 	local _metrics="$3"
 	
 	local -a _bandwidths=( $( multipathing/getNormalizedBandwidths "$_dpath" "$_metrics" ) )
-	
+
+	#echo "DEBUG: _bandwidths=\"$( echo "${_bandwidths[@]}" )\"" 1>&2
+
 	local -a _proportions=( $( multipathing/normalizeProportions "${_bandwidths[*]}" ) )
+
+	#echo "DEBUG: _proportions=\"$( echo "${_proportions[@]}" )\"" 1>&2
 
 	> "$__GLOBAL__proportionsFile"
 	
@@ -109,8 +113,10 @@ multipathing/createTransferLists()
 		echo "$_proportion" >> "$__GLOBAL__proportionsFile"
 	done
 	
+	# TODO: Try to use cached files (transfer lists).
+
 	# forward both transfer list and proportions file to the bin packing script
-	local -a _transferListNames=( $( $_GTRANSFER_LIBEXECPATH/packBinsNew.py "$_inputTransferList" "$__GLOBAL__proportionsFile" ) )
+	local -a _transferListNames=( $( cd $__GLOBAL__gtTmpDir; $_GTRANSFER_LIBEXECPATH/packBinsNew.py "$_inputTransferList" "$__GLOBAL__proportionsFile" 2>/dev/null ) )
 	
 	#$_GTRANSFER_LIBEXECPATH/packBinsNew.py "$_inputTransferList" "$__GLOBAL__proportionsFile"
 	
@@ -266,6 +272,40 @@ helperFunctions/getMax()
 	
 	return
 }
+
+
+multipathing/checkProcessActivity()
+{
+	local -a _pids=($1)
+
+	local _index=0
+	local -a _processActivity
+	local _numberOfActiveProcesses=0
+
+	for _pid in "${_pids[@]}"; do
+
+		if kill -0 $_pid &>/dev/null; then
+			echo -n "$_index"
+			_processActivity[$_index]=1
+		else
+			_processActivity[$_index]=0
+		fi
+
+		_index=$(( $index + 1 ))
+	done
+
+	for _activityIndicator in "${_processActivity[@]}"; do
+
+		_numberOfActiveProcesses=$(( $_numberOfActiveProcesses + $_activityIndicator ))
+	done
+
+	if [[ $_numberOfActiveProcesses -gt 0 ]]; then
+		return 0
+	else
+		return 1
+	fi
+}
+
 
 
 :<<comment
