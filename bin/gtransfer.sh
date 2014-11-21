@@ -584,6 +584,12 @@ fi
 #  set dpath metric
 if [[ "$dataPathMetricSet" != "0" ]]; then
 	dataPathMetric="$defaultDataPathMetric"
+elif [[ "$dataPathMetricSet" == "0" ]]; then
+	if multipathing/multipleMetricsSet "$dataPathMetric"; then
+		_activateMultipathing=1 # true => multipathing activated
+	else
+		_activateMultipathing=0 # false => multipathing not activated
+	fi
 fi
 
 #  set logfile name
@@ -603,11 +609,40 @@ if [[ "$gsiftpSourceUrl" == "" || \
 		gsiftpTransferListClean="$__GLOBAL__gtTmpDir/$$_transferList.${__GLOBAL__gtTmpSuffix}"		
 		sed -e '/^#.*$/d' "$gsiftpTransferList" > "$gsiftpTransferListClean"
 
+		if [[ $_activateMultipathing -eq 1 ]]; then
+
+			_transferListSource=$( listTransfer/getSourceFromTransferList "$transferListClean" )
+			_transferListDestination=$( listTransfer/getDestinationFromTransferList "$transferListClean" )
+			_dpath=$( listTransfer/dpathAvailable "$_transferListSource" "$_transferListDestination" )
+
+			#multipathing/createTransferLists
+			_transferLists=( $( multipathing/getTransferLists "$gsiftpTransferListClean" "$dataPathMetric" "$_dpath" ) )
+
+			for _transferLists in "${_transferLists[@]}"; do
+
+				# transfer lists created by multipathing are named like
+				# "<METRIC>.transferlist"
+				_currentMetric=$( echo "${_transferList%%.transferlist}" )
+
+				if [[ $autoOptimize -eq 1 ]]; then
+					gt -f "$_transferList" \
+					   -m "$_currentMetric" \
+					   -o "$transferMode" \
+					   --gt-progress-indicator "$_currentMetric" &
+				else
+					gt -f "$_transferList" \
+					   -m "$_currentMetric" \
+					   --gt-progress-indicator "$_currentMetric" &
+				fi
+			done
+
+			wait # wait until all gt children have finished
+
 		#  TODO:
 		#  Use temporary dir for temp files (.gtransfer/<transferID>)
 		#  1. Determine transfer id for original transfer list
 		#  2. Create temp dir (e.g. _tempDir=$( echo "$0" "$@" | sha1sum )) and store path in global var
-		if [[ $autoOptimize -eq 1 ]]; then
+		elif [[ $autoOptimize -eq 1 ]]; then
 			#  only perform auto-optimization if there are at least
 			#+ 100 files in the transfer list. If not perform simple
 			#+ list transfer.
