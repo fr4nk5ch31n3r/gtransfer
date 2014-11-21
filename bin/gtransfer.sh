@@ -308,6 +308,23 @@ onExit()
 
 	return
 }
+
+
+onSigint()
+{
+	# kill all gt subprocesses (from multipathing)
+	for _gtSubProcess in "${_gtSubProcesses[@]}"; do
+		kill -SIGINT $_gtSubProcess &>/dev/null
+	done
+
+	# restore signal handler to default one
+	trap - SIGINT
+
+	# kill self
+	kill -SIGINT $$
+
+	return
+}
 ################################################################################
 
 ################################################################################
@@ -315,6 +332,8 @@ onExit()
 ################################################################################
 
 trap 'onExit' EXIT
+
+trap 'onSigint' SIGINT
 
 #  check that all required tools are available
 helperFunctions/use cat grep sed cut sleep tgftp telnet uberftp || exit "$_gtransfer_exit_software"
@@ -607,37 +626,59 @@ if [[ "$gsiftpSourceUrl" == "" || \
 		mkdir -p "$__GLOBAL__gtTmpDir"
 		
 		#  strip comment lines from transfer list
-		gsiftpTransferListClean="$__GLOBAL__gtTmpDir/$$_transferList.${__GLOBAL__gtTmpSuffix}"		
+		gsiftpTransferListClean="$__GLOBAL__gtTmpDir/$$_transferList.${__GLOBAL__gtTmpSuffix}"
 		sed -e '/^#.*$/d' "$gsiftpTransferList" > "$gsiftpTransferListClean"
 
 		if [[ $_activateMultipathing -eq 1 ]]; then
+
+			#echo "DEBUG: Multipathing activated!" 1>&2
 
 			_transferListSource=$( listTransfer/getSourceFromTransferList "$gsiftpTransferListClean" )
 			_transferListDestination=$( listTransfer/getDestinationFromTransferList "$gsiftpTransferListClean" )
 			_dpath=$( listTransfer/dpathAvailable "$_transferListSource" "$_transferListDestination" )
 
-			#multipathing/createTransferLists
-			_transferLists=( $( multipathing/getTransferLists "$gsiftpTransferListClean" "$dataPathMetric" "$_dpath" ) )
+			#echo "DEBUG: _dpath=\"$_dpath\"" 1>&2
 
-			for _transferLists in "${_transferLists[@]}"; do
+			#multipathing/createTransferLists
+			#echo "DEBUG: _transferLists=( multipathing/createTransferLists "$gsiftpTransferListClean" "$_dpath" "$dataPathMetric" )"
+			#multipathing/getTransferLists "$gsiftpTransferListClean" "$_dpath" "$dataPathMetric"
+			_transferLists=( $( multipathing/createTransferLists "$gsiftpTransferListClean" "$_dpath" "$dataPathMetric" ) )
+
+			#echo "DEBUG: _transferLists=\"$( echo "${_transferLists[@]}" )\"" 1>&2
+
+			#exit
+
+			declare -a _gtSubProcesses
+			_index=0
+			for _transferList in "${_transferLists[@]}"; do
 
 				# transfer lists created by multipathing are named like
-				# "<METRIC>.transferlist"
-				_currentMetric=$( echo "${_transferList%%.transferlist}" )
+				# "<PATH>/<METRIC>.list"
+				_currentMetric=$( basename "$_transferList" )
+				_currentMetric=$( echo "${_currentMetric%%.list}" )
 
 				if [[ $autoOptimize -eq 1 ]]; then
 					gt -f "$_transferList" \
 					   -m "$_currentMetric" \
 					   -o "$transferMode" \
-					   --gt-progress-indicator "$_currentMetric" &
+					   --gt-progress-indicator "$_currentMetric" &>/dev/null &
 				else
 					gt -f "$_transferList" \
 					   -m "$_currentMetric" \
-					   --gt-progress-indicator "$_currentMetric" &
+					   --gt-progress-indicator "$_currentMetric" &>/dev/null &
 				fi
+
+				_gtSubProcesses[$_index]=$!
+				_index=$(( $index + 1 ))
 			done
 
-			wait # wait until all gt children have finished
+			# wait until all gt children have finished
+			while multipathing/checkProcessActivity "${_gtSubProcesses[*]}"; do
+
+				sleep 2
+			done
+
+			echo ""
 
 		#  TODO:
 		#  Use temporary dir for temp files (.gtransfer/<transferID>)
@@ -685,7 +726,7 @@ else
 			echo "E: Dealiasing failed!"
 			exit $_gtransfer_exit_software
 		fi
-	
+
 		# check if the alias value is different from the alias itself
 		if [[ "$_tmpSourceAlias" != "$_tmpSourceAliasValue" ]]; then
 	
@@ -771,7 +812,58 @@ else
 	#                     automatically strips commend lines!
 	gsiftpTransferList=$( listTransfer/createTransferList "$gsiftpSourceUrl" "$gsiftpDestinationUrl" )
 
-	if [[ $autoOptimize -eq 1 ]]; then
+	if [[ $_activateMultipathing -eq 1 ]]; then
+
+		#echo "DEBUG: Multipathing activated!" 1>&2
+
+		_transferListSource=$( listTransfer/getSourceFromTransferList "$gsiftpTransferList" )
+		_transferListDestination=$( listTransfer/getDestinationFromTransferList "$gsiftpTransferList" )
+		_dpath=$( listTransfer/dpathAvailable "$_transferListSource" "$_transferListDestination" )
+
+		#echo "DEBUG: _dpath=\"$_dpath\"" 1>&2
+
+		#multipathing/createTransferLists
+		#echo "DEBUG: _transferLists=( multipathing/createTransferLists "$gsiftpTransferListClean" "$_dpath" "$dataPathMetric" )"
+		#multipathing/getTransferLists "$gsiftpTransferListClean" "$_dpath" "$dataPathMetric"
+		_transferLists=( $( multipathing/createTransferLists "$gsiftpTransferList" "$_dpath" "$dataPathMetric" ) )
+
+		#echo "DEBUG: _transferLists=\"$( echo "${_transferLists[@]}" )\"" 1>&2
+
+		#exit
+
+		declare -a _gtSubProcesses
+		_index=0
+		for _transferList in "${_transferLists[@]}"; do
+
+			# transfer lists created by multipathing are named like
+			# "<PATH>/<METRIC>.list"
+			_currentMetric=$( basename "$_transferList" )
+			_currentMetric=$( echo "${_currentMetric%%.list}" )
+
+			if [[ $autoOptimize -eq 1 ]]; then
+				gt -f "$_transferList" \
+				   -m "$_currentMetric" \
+				   -o "$transferMode" \
+				   --gt-progress-indicator "$_currentMetric" &>/dev/null &
+			else
+				gt -f "$_transferList" \
+				   -m "$_currentMetric" \
+				   --gt-progress-indicator "$_currentMetric" &>/dev/null &
+			fi
+
+			_gtSubProcesses[$_index]=$!
+			_index=$(( $index + 1 ))
+		done
+
+		# wait until all gt children have finished
+		while multipathing/checkProcessActivity "${_gtSubProcesses[*]}"; do
+
+			sleep 2
+		done
+
+		echo ""
+
+	elif [[ $autoOptimize -eq 1 ]]; then
 
 		#  only perform auto-optimization if there are at least
 		#+ 100 files in the transfer list. If not perform simple
