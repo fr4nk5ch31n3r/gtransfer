@@ -107,6 +107,7 @@ readonly __GLOBAL__gtCacheSuffix="#gt#cache#"
 . "$_LIB"/${_gtransfer_libraryPrefix}/listTransfer.bashlib
 . "$_LIB"/${_gtransfer_libraryPrefix}/autoOptimization.bashlib
 . "$_LIB"/${_gtransfer_libraryPrefix}/pids/irodsMicroService.bashlib
+. "$_LIB"/${_gtransfer_libraryPrefix}/multipathing.bashlib
 
 ################################################################################
 
