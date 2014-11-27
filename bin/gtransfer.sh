@@ -607,6 +607,8 @@ if [[ "$dataPathMetricSet" != "0" ]]; then
 elif [[ "$dataPathMetricSet" == "0" ]]; then
 	if multipathing/multipleMetricsSet "$dataPathMetric"; then
 		_activateMultipathing=1 # true => multipathing activated
+		# create array of metrics
+		declare -a _dpathMetricArray=( $( echo "$dataPathMetric" | tr ',' ' ' ) )
 	else
 		_activateMultipathing=0 # false => multipathing not activated
 	fi
@@ -654,18 +656,22 @@ if [[ "$gsiftpSourceUrl" == "" || \
 
 				# transfer lists created by multipathing are named like
 				# "<PATH>/<METRIC>.list"
-				_currentMetric=$( basename "$_transferList" )
-				_currentMetric=$( echo "${_currentMetric%%.list}" )
+				#_currentMetric=$( basename "$_transferList" )
+				#_currentMetric=$( echo "${_currentMetric%%.list}" )
+
+				# To support multiple transfers with identical metric, the current metric
+				# is taken from the metrics Array build further up.
+				_currentMetric=${_dpathMetricArray[$_index]}
 
 				if [[ $autoOptimize -eq 1 ]]; then
 					gt -f "$_transferList" \
 					   -m "$_currentMetric" \
 					   -o "$transferMode" \
-					   --gt-progress-indicator "$_currentMetric" &>/dev/null &
+					   --gt-progress-indicator "$_index" &>/dev/null &
 				else
 					gt -f "$_transferList" \
 					   -m "$_currentMetric" \
-					   --gt-progress-indicator "$_currentMetric" &>/dev/null &
+					   --gt-progress-indicator "$_index" &>/dev/null &
 				fi
 
 				_gtSubProcesses[$_index]=$!
@@ -837,18 +843,22 @@ else
 
 			# transfer lists created by multipathing are named like
 			# "<PATH>/<METRIC>.list"
-			_currentMetric=$( basename "$_transferList" )
-			_currentMetric=$( echo "${_currentMetric%%.list}" )
+			#_currentMetric=$( basename "$_transferList" )
+			#_currentMetric=$( echo "${_currentMetric%%.list}" )
+			
+			# To support multiple transfers with identical metric, the current metric
+			# is taken from the metrics Array build further up.
+			_currentMetric=${_dpathMetricArray[$_index]}
 
 			if [[ $autoOptimize -eq 1 ]]; then
 				gt -f "$_transferList" \
 				   -m "$_currentMetric" \
 				   -o "$transferMode" \
-				   --gt-progress-indicator "$_currentMetric" &>/dev/null &
+				   --gt-progress-indicator "$_index" &>/dev/null &
 			else
 				gt -f "$_transferList" \
 				   -m "$_currentMetric" \
-				   --gt-progress-indicator "$_currentMetric" &>/dev/null &
+				   --gt-progress-indicator "$_index" &>/dev/null &
 			fi
 
 			_gtSubProcesses[$_index]=$!
