@@ -291,7 +291,7 @@ multipathing/checkProcessActivity()
 			_processActivity[$_index]=0
 		fi
 
-		_index=$(( $index + 1 ))
+		_index=$(( $_index + 1 ))
 	done
 
 	for _activityIndicator in "${_processActivity[@]}"; do

@@ -675,7 +675,7 @@ if [[ "$gsiftpSourceUrl" == "" || \
 				fi
 
 				_gtSubProcesses[$_index]=$!
-				_index=$(( $index + 1 ))
+				_index=$(( $_index + 1 ))
 			done
 
 			# wait until all gt children have finished
@@ -850,6 +850,8 @@ else
 			# is taken from the metrics Array build further up.
 			_currentMetric=${_dpathMetricArray[$_index]}
 
+			#echo "DEBUG: _currentMetric=\"$( echo "${_currentMetric[@]}" )\"" 1>&2
+
 			if [[ $autoOptimize -eq 1 ]]; then
 				gt -f "$_transferList" \
 				   -m "$_currentMetric" \
@@ -862,8 +864,10 @@ else
 			fi
 
 			_gtSubProcesses[$_index]=$!
-			_index=$(( $index + 1 ))
+			_index=$(( $_index + 1 ))
 		done
+
+		#echo "DEBUG: _gtSubProcesses=\"$( echo "${_gtSubProcesses[@]}" )\"" 1>&2
 
 		# wait until all gt children have finished
 		while multipathing/checkProcessActivity "${_gtSubProcesses[*]}"; do
