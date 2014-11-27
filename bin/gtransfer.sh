@@ -607,8 +607,6 @@ if [[ "$dataPathMetricSet" != "0" ]]; then
 elif [[ "$dataPathMetricSet" == "0" ]]; then
 	if multipathing/multipleMetricsSet "$dataPathMetric"; then
 		_activateMultipathing=1 # true => multipathing activated
-		# create array of metrics
-		declare -a _dpathMetricArray=( $( echo "$dataPathMetric" | tr ',' ' ' ) )
 	else
 		_activateMultipathing=0 # false => multipathing not activated
 	fi
@@ -638,6 +636,14 @@ if [[ "$gsiftpSourceUrl" == "" || \
 			_transferListSource=$( listTransfer/getSourceFromTransferList "$gsiftpTransferListClean" )
 			_transferListDestination=$( listTransfer/getDestinationFromTransferList "$gsiftpTransferListClean" )
 			_dpath=$( listTransfer/dpathAvailable "$_transferListSource" "$_transferListDestination" )
+
+			# create array of metrics
+			declare -a _dpathMetricArray
+			if [[ "$dataPathMetric" == "all" ]]; then
+				_dpathMetricArray=( $( grep '^<path .*metric=' < "$_dpath" | grep -o 'metric="[[:digit:]]*"' | sed -e 's/^metric="//' -e 's/"$//' ) )
+			else
+				_dpathMetricArray=( $( echo "$dataPathMetric" | tr ',' ' ' ) )
+			fi
 
 			#echo "DEBUG: _dpath=\"$_dpath\"" 1>&2
 
@@ -827,6 +833,14 @@ else
 		_dpath=$( listTransfer/dpathAvailable "$_transferListSource" "$_transferListDestination" )
 
 		#echo "DEBUG: _dpath=\"$_dpath\"" 1>&2
+
+		# create array of metrics
+		declare -a _dpathMetricArray
+		if [[ "$dataPathMetric" == "all" ]]; then
+			_dpathMetricArray=( $( grep '^<path .*metric=' < "$_dpath" | grep -o 'metric="[[:digit:]]*"' | sed -e 's/^metric="//' -e 's/"$//' ) )
+		else
+			_dpathMetricArray=( $( echo "$dataPathMetric" | tr ',' ' ' ) )
+		fi
 
 		#multipathing/createTransferLists
 		#echo "DEBUG: _transferLists=( multipathing/createTransferLists "$gsiftpTransferListClean" "$_dpath" "$dataPathMetric" )"

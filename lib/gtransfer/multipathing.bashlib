@@ -52,7 +52,7 @@ readonly __GLOBAL__proportionsFile="$__GLOBAL__gtTmpDir/$__GLOBAL__proportionsFi
 
 # Determine if given value contains multiple metrics
 #
-# $1 (_value) - The value to check for multiple metrics
+# $1 (_value) - The value to check for multiple metrics (string)
 #
 # Returns 0 if multiple metrics are set, 1 otherwise.
 multipathing/multipleMetricsSet()
@@ -61,6 +61,10 @@ multipathing/multipleMetricsSet()
 	
 	local _metrics
 	
+	if [[ "$_value" == "all" ]]; then
+		return 0
+	fi
+
 	_metrics=( $( echo "$_value" | tr ',' ' ' ) )
 	
 	if [[ ${#_metrics[@]} -gt 1 ]]; then
