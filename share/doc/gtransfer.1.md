@@ -1,6 +1,6 @@
-% GTRANSFER(1) gtransfer 0.2.0 | User Commands
+% GTRANSFER(1) gtransfer 0.3.0 | User Commands
 % Frank Scheiner
-% Aug 22, 2013
+% Nov 28, 2014
 
 
 # NAME #
@@ -36,6 +36,11 @@ advanced command line interface for performing GridFTP data transfers.
 **gtransfer** can transfer files along predefined paths by using transit sites
 and can therefore bridge different network domains. See **dpath(5)** for more
 details.
+
+## Data transfer using multipathing ##
+**gtransfer** can distribute a data transfer over multiple paths. This way users
+can benefit from the combined bandwidth of multiple paths. See option **-m** for
+usage details.
 
 ## Optimized data transfer performance ##
 **gtransfer** supports usage of pre-optimized data transfer parameters for
@@ -155,15 +160,19 @@ Be verbose.
 
 ## **[-m, \--metric _dataPathMetric_]** ##
 
-Set the metric to select the corresponding path of a data path.
+Set the metric to select the corresponding path of a data path. To enable
+multipathing, use either the keyword "all" to transfer data using all available
+paths or use a comma separated list with the metric values of the paths that
+should be used (e.g. "0,1,2"). You can also use metric values multiple times
+(e.g. "0,0").
 
 
 ## **[-l, \--logfile _logfile_]** ##
 
 Set the name for the logfile, tgftp will generate for each transfer. If
-specified with ".log" as extension, gtransfer will insert a "\_\_step_#" string to
-the name of the logfile ("#" is the number of the transfer step performed). If
-omitted gtransfer will automatically generate a name for the logfile(s).
+specified with ".log" as extension, gtransfer will insert a "\_\_step_#" string
+to the name of the logfile ("#" is the number of the transfer step performed).
+If omitted gtransfer will automatically generate a name for the logfile(s).
 
 
 ## **[-a, \--auto-clean]** ##

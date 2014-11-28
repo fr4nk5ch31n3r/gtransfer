@@ -197,8 +197,12 @@ The options are as follows:
 [--verbose|-v]		Be verbose.
 
 [--metric|-m dataPathMetric]
-			Determine the metric to select the corresponding data
-			path.
+			Set the metric to select the corresponding data path. To
+			enable multipathing, use either the keyword "all" to
+			transfer data using all available paths or use a comma
+			separated list with the metric values of the paths that
+			should be used (e.g. "0,1,2"). You can also use metric
+			values multiple times (e.g. "0,0").
 
 [--logfile|-l logfile]	Determine the name for the logfile, tgftp will generate
 			for each transfer. If specified with ".log" as
@@ -290,7 +294,7 @@ echoDebug()
 	elif [[ "$fd" == "stderr" ]]; then
 		echo "$debugLevel: $debugString" 1>&2
 	else
-		echo "$debugLevel: $debugString" >$fd
+		echo "$debugLevel: $debugString" 1>$fd
 	fi		
 
 	return

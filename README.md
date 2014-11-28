@@ -40,10 +40,11 @@ Example:
 
 ```shell
 $ gt -s host1:/files/* -d host3:/files/
+................
 ```
 
-> **NOTICE:** This examples uses two [host aliases][aliases] - `host1:` and `host3:` -
-> which can point to ordinary host addresses like
+> **NOTICE:** This examples uses two [host aliases][aliases] - `host1:` and
+> `host3:` - which can point to ordinary host addresses like
 > `gsiftp://host1.domain.tld:2811`.
 
 [aliases]: #host-aliases
@@ -58,6 +59,35 @@ has finished temporary files are removed from `host2`. See [dpath(5)] for
 details.
 
 [dpath(5)]: /share/doc/dpath.5.md
+
+### Data transfer using multpathing ###
+
+Gtransfer can distribute a data transfer over multiple paths. This way users
+can benefit from the combined bandwidth of multiple paths.
+
+Example
+
+```shell
+$ gt -s host1:/file/* -d host3:/files/ -m all
+010101011
+```
+
+![transfer using multipathing](/share/doc/images/multipathing-transfer.png)
+
+The host `host1` has connections to both the Internet and a private network. The 
+bandwidth of the Internet connection is limited to 1 Gb/s, but the connection to
+the private network has a bandwidth of 10 Gb/s. The host `host2` has a bandwidth
+of 10 Gb/s on connections to both the Internet and the private network. In
+effect there are two paths available from `host1` to `host2`, one direct path
+and one indirect path using `host2` as transit site. Instead of using only one
+path, both paths can be used to combine the available bandwidth. To distribute a
+data transfer over those two paths, gtransfer splits the list of files to be
+transferred into two lists according to the bandwidth proportions. I.e. the
+connection with the greater bandwidth will transfer the greater number of files.
+
+> **NOTICE:** Because the second path uses a transit site and needs two transfer
+> steps to complete, the effective bandwidth is lower than the bandwidth of the
+> used connections.
 
 ### Optimized data transfer performance ###
 
@@ -141,7 +171,7 @@ This is a list of HPC centers in Europe that use gtransfer in production:
 
 ****
 
-[![LRZ logo](https://raw.github.com/fscheiner/images/master/site_logos/lrz_logo_h100.png)](http://www.lrz.de/)
+[![LRZ logo](https://raw.github.com/fscheiner/images/master/site_logos/lrz_logo_new_h100.png)](http://www.lrz.de/)
 
 [Leibniz-Rechenzentrum (LRZ) der Bayerischen Akademie der Wissenschaften (LRZ - Germany)](http://www.lrz.de/)
 
@@ -169,12 +199,18 @@ This is a list of HPC centers in Europe that use gtransfer in production:
 
 [Centre Informatique National de l’Enseignement Supérieur (CINES - France)](http://www.cines.fr/)
 
+****
+
+[![IT4Inoovations logo](https://raw.github.com/fscheiner/images/master/site_logos/it4innovations_logo_h100.png)](http://www.it4i.cz/)
+
+[IT4Innovations national supercomputing center (IT4Innovations - Czech republic)](http://www.it4i.cz/)
+
 
 ## License ##
 
 (GPLv3)
 
-Copyright (C) 2010, 2011, 2013 Frank Scheiner, HLRS, Universitaet Stuttgart  
+Copyright (C) 2010, 2011, 2013, 2014 Frank Scheiner, HLRS, Universitaet Stuttgart  
 Copyright (C) 2011, 2012, 2013 Frank Scheiner
 
 The software is distributed under the terms of the GNU General Public License
@@ -193,3 +229,4 @@ You should have received a [copy] of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 [copy]: /COPYING
+
