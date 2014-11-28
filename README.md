@@ -78,7 +78,7 @@ The host `host1` has connections to both the Internet and a private network. The
 bandwidth of the Internet connection is limited to 1 Gb/s, but the connection to
 the private network has a bandwidth of 10 Gb/s. The host `host2` has a bandwidth
 of 10 Gb/s on connections to both the Internet and the private network. In
-effect there are two paths available from `host1` to `host2`, one direct path
+effect there are two paths available from `host1` to `host3`, one direct path
 and one indirect path using `host2` as transit site. Instead of using only one
 path, both paths can be used to combine the available bandwidth. To distribute a
 data transfer over those two paths, gtransfer splits the list of files to be
