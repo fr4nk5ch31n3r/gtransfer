@@ -6,9 +6,10 @@
 2. Installation  
     2.1	System install  
     2.2	User install  
-    2.3 Add-ons  
-        2.3.1 Module file  
-        2.3.2 Bash completion
+    2.3 Git deployment  
+    2.4 Add-ons  
+        2.4.1 Module file  
+        2.4.2 Bash completion
 3. Uninstallation
 
 ****
@@ -28,8 +29,8 @@ need the following binaries/scripts in `$PATH` for operation:
 * `uberftp`
 * `telnet` (Linux NetKit version or compatible)
 
-`tgftp` additionally needs a `globus-url-copy` with `-list` function (>= Globus
-Toolkit 4.2.0) and is available from [GitHub].
+`tgftp` additionally needs a `globus-url-copy` with `-list` function (Globus
+Toolkit >= v4.2.0) and is available from [GitHub].
 
 [GitHub]: https://github.com/fr4nk5ch31n3r/tgftp/
 
@@ -110,21 +111,31 @@ existing, it will be created. Another difference is that the configuration files
 are copied to `$HOME/.gtransfer` for a user install. Please adapt the
 configuration files to your local configuration after installation.
 
+### (2.3) Git deployment ###
 
-### (2.3) Add-ons ###
+Gtransfer can also be used directly from its git repository. Simply clone the
+[gtransfer git repository], adapt your `$PATH` environment variable, optionally
+source the [bash completion file] for an improved user experience and you are
+ready to go.
+
+[gtransfer git repository]: https://github.com/fr4nk5ch31n3r/gtransfer.git
+[bash completion file]: #242-bash-completion
 
 
-#### (2.3.1) Module file ####
+### (2.4) Add-ons ###
+
+
+#### (2.4.1) Module file ####
 
 To ease usage of this tool for users that have a [modules environment]
 available, a module file has been created. All related files are stored below
 `./modulefiles` in the package dir. As the implementation of a modules
-environment usually differs from host to hosts o site to site, the module file
+environment usually differs from host to host or site to site, the module file
 has to be installed manually.
 
 [modules environment]: http://en.wikipedia.org/wiki/Modules_Environment
 
-#### (2.3.2) Bash completion ####
+#### (2.4.2) Bash completion ####
 
 To even more ease usage of this tool a bash completion file was created. This
 supports options and URLs. URL completion also expands (remote) paths. The
