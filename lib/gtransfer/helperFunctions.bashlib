@@ -614,6 +614,19 @@ helperFunctions/indicateProgress()
 
 	return
 }
+
+
+helperFunctions/isValidMetric()
+{
+	local _dpath="$1"
+	local _metric="$2"
+
+	if grep '^<path .*metric=' < "$_dpath" | grep -o 'metric="[[:digit:]]*"' | sed -e 's/^metric="//' -e 's/"$//' | grep $_metric &>/dev/null; then
+		return 0
+	else
+		return 1
+	fi
+}
 ################################################################################
 #  CHECKS
 ################################################################################

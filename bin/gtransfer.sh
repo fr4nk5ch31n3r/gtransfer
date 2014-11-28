@@ -633,13 +633,13 @@ if [[ "$gsiftpSourceUrl" == "" || \
 		gsiftpTransferListClean="$__GLOBAL__gtTmpDir/$$_transferList.${__GLOBAL__gtTmpSuffix}"
 		sed -e '/^#.*$/d' "$gsiftpTransferList" > "$gsiftpTransferListClean"
 
+		_transferListSource=$( listTransfer/getSourceFromTransferList "$gsiftpTransferListClean" )
+		_transferListDestination=$( listTransfer/getDestinationFromTransferList "$gsiftpTransferListClean" )
+		_dpath=$( listTransfer/dpathAvailable "$_transferListSource" "$_transferListDestination" )
+
 		if [[ $_activateMultipathing -eq 1 ]]; then
 
 			#echo "DEBUG: Multipathing activated!" 1>&2
-
-			_transferListSource=$( listTransfer/getSourceFromTransferList "$gsiftpTransferListClean" )
-			_transferListDestination=$( listTransfer/getDestinationFromTransferList "$gsiftpTransferListClean" )
-			_dpath=$( listTransfer/dpathAvailable "$_transferListSource" "$_transferListDestination" )
 
 			# create array of metrics
 			declare -a _dpathMetricArray
@@ -647,6 +647,13 @@ if [[ "$gsiftpSourceUrl" == "" || \
 				_dpathMetricArray=( $( grep '^<path .*metric=' < "$_dpath" | grep -o 'metric="[[:digit:]]*"' | sed -e 's/^metric="//' -e 's/"$//' ) )
 			else
 				_dpathMetricArray=( $( echo "$dataPathMetric" | tr ',' ' ' ) )
+				for _dpathMetric in "${_dpathMetricArray[@]}"; do
+					if ! helperFunctions/isValidMetric $_dpath $_dpathMetric; then
+
+						echo "ERROR: Invalid metric value(s) used! Please check the used dpath \"$_dpath\" for valid metrics."
+						exit $_gtransfer_exit_usage
+					fi
+				done
 			fi
 
 			#echo "DEBUG: _dpath=\"$_dpath\"" 1>&2
@@ -701,6 +708,13 @@ if [[ "$gsiftpSourceUrl" == "" || \
 		#  1. Determine transfer id for original transfer list
 		#  2. Create temp dir (e.g. _tempDir=$( echo "$0" "$@" | sha1sum )) and store path in global var
 		elif [[ $autoOptimize -eq 1 ]]; then
+
+			if ! helperFunctions/isValidMetric $_dpath $dataPathMetric; then
+
+				echo "ERROR: Invalid metric value(s) used! Please check the used dpath \"$_dpath\" for valid metrics."
+				exit $_gtransfer_exit_usage
+			fi
+
 			#  only perform auto-optimization if there are at least
 			#+ 100 files in the transfer list. If not perform simple
 			#+ list transfer.
@@ -710,6 +724,12 @@ if [[ "$gsiftpSourceUrl" == "" || \
 				listTransfer/performTransfer "$gsiftpTransferListClean" "$dataPathMetric" "$tgftpLogfileName"
 			fi
 		else
+			if ! helperFunctions/isValidMetric $_dpath $dataPathMetric; then
+
+				echo "ERROR: Invalid metric value(s) used! Please check the used dpath \"$_dpath\" for valid metrics."
+				exit $_gtransfer_exit_usage
+			fi
+
 			listTransfer/performTransfer "$gsiftpTransferListClean" "$dataPathMetric" "$tgftpLogfileName"
 		fi
 	else
@@ -828,13 +848,13 @@ else
 	#                     automatically strips commend lines!
 	gsiftpTransferList=$( listTransfer/createTransferList "$gsiftpSourceUrl" "$gsiftpDestinationUrl" )
 
+	_transferListSource=$( listTransfer/getSourceFromTransferList "$gsiftpTransferList" )
+	_transferListDestination=$( listTransfer/getDestinationFromTransferList "$gsiftpTransferList" )
+	_dpath=$( listTransfer/dpathAvailable "$_transferListSource" "$_transferListDestination" )
+
 	if [[ $_activateMultipathing -eq 1 ]]; then
 
 		#echo "DEBUG: Multipathing activated!" 1>&2
-
-		_transferListSource=$( listTransfer/getSourceFromTransferList "$gsiftpTransferList" )
-		_transferListDestination=$( listTransfer/getDestinationFromTransferList "$gsiftpTransferList" )
-		_dpath=$( listTransfer/dpathAvailable "$_transferListSource" "$_transferListDestination" )
 
 		#echo "DEBUG: _dpath=\"$_dpath\"" 1>&2
 
@@ -844,6 +864,13 @@ else
 			_dpathMetricArray=( $( grep '^<path .*metric=' < "$_dpath" | grep -o 'metric="[[:digit:]]*"' | sed -e 's/^metric="//' -e 's/"$//' ) )
 		else
 			_dpathMetricArray=( $( echo "$dataPathMetric" | tr ',' ' ' ) )
+			for _dpathMetric in "${_dpathMetricArray[@]}"; do
+				if ! helperFunctions/isValidMetric $_dpath $_dpathMetric; then
+
+					echo "ERROR: Invalid metric value(s) used! Please check the used dpath \"$_dpath\" for valid metrics."
+					exit $_gtransfer_exit_usage
+				fi
+			done
 		fi
 
 		#multipathing/createTransferLists
@@ -897,6 +924,12 @@ else
 
 	elif [[ $autoOptimize -eq 1 ]]; then
 
+		if ! helperFunctions/isValidMetric $_dpath $dataPathMetric; then
+
+			echo "ERROR: Invalid metric value used! Please check the used dpath \"$_dpath\" for valid metrics."
+			exit $_gtransfer_exit_usage
+		fi
+
 		#  only perform auto-optimization if there are at least
 		#+ 100 files in the transfer list. If not perform simple
 		#+ list transfer.
@@ -910,6 +943,13 @@ else
 			listTransfer/performTransfer "$gsiftpTransferList" "$dataPathMetric" "$tgftpLogfileName"
 		fi
 	else
+
+		if ! helperFunctions/isValidMetric $_dpath $dataPathMetric; then
+
+			echo "ERROR: Invalid metric value used! Please check the used dpath \"$_dpath\" for valid metrics."
+			exit $_gtransfer_exit_usage
+		fi
+
 		# Only perform list transfers from now on
 		#urlTransfer/transferData "$gsiftpSourceUrl" "$gsiftpDestinationUrl" "$dataPathMetric" "$tgftpLogfileName"
 		listTransfer/performTransfer "$gsiftpTransferList" "$dataPathMetric" "$tgftpLogfileName"
