@@ -3,6 +3,7 @@
 * [Description](#description)
 * [Features](#features)
     * [Multi-step data transfers](#multi-step-data-transfers)
+    * [Data transfer using multipathing](#data-transfer-using-multipathing)
     * [Optimized data transfer performance](#optimized-data-transfer-performance)
     * [Data transfer interruption and continuation](#data-transfer-interruption-and-continuation)
     * [Data transfer reliability](#data-transfer-reliability)
@@ -60,7 +61,7 @@ details.
 
 [dpath(5)]: /share/doc/dpath.5.md
 
-### Data transfer using multpathing ###
+### Data transfer using multipathing ###
 
 Gtransfer can distribute a data transfer over multiple paths. This way users
 can benefit from the combined bandwidth of multiple paths.
