@@ -84,8 +84,9 @@ and one indirect path using `host2` as transit site. With multipathing, instead
 of using only one path, both paths can be used to combine the available
 bandwidth. To distribute a data transfer over those two paths, gtransfer splits
 the list of files to be transferred into two lists according to the bandwidth
-proportions. I.e. the connection with the greater bandwidth will transfer the
-greater number of files.
+proportions taking into account the file size. I.e. the connection with the
+greater bandwidth will transfer a greater amount of the total file size of the
+data transfer than the other connection.
 
 > **NOTICE:** Because the second path uses a transit site and needs two transfer
 > steps to complete, the effective bandwidth is lower than the bandwidth of the
