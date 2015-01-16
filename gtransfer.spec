@@ -149,6 +149,9 @@ rm -rf %{buildroot}
 * Fri Jan 16 2015 Frank Scheiner <scheiner@hlrs.de> 0.3.0BETA4-1
 - Updated spec file to include new multipathing support and gt-version tool.
 
+* Fri Jul 25 2014 Frank Scheiner <scheiner@hlrs.de> 0.3.0BETA3-1
+- Updated source package and version number to upstream version.
+
 * Thu Nov 14 2013 Frank Scheiner <scheiner@hlrs.de> 0.3.0BETA1-1
 - Added spec file to gtransfer repo. Bash libraries (architecture independent files) are now stored below "/usr/share/gtransfer".
 
