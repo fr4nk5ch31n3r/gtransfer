@@ -1,14 +1,11 @@
 Name:		gtransfer
-Version:	0.3.0BETA1
-#Version:	0.2.3
+Version:	0.3.0BETA4
 Release:	1%{?dist}
 Summary:	Advanced data transfer tool for GridFTP
 Group:		base
 License:	GPLv3
 URL:		https://github.com/fscheiner/%{name}
 Source0:	https://github.com/fscheiner/%{name}/archive/v%{version}.tar.gz
-#URL:		https://github.com/fr4nk5ch31n3r/%{name}
-#Source0:	https://github.com/fr4nk5ch31n3r/%{name}/archive/v%{version}.tar.gz
 BuildRoot:	%{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildArch:	noarch
 Requires:	coreutils,grep,sed,telnet,tgftp,uberftp,globus-gass-copy-progs
@@ -24,7 +21,7 @@ performance or crossing network domains and provide improved performance.
 
 %install
 rm -rf %{buildroot}
-#  Create needed directories
+# Create needed directories
 mkdir -p %{buildroot}%{_sysconfdir}/%{name}
 mkdir -p %{buildroot}%{_sysconfdir}/%{name}/pids
 mkdir -p %{buildroot}%{_sysconfdir}/%{name}/aliases
@@ -60,6 +57,7 @@ cp lib/gtransfer/listTransfer.bashlib %{buildroot}%{_datadir}/%{name}/
 cp lib/gtransfer/urlTransfer.bashlib %{buildroot}%{_datadir}/%{name}/
 cp lib/gtransfer/alias.bashlib %{buildroot}%{_datadir}/%{name}/
 cp lib/gtransfer/pids/irodsMicroService.bashlib %{buildroot}%{_datadir}/%{name}/pids/
+cp lib/gtransfer/multipathing.bashlib %{buildroot}%{_datadir}/%{name}/
 
 ################################################################################
 # * Tools and symlinks
@@ -68,17 +66,20 @@ cp bin/gtransfer.sh %{buildroot}%{_bindir}/
 cp bin/datapath.sh %{buildroot}%{_bindir}/
 cp bin/defaultparam.sh %{buildroot}%{_bindir}/
 cp bin/halias.bash %{buildroot}%{_bindir}/
+cp bin/gtransfer-version.bash %{buildroot}%{_bindir}/
 ln -s gtransfer.sh %{buildroot}%{_bindir}/gtransfer
 ln -s gtransfer.sh %{buildroot}%{_bindir}/gt
 ln -s datapath.sh %{buildroot}%{_bindir}/dpath
 ln -s defaultparam.sh %{buildroot}%{_bindir}/dparam
 ln -s halias.bash %{buildroot}%{_bindir}/halias
+ln -s gtransfer-version.bash %{buildroot}%{_bindir}/gt-version
 
 ################################################################################
 # * Additional (internal) tools
 ################################################################################
 cp libexec/getPidForUrl.r %{buildroot}%{_libexecdir}/%{name}/
 cp libexec/getUrlForPid.r %{buildroot}%{_libexecdir}/%{name}/
+cp libexec/packBinsNew.py %{buildroot}%{_libexecdir}/%{name}/
 
 ################################################################################
 # * Manpages
@@ -118,10 +119,13 @@ rm -rf %{buildroot}
 %{_bindir}/dparam
 %{_bindir}/halias.bash
 %{_bindir}/halias
+%{_bindir}/gtransfer-version.bash
+%{_bindir}/gt-version
 
 %{_libexecdir}/%{name}
 %{_libexecdir}/%{name}/getPidForUrl.r
 %{_libexecdir}/%{name}/getUrlForPid.r
+%{_libexecdir}/%{name}/packBinsNew.py
 
 %{_datadir}/%{name}
 %{_datadir}/%{name}/autoOptimization.bashlib
@@ -131,6 +135,7 @@ rm -rf %{buildroot}
 %{_datadir}/%{name}/urlTransfer.bashlib
 %{_datadir}/%{name}/alias.bashlib
 %{_datadir}/%{name}/pids/irodsMicroService.bashlib
+%{_datadir}/%{name}/multipathing.bashlib
 
 %{_mandir}/man1/gtransfer.1.gz
 %{_mandir}/man1/gt.1.gz
@@ -141,6 +146,9 @@ rm -rf %{buildroot}
 %{_mandir}/man1/halias.1.gz
 
 %changelog
+* Fri Jan 16 2015 Frank Scheiner <scheiner@hlrs.de> 0.3.0BETA4-1
+- Updated spec file to include new multipathing support and gt-version tool.
+
 * Thu Nov 14 2013 Frank Scheiner <scheiner@hlrs.de> 0.3.0BETA1-1
 - Added spec file to gtransfer repo. Bash libraries (architecture independent files) are now stored below "/usr/share/gtransfer".
 
