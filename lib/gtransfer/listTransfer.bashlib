@@ -3,6 +3,7 @@
 :<<COPYRIGHT
 
 Copyright (C) 2012, 2013 Frank Scheiner
+Copyright (C) 2015 Frank Scheiner, HLRS, Universitaet Stuttgart
 
 The program is distributed under the terms of the GNU General Public License
 
@@ -25,7 +26,7 @@ COPYRIGHT
 #  DEFINES
 ################################################################################
 
-readonly _listTransfer_Version="0.2.0"
+readonly _listTransfer_Version="0.3.0"
 
 ################################################################################
 #  INCLUDES
@@ -136,6 +137,61 @@ listTransfer/dpathAvailable()
 	else
 		return 1
 	fi
+}
+
+
+# Return the dpath file name that corresponds to the given source and
+# destination URLs.
+#
+# $1 (_source)      - The source URL (e.g.
+#                     "gsiftp://user@host.domain:2811/path/to/files")
+# $2 (_destination) - The destination URL (similar to source URL)
+#
+# Returns the file name and path of the corresponding dpath if it is available.
+# If it is not available, it creates a temporary dpath in gt's temp dir for the
+# current transfer and returns its name and path.
+listTransfer/getDpathFile()
+{
+	local _source="$1"
+	local _destination="$2"
+
+	local _dpathFile=""
+
+	_dpathFile=$( listTransfer/dpathAvailable "$_source" "$_destination" )
+
+	# If no pre-created dpath is available, create a temporary one.
+	if [[ $? -ne 0 ]]; then
+
+		local _sourceWithoutPath=$( helperFunctions/getURLWithoutPath "$_source" )
+		local _destinationWithoutPath=$( helperFunctions/getURLWithoutPath "$_destination" )
+
+		local _dpathFilename=$( helperFunctions/hashSourceDestination $( echo $_sourceWithoutPath | sed -e 's/:\/\/.*@/:\/\//' ) $( echo $_destinationWithoutPath | sed -e 's/:\/\/.*@/:\/\//' ) )
+
+		_dpathFile="${__GLOBAL__gtTmpDir}/$_dpathFilename"
+
+		# Set bandwidth to 10 Gb, even if we don't know, which bandwidth the
+		# connection really provides. This is ok, because when multiple differing
+		# metrics are selected by a user, we cannot continue either, because the
+		# temp path only provides one metric. In a case where a user selects metric 0
+		# multiple times (e.g. to get a sort of striping), this works fine because
+		# the bandwidth proportions are then always 1 to 1 ( to 1 [...]). Would be
+		# be the same for a dpath with multiple metrics.
+		cat > "$_dpathFile" <<-EOF
+		<source>
+		$_sourceWithoutPath
+		</source>
+		<destination>
+		$_destinationWithoutPath
+		</destination>
+		<path metric="0" bandwidth="10Gb">
+		$_sourceWithoutPath;$_destinationWithoutPath
+		</path>
+		EOF
+	fi
+
+	echo "$_dpathFile"
+
+	return
 }
 
 
@@ -317,7 +373,8 @@ listTransfer/performTransfer()
 		if [[ -e "$_dpathFile" && \
 		      $memToMem != 0 \
 		]]; then
-			helperFunctions/echoIfVerbose -e "Data path used:\n$_dpathFile"
+			helperFunctions/echoIfVerbose ""
+			helperFunctions/echoIfVerbose -e "${_program} [${gtInstance}]: Data path used:\n$_dpathFile"
 		fi
 		
 		#  get dpath array
@@ -374,7 +431,8 @@ listTransfer/performTransfer()
 			#  temporary transfer lists
 			rm -f "${__GLOBAL__gtTmpDir}/"*.transferList &>/dev/null
 
-			helperFunctions/echoIfVerbose -e "INFO: The transfer succeeded!"
+			helperFunctions/echoIfVerbose ""
+			helperFunctions/echoIfVerbose -e "${_program} [${gtInstance}]: The transfer succeeded!"
 	
 			if [[ $gtProgressIndicatorSet != 0 ]]; then
 				echo ""
@@ -552,7 +610,7 @@ listTransfer/transferData()
 		#	transferStepNumber=$(( $transferStepNumber + 1 ))
 		#	continue
 		#else
-	   	helperFunctions/echoIfVerbose "Transfer step: $transferStepNumber"
+		helperFunctions/echoIfVerbose -e "\n${_program} [${gtInstance}]: Transfer step: $transferStepNumber"
 		listTransfer/doTransferStep "$transferStepSource" \
 					    "$transferStepDestination" \
 					    "$transferStepNumber" \
@@ -577,23 +635,21 @@ listTransfer/transferData()
 
 		elif [[ $RETURN -eq 4 ]]; then
 			#  already finished, can be skipped
-			helperFunctions/echoIfVerbose "Skipped because already finished!"
+			helperFunctions/echoIfVerbose -e "\n${_program} [${gtInstance}]: Transfer step $transferStepNumber skipped because already finished!"
 			transferStepNumber=$(( $transferStepNumber + 1 ))
 			continue
 
 		elif [[ $RETURN -eq 2 ]]; then
 			#  no, it failed completely (e.g. hosts couldn't be
 			#+ reached)
-			helperFunctions/echoIfVerbose ""
-			helperFunctions/echoIfVerbose "ERROR: Transfer step #$transferStepNumber failed!" #\
+			helperFunctions/echoIfVerbose -e "\n${_program} [${gtInstance}]: Transfer step #$transferStepNumber failed!" #\
 				 #"Please see \"${tgftpTransferCommand}Output\" for details!"
 			exit $_gtransfer_exit_tempfail
 
 		elif [[ $RETURN -ne 0 && "$retries" -lt "$maxRetries" ]]; then
 			retries=$(( $retries + 1 ))
 			#  no
-			helperFunctions/echoIfVerbose ""
-			helperFunctions/echoIfVerbose "ERROR: Transfer step #$transferStepNumber failed! Retrying!" #\
+			helperFunctions/echoIfVerbose -e "\n${_program} [${gtInstance}]: Transfer step #$transferStepNumber failed! Retrying!" #\
 				 #"Please see \"${tgftpTransferCommand}Output\" for details!"
 
 		elif [[ $RETURN -eq 0 ]]; then
@@ -604,8 +660,7 @@ listTransfer/transferData()
 			transferStepNumber=$(( $transferStepNumber + 1 ))
 
 		elif [[ "$retries" -eq "$maxRetries" ]]; then
-			echo ""
-			echo "ERROR: Transfer step #$transferStepNumber failed after $retries retries! Exiting."
+			echo -e "\n${_program} [${gtInstance}]: Transfer step #$transferStepNumber failed after $retries retries! Exiting." 1>&2
 			exit $_gtransfer_exit_tempfail
 
 		fi
@@ -698,18 +753,18 @@ listTransfer/doTransferStep()
 	else
 		if ! helperFunctions/checkConnection "$transferStepSourceWithoutPath" && \
 		   ! helperFunctions/checkConnection "$transferStepDestinationWithoutPath"; then
-			echo "ERROR: Cannot connect to neither \"$transferStepSourceWithoutPath\" nor \"$transferStepDestinationWithoutPath\"! Either try again or correct your input!"
+			echo -e "\n${_program} [${gtInstance}]: Cannot connect to neither \"$transferStepSourceWithoutPath\" nor \"$transferStepDestinationWithoutPath\"! Either try again or correct your input!" 1>&2
 			#  we assume that source and destination strings are correct,
 			#+ and they're just unavailable currently. If the user just used
 			#+ a nonexistent host, he can detect this by reading the error
 			#+ message
 			return 2
 		elif ! helperFunctions/checkConnection "$transferStepSourceWithoutPath"; then
-			echo "ERROR: Cannot connect to \"$transferStepSourceWithoutPath\"! Either try again or correct your input!"
+			echo -e "\n${_program} [${gtInstance}]: Cannot connect to \"$transferStepSourceWithoutPath\"! Either try again or correct your input!" 1>&2
 			#  same as above
 			return 2
 		elif ! helperFunctions/checkConnection "$transferStepDestinationWithoutPath"; then
-			echo "ERROR: Cannot connect to \"$transferStepDestinationWithoutPath\"! Either try again or correct your input!"
+			echo -e "\n${_program} [${gtInstance}]: Cannot connect to \"$transferStepDestinationWithoutPath\"! Either try again or correct your input!" 1>&2
 			#  same as above
 			return 2
 		fi
@@ -790,11 +845,11 @@ listTransfer/doTransferStep()
 			#simulateTransfer
 
 			if [[ $? != 0 ]]; then
-				echo "ERROR: tgftp transfer command couldn't be created!"
+				echo -e "\n${_program} [${gtInstance}]: tgftp transfer command couldn't be created!" 1>&2
 				exit $_gtransfer_exit_software
 			fi
 
-			helperFunctions/catIfVerbose "$tgftpTransferCommand"
+			helperFunctions/echoIfVerbose -e "\n${_program} [${gtInstance}]: tgftp transfer command:\n$( helperFunctions/catIfVerbose "$tgftpTransferCommand" )"
 
 			bash $tgftpTransferCommand &>"${tgftpTransferCommand}Output" &
 			#true &
@@ -847,11 +902,11 @@ listTransfer/doTransferStep()
 			#simulateError
 
 			if [[ $? != 0 ]]; then
-				echo "ERROR: tgftp transfer command couldn't be created!"
+				echo -e "\n${_program} [${gtInstance}]: tgftp transfer command couldn't be created!" 1>&2
 				exit $_gtransfer_exit_software
 			fi
 
-			helperFunctions/catIfVerbose "$tgftpTransferCommand"
+			helperFunctions/echoIfVerbose -e "\n${_program} [${gtInstance}]: tgftp transfer command:\n$( helperFunctions/catIfVerbose "$tgftpTransferCommand" )"
 
 			bash $tgftpTransferCommand &>"${tgftpTransferCommand}Output" &
 			#true &
@@ -903,11 +958,11 @@ listTransfer/doTransferStep()
 			#simulateTransfer
 
 			if [[ $? != 0 ]]; then
-				echo "ERROR: tgftp transfer command couldn't be created!"
+				echo -e "\n${_program} [${gtInstance}]: tgftp transfer command couldn't be created!" 1>&2
 				exit $_gtransfer_exit_software
 			fi
 
-			helperFunctions/catIfVerbose "$tgftpTransferCommand"
+			helperFunctions/echoIfVerbose -e "\n${_program} [${gtInstance}]: tgftp transfer command:\n$( helperFunctions/catIfVerbose "$tgftpTransferCommand" )"
 
 			bash $tgftpTransferCommand &>${tgftpTransferCommand}Output &
 			#true &
@@ -964,11 +1019,11 @@ listTransfer/doTransferStep()
 			#simulateError
 
 			if [[ $? != 0 ]]; then
-				echo "ERROR: tgftp transfer command couldn't be created!"
+				echo -e "\n${_program} [${gtInstance}]: tgftp transfer command couldn't be created!" 1>&2
 				exit $_gtransfer_exit_software
 			fi
 
-			helperFunctions/catIfVerbose "$tgftpTransferCommand"
+			helperFunctions/echoIfVerbose -e "\n${_program} [${gtInstance}]: tgftp transfer command:\n$( helperFunctions/catIfVerbose "$tgftpTransferCommand" )"
 
 			bash $tgftpTransferCommand &>${tgftpTransferCommand}Output &
 			#true &
@@ -1290,16 +1345,16 @@ listTransfer/createTransferList() {
 
 	#  Check if valid URLs are provided
 	if ! helperFunctions/isValidUrl $_source; then
-		echo "ERROR: \"$_source\" invalid source URL (check FQDN or protocol part)!" 1>&2
+		echo -e "\n${_program} [${gtInstance}]: \"$_source\" invalid source URL (check FQDN or protocol part)!" 1>&2
 		return 1
 	elif ! helperFunctions/isValidUrl $_destination; then
-		echo "ERROR: \"$_destination\" invalid destination URL (check FQDN or protocol part)!" 1>&2
+		echo -e "\n${_program} [${gtInstance}]: \"$_destination\" invalid destination URL (check FQDN or protocol part)!" 1>&2
 		return 1
 	#  check if target URL is a "http://" URL
 	elif [[ "$( helperFunctions/getProtocolSpecifier $_destination )" == "http://" || \
 		"$( helperFunctions/getProtocolSpecifier $_destination )" == "https://" \
 	]]; then
-		echo "ERROR: Target URL cannot be a \"http[s]://\" URL!" 1>&2
+		echo -e "\n${_program} [${gtInstance}]: Target URL cannot be a \"http[s]://\" URL!" 1>&2
 		return 1
 	fi
 	
