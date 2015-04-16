@@ -132,8 +132,6 @@ multipathing/createTransferLists()
 		local -a _transferListNames
 		_transferListNames=( $( cd $__GLOBAL__gtTmpDir; $_GTRANSFER_LIBEXECPATH/packBinsNew.py "$_inputTransferList" "$__GLOBAL__proportionsFile" 2>/dev/null ) )
 	
-		#$_GTRANSFER_LIBEXECPATH/packBinsNew.py "$_inputTransferList" "$__GLOBAL__proportionsFile"
-	
 		for _transferListName in "${_transferListNames[@]}"; do
 
 			echo -n "$__GLOBAL__gtTmpDir/$_transferListName "
