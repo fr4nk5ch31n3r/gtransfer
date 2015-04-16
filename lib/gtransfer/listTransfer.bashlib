@@ -1145,15 +1145,25 @@ listTransfer/createTgftpTransferCommand()
 	#+ * source URL
 	#+ * destination URL
 	#+ * offset
-	local addGsiftpParams="-restart -rst-retries $gucMaxRetries -dumpfile $dumpfileName -stall-timeout 30 -sync -sync-level 1"
 
-	#+ Filter "-pp" from "gsiftpParams", as pipelining and reliability don't
-	#+ work well in conjunction.
-	#
-	#  Just remove the "-pp" param, because this will leave two spaces at the
-	#+ position where "-pp" was removed. This way one can detect that a param
-	#+ was removed by gt.
-	gsiftpParams=$( echo "$gsiftpParams" | sed -e 's/-pp//' )
+	# Deactivate reliability (GT_NO_RELIABILITY=1) if needed.
+	#local addGsiftpParams
+	local _gucReliabilityOptions
+	if [[ $GT_NO_RELIABILITY -eq 1 ]]; then
+
+		_gucReliabilityOptions=""
+	else
+		_gucReliabilityOptions="-restart -rst-retries $gucMaxRetries -dumpfile $dumpfileName -stall-timeout 30"
+		# Filter "-pp" from "gsiftpParams", as pipelining and reliability don't
+		# work well in conjunction.
+		#
+		# Just remove the "-pp" param, because this will leave two spaces at the
+		# position where "-pp" was removed. This way one can detect that a param
+		# was removed by gt.
+		gsiftpParams=$( echo "$gsiftpParams" | sed -e 's/-pp//' )
+	fi
+
+	local _gucSyncOptions="-sync -sync-level 1"
 
 	#  perform recursive transfer
 	if [[ $recursiveTransferSet -eq 0 ]]; then
@@ -1237,7 +1247,7 @@ listTransfer/createTgftpTransferCommand()
 		     "--log-filename \"$logfileName\"" \
 		     "--force-log-overwrite" \
 		     "$tgftpPostCommandParam" \"$tgftpPostCommand\" \
-		     "-- -dbg $gsiftpParams $addGsiftpParams -f $_transferList" > "$tgftpTransferCommand"
+		     "-- -dbg $gsiftpParams $_gucReliabilityOptions $_gucSyncOptions -f $_transferList" > "$tgftpTransferCommand"
 
 	#  case 5
 	elif [[ $verboseExec -eq 1 && \
@@ -1249,7 +1259,7 @@ listTransfer/createTgftpTransferCommand()
 		     "--force-log-overwrite" \
 		     "$tgftpPreCommandParam" \"$tgftpPreCommand\" \
 		     "$tgftpPostCommandParam" \"$tgftpPostCommand\" \
-		     "-- -dbg $gsiftpParams $addGsiftpParams -f $_transferList" > "$tgftpTransferCommand"
+		     "-- -dbg $gsiftpParams $_gucReliabilityOptions $_gucSyncOptions -f $_transferList" > "$tgftpTransferCommand"
 
 	#  case 7
 	elif [[ $verboseExec -eq 1 && \
@@ -1261,7 +1271,7 @@ listTransfer/createTgftpTransferCommand()
 		     "--force-log-overwrite" \
 		     "$tgftpPreCommandParam" \"$tgftpPreCommand\" \
 		     "$tgftpPostCommandParam" \"$tgftpPostCommand\" \
-		     "-- -dbg $gsiftpParams $addGsiftpParams -f $_transferList" > "$tgftpTransferCommand"
+		     "-- -dbg $gsiftpParams $_gucReliabilityOptions $_gucSyncOptions -f $_transferList" > "$tgftpTransferCommand"
 
 	#  case 6
 	elif [[ $verboseExec -eq 1 && \
@@ -1272,7 +1282,7 @@ listTransfer/createTgftpTransferCommand()
 		     "--log-filename \"$logfileName\"" \
 		     "--force-log-overwrite" \
 		     "$tgftpPostCommandParam" \"$tgftpPostCommand\" \
-		     "-- -dbg $gsiftpParams $addGsiftpParams -f $_transferList" > "$tgftpTransferCommand"
+		     "-- -dbg $gsiftpParams $_gucReliabilityOptions $_gucSyncOptions -f $_transferList" > "$tgftpTransferCommand"
 
 	#  case 0
 	elif [[ $verboseExec -eq 0 && \
@@ -1283,7 +1293,7 @@ listTransfer/createTgftpTransferCommand()
 		     "--log-filename \"$logfileName\"" \
 		     "--force-log-overwrite" \
 		     "$tgftpPostCommandParam" \"$tgftpPostCommand\" \
-		     "-- $gsiftpParams $addGsiftpParams -f $_transferList" > "$tgftpTransferCommand"
+		     "-- $gsiftpParams $_gucReliabilityOptions $_gucSyncOptions -f $_transferList" > "$tgftpTransferCommand"
 
 	#  case 1
 	elif [[ $verboseExec -eq 0 && \
@@ -1295,7 +1305,7 @@ listTransfer/createTgftpTransferCommand()
 		     "--force-log-overwrite" \
 		     "$tgftpPreCommandParam" \"$tgftpPreCommand\" \
 		     "$tgftpPostCommandParam" \"$tgftpPostCommand\" \
-		     "-- $gsiftpParams $addGsiftpParams -f $_transferList" > "$tgftpTransferCommand"
+		     "-- $gsiftpParams $_gucReliabilityOptions $_gucSyncOptions -f $_transferList" > "$tgftpTransferCommand"
 
 	#  case 3
 	elif [[ $verboseExec -eq 0 && \
@@ -1307,7 +1317,7 @@ listTransfer/createTgftpTransferCommand()
 		     "--force-log-overwrite" \
 		     "$tgftpPreCommandParam" \"$tgftpPreCommand\" \
 		     "$tgftpPostCommandParam" \"$tgftpPostCommand\" \
-		     "-- $gsiftpParams $addGsiftpParams -f $_transferList" > "$tgftpTransferCommand"
+		     "-- $gsiftpParams $_gucReliabilityOptions $_gucSyncOptions -f $_transferList" > "$tgftpTransferCommand"
 
 	#  case 2
 	elif [[ $verboseExec -eq 0 && \
@@ -1318,7 +1328,7 @@ listTransfer/createTgftpTransferCommand()
 		     "--log-filename \"$logfileName\"" \
 		     "--force-log-overwrite" \
 		     "$tgftpPostCommandParam" \"$tgftpPostCommand\" \
-		     "-- $gsiftpParams $addGsiftpParams -f $_transferList" > "$tgftpTransferCommand"
+		     "-- $gsiftpParams $_gucReliabilityOptions $_gucSyncOptions -f $_transferList" > "$tgftpTransferCommand"
 
 	fi
 
