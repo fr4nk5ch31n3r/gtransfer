@@ -1388,6 +1388,28 @@ listTransfer/createTransferList() {
 	if [[ "$?" == "0" && -e "$_transferListFile" ]]; then
 		#  strip comment lines
 		sed -i -e '/^#.*$/d' "$_transferListFile"
+
+		# Now check if the transfer list only has one line (i.e. only
+		# one file should be transferred). If this is the case, the
+		# transfer list does not contain the size of the file. This is
+		# a bug in guc that is still existing in version 9.11. The
+		# Globus JIRA ticket is at `https://globus.atlassian.net/browse/GT-318`
+		# and also it is stated there that this bug is fixed, I still
+		# run into it when trying to transfer one file only.
+
+		if [[ $( wc -l "$_transferListFile" | cut -d ' ' -f 1) == "1" ]]; then
+
+			# If there's only one line in the transfer list, we need to add
+			# the missing file size information manually, e.g. with uberftp.
+			local _fileSize=$( uberftp -size "$_source" )
+
+			# remove newline from end of file
+			truncate -s -1 "$_transferListFile"
+
+			# add size
+			echo " 0,-1 size=$_fileSize;" >> "$_transferListFile"
+		fi
+
 		echo "$_transferListFile"
 		return 0
 	else
