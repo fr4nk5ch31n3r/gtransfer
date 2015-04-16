@@ -1,3 +1,4 @@
+#!/bin/bash
 #  listTransfer.bashlib - library functions for transferring lists
 
 :<<COPYRIGHT
@@ -628,38 +629,43 @@ listTransfer/transferData()
 
 		local RETURN="$?"
 
-		#  did the current transfer step work?
+		# Did the current transfer step work?
 		if [[ $RETURN -eq 130 ]]; then
+
 			# no, it was interrupted
 			kill -SIGINT $$
 
 		elif [[ $RETURN -eq 4 ]]; then
-			#  already finished, can be skipped
+
+			# yes, it was already finished in the past, so can be skipped
 			helperFunctions/echoIfVerbose -e "\n${_program} [${gtInstance}]: Transfer step $transferStepNumber skipped because already finished!"
 			transferStepNumber=$(( $transferStepNumber + 1 ))
 			continue
 
 		elif [[ $RETURN -eq 2 ]]; then
-			#  no, it failed completely (e.g. hosts couldn't be
-			#+ reached)
-			helperFunctions/echoIfVerbose -e "\n${_program} [${gtInstance}]: Transfer step #$transferStepNumber failed!" #\
-				 #"Please see \"${tgftpTransferCommand}Output\" for details!"
+
+			# no, it failed, but can be retried later (e.g. hosts couldn't be reached)
+			helperFunctions/echoIfVerbose -e "\n${_program} [${gtInstance}]: Transfer step #$transferStepNumber failed!"
 			exit $_gtransfer_exit_tempfail
 
-		elif [[ $RETURN -ne 0 && "$retries" -lt "$maxRetries" ]]; then
+		elif [[ $RETURN -ne 0 && $retries -lt $maxRetries ]]; then
+
+			# no, but can be retried instantly
 			retries=$(( $retries + 1 ))
-			#  no
-			helperFunctions/echoIfVerbose -e "\n${_program} [${gtInstance}]: Transfer step #$transferStepNumber failed! Retrying!" #\
-				 #"Please see \"${tgftpTransferCommand}Output\" for details!"
+			helperFunctions/echoIfVerbose -e "\n${_program} [${gtInstance}]: Transfer step #$transferStepNumber failed! Retrying!"
+			continue
 
 		elif [[ $RETURN -eq 0 ]]; then
-			#  yes
+
+			# yes
+			# reset retries value
 			retries="0"
 			#touch "${_transferId}.step_${transferStepNumber}.finished"
-
 			transferStepNumber=$(( $transferStepNumber + 1 ))
 
 		elif [[ "$retries" -eq "$maxRetries" ]]; then
+
+			# max number of retries reached, try again later
 			echo -e "\n${_program} [${gtInstance}]: Transfer step #$transferStepNumber failed after $retries retries! Exiting." 1>&2
 			exit $_gtransfer_exit_tempfail
 
@@ -1211,15 +1217,16 @@ listTransfer/createTgftpTransferCommand()
 	#  |  | |
 	#  |  | | toTransitSite (0 false, 1 true)
 	#  |  | | |
-	#  4  1 0 0 source -> dest
-	#  5  1 0 1 source -> transit
-	#  8  1 1 1 transit -> transit
-	#  6  1 1 0 transit -> dest
 	#
 	#  0  0 0 0 source -> dest
 	#  1  0 0 1 source -> transit
-	#  3  0 1 1 transit -> transit
 	#  2  0 1 0 transit -> dest
+	#  3  0 1 1 transit -> transit
+	#
+	#  4  1 0 0 source -> dest
+	#  5  1 0 1 source -> transit
+	#  6  1 1 0 transit -> dest
+	#  7  1 1 1 transit -> transit
 
 	#  case 4
 	if [[ $verboseExec -eq 1 && \
@@ -1244,7 +1251,7 @@ listTransfer/createTgftpTransferCommand()
 		     "$tgftpPostCommandParam" \"$tgftpPostCommand\" \
 		     "-- -dbg $gsiftpParams $addGsiftpParams -f $_transferList" > "$tgftpTransferCommand"
 
-	#  case 8
+	#  case 7
 	elif [[ $verboseExec -eq 1 && \
 		$fromTransitSite -eq 1 && \
 		$toTransitSite -eq 1 \
