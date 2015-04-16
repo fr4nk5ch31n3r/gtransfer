@@ -5,7 +5,7 @@
 # Original author: Kent S Johnson <kent@kentsjohnson.com>
 # Website: http://kentsjohnson.com/
 
-# Adapted by Frank Scheiner 2014
+# Adapted by Frank Scheiner 2014-2015
 
 ''' Partition a list into sublists whose sums don't exceed a maximum
      using a First Fit Decreasing algorithm. See
@@ -17,6 +17,8 @@
 # * [ ] Describe functioning and usage of this tool!
 # * [ ] Remove garbage und unneccessary comments
 # * [ ] Move functions and includes to respective blocks
+
+# version 0.2.0
 
 ################################################################################
 # INCLUDES
@@ -223,9 +225,6 @@ if __name__ == '__main__':
 
         print(time.time(), 'END: Building lists' , file=sys.stderr)
 
-        # http://stackoverflow.com/questions/73663/terminating-a-python-script
-        sys.exit()
-     
     #print "Number of lists per proportion: ", numberOfListsPerProportion
 
     else:
@@ -281,7 +280,10 @@ if __name__ == '__main__':
 
         print(time.time(), 'END: Adding remaining list', file=sys.stderr)
 
-        print(' '.join(transferListFiles), file=sys.stdout)
+    print(' '.join(transferListFiles), file=sys.stdout)
+
+    # http://stackoverflow.com/questions/73663/terminating-a-python-script
+    sys.exit()
 
     # arbitrary number of paths possible
     #packAndShow(combinedList, max(combinedList)[0])
