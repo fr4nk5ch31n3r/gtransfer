@@ -1,4 +1,4 @@
-.TH GTRANSFER 1 "Nov 28, 2014" "gtransfer 0.3.0" "User Commands"
+.TH GTRANSFER 1 "Apr 16, 2015" "gtransfer 0.3.0" "User Commands"
 .SH NAME
 .PP
 \f[B]gtransfer\f[] - The GridFTP data transfer script
@@ -199,6 +199,26 @@ Prints out a help message.
 .SS \f[B][-V, --version]\f[]
 .PP
 Prints out version information.
+.SH ENVIRONMENT VARIABLES
+.SS \f[B]GUC_MAX_RETRIES\f[]
+.PP
+See option \f[B]--guc-max-retries\f[] for details.
+.SS \f[B]GT_MAX_RETRIES\f[]
+.PP
+See option \f[B]--gt-max-retries\f[] for details.
+.SS \f[B]GT_KEEP_TMP_DIR\f[]
+.PP
+If set to 1, gt will keep its used temporary directory below
+~/.gtransfer/tmp for inspection when exiting.
+.SS \f[B]GT_NO_RELIABILITY\f[]
+.PP
+If set to 1, gt will not make use of the reliabilty functionality of
+guc.
+This means that transfers always start from the beginning.
+I.e.
+transfers cannot be interrupted and later continued from where they were
+interrupted and transfers that failed temporarily will also start from
+the beginning, when retried.
 .SH FILES
 .SS \f[I][...]/gtransfer.conf\f[]
 .PP
@@ -227,7 +247,7 @@ Example:
 .IP
 .nf
 \f[C]
-#\ \ MIN_SIZE_IN_MB;MAX_SIZE_IN_MB;GUC_PARAMETERS
+#MIN_SIZE_IN_MB;MAX_SIZE_IN_MB;GUC_PARAMETERS
 min;50;-cc\ 16\ -tcp-bs\ 4M\ -stripe\ -sbs\ 4M\ -cd
 50;250;-cc\ 8\ -tcp-bs\ 8M\ -stripe\ -sbs\ 4M\ -cd
 250;max;-cc\ 6\ -p\ 4\ -tcp-bs\ 8M\ -stripe\ -sbs\ 8M\ -g2\ -cd
