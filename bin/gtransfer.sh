@@ -655,6 +655,12 @@ if [[ "$gsiftpSourceUrl" == "" || \
       "$gsiftpDestinationUrl" == "" \
 ]]; then
         if [[ $gsiftpTransferListSet -eq 1 ]]; then
+		# skip transfer if transfer list is empty
+		if [[ ! -s "$gsiftpTransferList" ]]; then
+			helperFunctions/echoIfVerbose "${_program} [${gtInstance}]: Skipping empty transfer list."
+			exit 0
+		fi
+
 		#  create directory for temp files
 		mkdir -p "$__GLOBAL__gtTmpDir"
 		
@@ -918,7 +924,7 @@ transferDataReturnValue=$?
 
 #  if transfer was successful, remove dir for temp files
 if [[ $transferDataReturnValue -eq 0 && \
-      $GT_KEEP_TMP_FILES -ne 1 ]]; then
+      $GT_KEEP_TMP_DIR -ne 1 ]]; then
 	rm -rf "$__GLOBAL__gtTmpDir"
 fi
 
