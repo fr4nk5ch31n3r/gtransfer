@@ -1,8 +1,8 @@
 #!/bin/bash
 
-#  install.sh / uninstall.sh - Install or uninstall software
+# install.sh / uninstall.sh - Install or uninstall software
 
-#  if a (prefix) directory is provided, switch to system install
+# if a (prefix) directory is provided, switch to system install
 if [[ "$1" != "" ]]; then
 	# user install activated? 0 => no, 1 => yes
 	userInstall=0
@@ -23,17 +23,17 @@ manDir="$prefixDir/gtransfer/share/man"
 libDir="$prefixDir/gtransfer/lib"
 libexecDir="$prefixDir/gtransfer/libexec"
 
-#  installation
+# installation
 if [[ "$(basename $0)" == "install.sh" ]]; then
 
-	#  first create bin dir in home, if not already existing
+	# first create bin dir in home, if not already existing
 	if [[ $userInstall -eq 1 ]]; then	
 		if [[ ! -e "$HOME/bin" ]]; then
 			mkdir -p "$HOME/bin" &>/dev/null
 		fi
 	fi
 
-	#  create directory structure
+	# create directory structure
 	mkdir -p "$binDir" &>/dev/null
 	mkdir -p "$docDir" &>/dev/null
 	mkdir -p "$manDir/man1" &>/dev/null
@@ -43,7 +43,7 @@ if [[ "$(basename $0)" == "install.sh" ]]; then
 	mkdir -p "$libDir" &>/dev/null
 	mkdir -p "$libexecDir" &>/dev/null
 	
-	#  copy configuration files (also copy bash completion file)
+	# copy configuration files (also copy bash completion file)
 	#cp ./etc/gtransfer/gtransfer.conf_example \
         #   ./etc/gtransfer/dpath.conf_example \
         #   ./etc/gtransfer/dparam.conf_example \
@@ -54,13 +54,13 @@ if [[ "$(basename $0)" == "install.sh" ]]; then
         cp -r --backup=numbered ./etc/gtransfer/* "$etcDir"
 	cp -r ./etc/bash_completion.d "$etcDir"
 
-	#  copy scripts and...
+	# copy scripts and...
 	cp ./bin/gtransfer.sh \
 	   ./bin/datapath.sh \
 	   ./bin/defaultparam.sh \
 	   ./bin/halias.bash "$binDir"
 	
-	#  ...reconfigure paths inside of the scripts and...
+	# ...reconfigure paths inside of the scripts and...
 	#        + reconfigure path to configuration files
 	#        |                                                 + remove (special) comments
 	#        |                                                 |
@@ -69,7 +69,7 @@ if [[ "$(basename $0)" == "install.sh" ]]; then
 	sed -e "s|<GTRANSFER_BASE_PATH>|$prefixDir/gtransfer|g" -e 's/#sed#//g' -i "$binDir/defaultparam.sh"
 	sed -e "s|<GTRANSFER_BASE_PATH>|$prefixDir/gtransfer|g" -e 's/#sed#//g' -i "$binDir/halias.bash"
 
-	#  ...make links and...
+	# ...make links and...
 	if [[ $userInstall -eq 1 ]]; then
 		linkPath="$HOME/bin"
 		
@@ -81,7 +81,7 @@ if [[ "$(basename $0)" == "install.sh" ]]; then
 	else
 		linkPath="$binDir"
 		
-		#  no path in links for system install!
+		# no path in links for system install!
 		ln -s "gtransfer.sh" "$linkPath/gtransfer"	
 		ln -s "gtransfer.sh" "$linkPath/gt"
 		ln -s "datapath.sh" "$linkPath/dpath"
@@ -89,7 +89,7 @@ if [[ "$(basename $0)" == "install.sh" ]]; then
 		ln -s "halias.bash" "$linkPath/halias"
 	fi
 
-	#  ...copy README and manpages.
+	# ...copy README and manpages.
 	#cp ./share/doc/README.md \
 	#   ./share/doc/gtransfer.1.pdf \
 	#   ./share/doc/dpath.1.pdf \
@@ -97,7 +97,7 @@ if [[ "$(basename $0)" == "install.sh" ]]; then
 	#   ./COPYING "$docDir"
 	cp -r ./share/doc/* ./README.md ./COPYING "$docDir"
 	
-	# Update paths in README.md
+	# update paths in README.md
 	sed -e 's|/share/doc/||g' -e 's|/COPYING|COPYING|' -i "$docDir/README.md"
 
 	#cp ./share/man/man1/gtransfer.1 \
@@ -106,10 +106,10 @@ if [[ "$(basename $0)" == "install.sh" ]]; then
 	#   ./share/man/man1/dparam.1 "$manDir/man1"
 	cp -r ./share/man/* "$manDir/"
 	   
-	#  copy libraries
+	# copy libraries
 	cp -r ./lib/* "$libDir"
 	
-	#  copy helper tools
+	# copy helper tools
 	cp -r ./libexec/* "$libexecDir"
 
 #  uninstallation

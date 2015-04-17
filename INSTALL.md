@@ -22,6 +22,7 @@ need the following binaries/scripts in `$PATH` for operation:
 * `cat` (GNU coreutils)
 * `cut` (GNU coreutils)
 * `sleep` (GNU coreutils)
+* `truncate` (GNU coreutils)
 * `grep` (GNU version)
 * `sed` (GNU version)
 * `sha1sum` (GNU version)
@@ -70,13 +71,32 @@ local configuration after installation.
 The gtransfer scripts search for their configuration files in the following
 places and order:
 
-* `/etc/gtransfer/gtransfer.conf`
-* `<INSTALL_PATH>/etc/gtransfer.conf`
-* `/etc/opt/gtransfer/gtransfer.conf`
-* `$HOME/.gtransfer/gtransfer.conf`
+* `/etc/gtransfer`
+* `<INSTALL_PATH>/etc`
+* `/etc/opt/gtransfer`
+* `$HOME/.gtransfer`
+* `$( dirname $BASH_SOURCE )/../etc/gtransfer`
 
-Hence only if gtransfer is installed below an optional `<PROVIDER>` directory,
-manual intervention is needed to provide the configuration files to the scripts.
+The paths to the library files and additional helper tools are derived from
+these paths. I.e. the following paths are used respectively to find the library
+files:
+
+* `/usr/share/gtransfer`
+* `<INSTALL_PATH>/lib`
+* `/opt/gtransfer/lib`
+* `$HOME/opt/gtransfer/lib`
+* `$( dirname $BASH_SOURCE )/../lib`
+
+The following paths are used respectively to find the additional helper tools:
+
+* `/usr/libexec/gtransfer`
+* `<INSTALL_PATH>/libexec`
+* `/opt/gtransfer/libexec`
+* `$HOME/opt/gtransfer/libexec`
+* `$( dirname $BASH_SOURCE )/../libexec`
+
+Hence manual intervention to provide the configuration files to the scripts is
+only needed, if gtransfer is installed below an optional `<PROVIDER>` directory.
 This can be achieved by either copying the configuration files to
 `/etc/opt/gtransfer` or create a link there that points to the configuration
 file base directory. Alternatively you can also reconfigure the path in the
@@ -118,6 +138,13 @@ Gtransfer can also be used directly from its git repository. Simply clone the
 source the [bash completion file] for an improved user experience and you are
 ready to go.
 
+> **NOTICE:** Due to the used implementation for finding its configuration and
+> library files, the gtransfer scripts will not use the configuration and
+> library files from the git repository as long as another gtransfer system or
+> user installation is available on the same host. This is also true if native
+> OS packages are already installed. The gtransfer scripts will then use the
+> first available path with configuration and library files.
+
 [gtransfer git repository]: https://github.com/fr4nk5ch31n3r/gtransfer.git
 [bash completion file]: #242-bash-completion
 
@@ -130,8 +157,10 @@ ready to go.
 To ease usage of this tool for users that have a [modules environment]
 available, a module file has been created. All related files are stored below
 `./modulefiles` in the package dir. As the implementation of a modules
-environment usually differs from host to host or site to site, the module file
-has to be installed manually.
+environment usually differs from host to host or site to site, the module files
+have to be installed manually. After installation change the string "version" in
+the file names to the installed version of gtransfer (e.g. "gtransfer-version"
+=> "gtransfer-0.3.0").
 
 [modules environment]: http://en.wikipedia.org/wiki/Modules_Environment
 
@@ -151,5 +180,5 @@ to retain your dpaths and dparams, make a backup before uninstalling gtransfer.
 If you add the original install path for a system installation, e.g.
 `./uninstall.sh /opt`, the gtransfer distribution will be removed from there
 instead. Because the modulefile and the bash completion file have to be
-installed manually, they're not removed by the uninstallation.
+installed manually, they're not removed by the uninstallation procedure.
 
