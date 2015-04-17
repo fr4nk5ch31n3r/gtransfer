@@ -29,7 +29,7 @@ COPYRIGHT
 ################################################################################
 
 readonly _program=$( basename "$0" )
-readonly _gtransferToolkitVersion="0.3.0BETA4"
+readonly _gtransferToolkitVersion="0.3.0RC1"
 
 readonly _gtransferTools=( "gtransfer"
 			   "dpath"

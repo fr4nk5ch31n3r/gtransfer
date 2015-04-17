@@ -37,7 +37,7 @@ trap - SIGINT
 #set -f
 
 readonly _program=$( basename "$0" )
-readonly _gtransferVersion="0.3.0BETA"
+readonly _gtransferVersion="0.3.0"
 
 version="$_gtransferVersion"
 
