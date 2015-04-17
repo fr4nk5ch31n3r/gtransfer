@@ -17,18 +17,20 @@
 
 ## Description ##
 
-Gtransfer is a wrapper script for [tgftp] and provides an advanced command line
-interface for performing GridFTP data transfers. The primary aim of gtransfer is
-to make GridFTP data transfers on the command line as easy as possible for the
-user. Therefore a user only has to provide the source and the destination to
-perform a data transfer:
+Gtransfer is a wrapper script for [tgftp] (which itself wraps [globus-url-copy])
+and also uses functionality of [uberftp]. Gtransfer provides an advanced command
+line interface for performing GridFTP data transfers. The primary aim of
+gtransfer is to make GridFTP data transfers on the command line as easy as
+possible for the user. Therefore a user only has to provide the source and the
+destination to perform a data transfer:
 
 ```shell
 $ gt -s <SOURCE> -d <DESTINATION>
 ```
 
 [tgftp]: https://github.com/fr4nk5ch31n3r/tgftp/
-
+[globus-url-copy]: http://toolkit.globus.org/toolkit/docs/latest-stable/gridftp/user/#globus-url-copy
+[uberftp]: https://github.com/JasonAlt/UberFTP
 
 ## Features ##
 
@@ -50,7 +52,7 @@ $ gt -s host1:/files/* -d host3:/files/
 
 [aliases]: #host-aliases
 
-![multi-step transfer](/share/doc/images/multi-step_transfer.png)
+![multi-step transfer](/share/doc/images/multi-step-transfer.png)
 
 The host `host1` is located in a private network, `host3` is located in the
 Internet and `host2` has connections to both networks. To transfer files from
@@ -120,10 +122,7 @@ retries is configurable. See [gtransfer(1)] for details.
 
 Gtransfer makes use of bash completion to ease usage. This supports completion
 of options and URLs. URL completion also expands (remote) paths directly on the
-command line. Just hit the `TAB` key to see what's possible. For a demo, please
-checkout the [shelr cast] on shelr.tv.
-
-[shelr cast]: http://shelr.tv/records/4fd1be0096608036e1000001
+command line. Just hit the `TAB` key to see what's possible.
 
 ### Host aliases ###
 
@@ -131,7 +130,7 @@ Gtransfer can use host aliases as alternatives to host addresses. E.g. a user
 can use `myGridFTP:` and `gsiftp://host1.domain.tld:2811` synonymically. See
 [host aliases] for more details.
 
-[host aliases]: /share/doc/host_aliases.md
+[host aliases]: /share/doc/host-aliases.md
 
 ### Persistent identifiers (PIDs) ###
 
@@ -139,7 +138,7 @@ Gtransfer can use persistent identifiers (PIDs) as used by [EUDAT] and provided
 by [EPIC] as source of a data transfer. See [persistent identifiers] for more
 details.
 
-[persistent identifiers]: /share/doc/persistent_identifiers.md
+[persistent identifiers]: /share/doc/persistent-identifiers.md
 [EUDAT]: http://www.eudat.eu/
 [EPIC]: http://www.pidconsortium.eu/
 
@@ -213,7 +212,7 @@ This is a list of HPC centers in Europe that use gtransfer in production:
 
 (GPLv3)
 
-Copyright (C) 2010, 2011, 2013, 2014 Frank Scheiner, HLRS, Universitaet Stuttgart  
+Copyright (C) 2010, 2011, 2013-2015 Frank Scheiner, HLRS, Universitaet Stuttgart  
 Copyright (C) 2011, 2012, 2013 Frank Scheiner
 
 The software is distributed under the terms of the GNU General Public License
