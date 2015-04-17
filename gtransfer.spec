@@ -1,5 +1,5 @@
 Name:		gtransfer
-Version:	0.3.0BETA4
+Version:	0.3.0RC1
 Release:	1%{?dist}
 Summary:	Advanced data transfer tool for GridFTP
 Group:		base
@@ -11,10 +11,12 @@ BuildArch:	noarch
 Requires:	coreutils,grep,sed,telnet,tgftp,uberftp,globus-gass-copy-progs
 
 %description
-gtransfer - An advanced data transfer tool for GridFTP. gtransfer is a wrapper
-for globus-url-copy and tgftp and provides several features that make it 
-easy and comfortable to use, allow rerouting of data transfer for improved
-performance or crossing network domains and provide improved performance.
+gtransfer - An advanced data transfer tool for GridFTP. Gtransfer is a wrapper
+for tgftp (which itself wraps globus-url-copy) and also uses functionality of
+uberftp. Gtransfer provides several features that make it easy and comfortable
+to use, that allow rerouting of data transfers for improved performance or
+crossing network domains and that also allow for high-performance data
+transfers.
 
 %prep
 %setup -q -n %{name}-%{version}
@@ -62,15 +64,15 @@ cp lib/gtransfer/multipathing.bashlib %{buildroot}%{_datadir}/%{name}/
 ################################################################################
 # * Tools and symlinks
 ################################################################################
-cp bin/gtransfer.sh %{buildroot}%{_bindir}/
-cp bin/datapath.sh %{buildroot}%{_bindir}/
-cp bin/defaultparam.sh %{buildroot}%{_bindir}/
+cp bin/gtransfer.bash %{buildroot}%{_bindir}/
+cp bin/datapath.bash %{buildroot}%{_bindir}/
+cp bin/defaultparam.bash %{buildroot}%{_bindir}/
 cp bin/halias.bash %{buildroot}%{_bindir}/
 cp bin/gtransfer-version.bash %{buildroot}%{_bindir}/
-ln -s gtransfer.sh %{buildroot}%{_bindir}/gtransfer
-ln -s gtransfer.sh %{buildroot}%{_bindir}/gt
-ln -s datapath.sh %{buildroot}%{_bindir}/dpath
-ln -s defaultparam.sh %{buildroot}%{_bindir}/dparam
+ln -s gtransfer.bash %{buildroot}%{_bindir}/gtransfer
+ln -s gtransfer.bash %{buildroot}%{_bindir}/gt
+ln -s datapath.bash %{buildroot}%{_bindir}/dpath
+ln -s defaultparam.bash %{buildroot}%{_bindir}/dparam
 ln -s halias.bash %{buildroot}%{_bindir}/halias
 ln -s gtransfer-version.bash %{buildroot}%{_bindir}/gt-version
 
@@ -104,18 +106,18 @@ rm -rf %{buildroot}
 %config %{_sysconfdir}/%{name}/dpath.template
 %config %{_sysconfdir}/%{name}/chunkConfig
 
-%doc README.md COPYING ChangeLog share/doc/dparam.1.md share/doc/dparam.5.md share/doc/dpath.1.md share/doc/dpath.5.md share/doc/gtransfer.1.md share/doc/halias.1.md share/doc/host_aliases.md share/doc/persistent_identifiers.md share/doc/images/multi-step_transfer.png
+%doc README.md COPYING ChangeLog share/doc/dparam.1.md share/doc/dparam.5.md share/doc/dpath.1.md share/doc/dpath.5.md share/doc/gtransfer.1.md share/doc/halias.1.md share/doc/host-aliases.md share/doc/persistent-identifiers.md share/doc/images/multi-step-transfer.png share/doc/images/multipathing-transfer.png
 
 %{_sysconfdir}/%{name}
 %{_sysconfdir}/bash_completion.d
 %{_sysconfdir}/bash_completion.d/gtransfer.sh
 
-%{_bindir}/gtransfer.sh
+%{_bindir}/gtransfer.bash
 %{_bindir}/gtransfer
 %{_bindir}/gt
-%{_bindir}/datapath.sh
+%{_bindir}/datapath.bash
 %{_bindir}/dpath
-%{_bindir}/defaultparam.sh
+%{_bindir}/defaultparam.bash
 %{_bindir}/dparam
 %{_bindir}/halias.bash
 %{_bindir}/halias
@@ -146,6 +148,9 @@ rm -rf %{buildroot}
 %{_mandir}/man1/halias.1.gz
 
 %changelog
+* Fri Apr 17 2015 Frank Scheiner <scheiner@hlrs.de> 0.3.0RC1-1
+- Updated source package and version number to upstream version.
+
 * Fri Jan 16 2015 Frank Scheiner <scheiner@hlrs.de> 0.3.0BETA4-1
 - Updated spec file to include new multipathing support and gt-version tool.
 
