@@ -1,4 +1,4 @@
-# Gtransfer - The GridFTP data transfer script #
+# Gtransfer - GridFTP transfers made easy! #
 
 * [Description](#description)
 * [Features](#features)
