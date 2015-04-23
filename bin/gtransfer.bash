@@ -50,7 +50,7 @@ if [[ -e "/etc/gtransfer" ]]; then
         #  gtransfer is installed in "/usr/bin", hence the base path is "/usr"
         gtransferBasePath="/usr"
         gtransferLibPath="$gtransferBasePath/share"
-        gtransferLibexecPath="$gtransferBasePath/libexec"
+        gtransferLibexecPath="$gtransferBasePath/libexec/gtransfer"
 
 #  For installation with "install.sh".
 #sed#elif [[ -e "<GTRANSFER_BASE_PATH>/etc" ]]; then
@@ -95,9 +95,19 @@ chunkConfig="$gtransferConfigurationFilesPath/chunkConfig"
 
 #  Set $_LIB so gtransfer and its libraries can find their includes
 readonly _LIB="$gtransferLibPath"
-readonly _GTRANSFER_LIBEXECPATH="$gtransferLibexecPath"
 
 readonly _gtransfer_libraryPrefix="gtransfer"
+readonly _GTRANSFER_LIBPATH="$_LIB/gtransfer"
+
+# On SLES these files are located in `$_LIB/gtransfer`
+if [[ -e "$_GTRANSFER_LIBPATH/getPidForUrl.r" && \
+      -e "$_GTRANSFER_LIBPATH/getUrlForPid.r" && \
+      -e "$_GTRANSFER_LIBPATH/packBinsNew.py" ]]; then
+
+	readonly _GTRANSFER_LIBEXECPATH="$_GTRANSFER_LIBPATH"
+else
+	readonly _GTRANSFER_LIBEXECPATH="$gtransferLibexecPath"
+fi
 
 readonly __GLOBAL__gtTmpSuffix="#gt#tmp#"
 readonly __GLOBAL__gtCacheSuffix="#gt#cache#"
@@ -105,18 +115,25 @@ readonly __GLOBAL__gtCacheSuffix="#gt#cache#"
 readonly _true=1
 readonly _false=0
 
-################################################################################
-#  INCLUDE LIBRARY FUNCTIONS
-################################################################################
-
-. "$_LIB"/${_gtransfer_libraryPrefix}/exitCodes.bashlib
-. "$_LIB"/${_gtransfer_libraryPrefix}/urlTransfer.bashlib
-. "$_LIB"/${_gtransfer_libraryPrefix}/listTransfer.bashlib
-. "$_LIB"/${_gtransfer_libraryPrefix}/autoOptimization.bashlib
-. "$_LIB"/${_gtransfer_libraryPrefix}/pids/irodsMicroService.bashlib
-. "$_LIB"/${_gtransfer_libraryPrefix}/multipathing.bashlib
 
 ################################################################################
+# INCLUDES
+################################################################################
+
+_neededLibraries=( "gtransfer/exitCodes.bashlib"
+                   "gtransfer/urlTransfer.bashlib"
+                   "gtransfer/listTransfer.bashlib"
+                   "gtransfer/autoOptimization.bashlib"
+                   "gtransfer/pids/irodsMicroService.bashlib"
+                   "gtransfer/multipathing.bashlib" )
+
+for _library in ${_neededLibraries[@]}; do
+
+	if ! . "$_LIB/$_library" 2>/dev/null; then
+		echo "$_program: Library \"$_LIB/$_library\" couldn't be read or is corrupted." 1>&2
+		exit 70
+	fi
+done
 
 
 ################################################################################

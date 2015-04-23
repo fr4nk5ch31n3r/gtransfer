@@ -29,7 +29,10 @@ mkdir -p %{buildroot}%{_sysconfdir}/%{name}/pids
 mkdir -p %{buildroot}%{_sysconfdir}/%{name}/aliases
 mkdir -p %{buildroot}%{_sysconfdir}/bash_completion.d
 mkdir -p %{buildroot}%{_bindir}
-mkdir -p %{buildroot}%{_libexecdir}/%{name}
+# SLES does not have a "libexec" dir!
+%if 0%{?rhel_version} || 0%{?centos_version}
+	mkdir -p %{buildroot}%{_libexecdir}/%{name}
+%endif	
 mkdir -p %{buildroot}%{_datadir}/%{name}/pids
 mkdir -p %{buildroot}%{_mandir}/man1
 mkdir -p %{buildroot}%{_mandir}/man5
@@ -79,9 +82,17 @@ ln -s gtransfer-version.bash %{buildroot}%{_bindir}/gt-version
 ################################################################################
 # * Additional (internal) tools
 ################################################################################
-cp libexec/getPidForUrl.r %{buildroot}%{_libexecdir}/%{name}/
-cp libexec/getUrlForPid.r %{buildroot}%{_libexecdir}/%{name}/
-cp libexec/packBinsNew.py %{buildroot}%{_libexecdir}/%{name}/
+%if 0%{?rhel_version} || 0%{?centos_version}
+	cp libexec/getPidForUrl.r %{buildroot}%{_libexecdir}/%{name}/
+	cp libexec/getUrlForPid.r %{buildroot}%{_libexecdir}/%{name}/
+	cp libexec/packBinsNew.py %{buildroot}%{_libexecdir}/%{name}/
+%endif
+# SLES does not have a "libexec" dir!
+%if 0%{?suse_version}
+	cp libexec/getPidForUrl.r %{buildroot}%{_datadir}/%{name}/
+	cp libexec/getUrlForPid.r %{buildroot}%{_datadir}/%{name}/
+	cp libexec/packBinsNew.py %{buildroot}%{_datadir}/%{name}/
+%endif
 
 ################################################################################
 # * Manpages
@@ -105,6 +116,9 @@ rm -rf %{buildroot}
 %config %{_sysconfdir}/%{name}/dparam.conf
 %config %{_sysconfdir}/%{name}/dpath.template
 %config %{_sysconfdir}/%{name}/chunkConfig
+%config %{_sysconfdir}/%{name}/pids/irodsMicroService_mappingFile
+%config %{_sysconfdir}/%{name}/aliases.conf
+%config %{_sysconfdir}/bash_completion.d/gtransfer.sh
 
 %doc README.md COPYING ChangeLog share/doc/dparam.1.md share/doc/dparam.5.md share/doc/dpath.1.md share/doc/dpath.5.md share/doc/gtransfer.1.md share/doc/halias.1.md share/doc/host-aliases.md share/doc/persistent-identifiers.md share/doc/images/multi-step-transfer.png share/doc/images/multipathing-transfer.png
 
@@ -124,10 +138,12 @@ rm -rf %{buildroot}
 %{_bindir}/gtransfer-version.bash
 %{_bindir}/gt-version
 
-%{_libexecdir}/%{name}
-%{_libexecdir}/%{name}/getPidForUrl.r
-%{_libexecdir}/%{name}/getUrlForPid.r
-%{_libexecdir}/%{name}/packBinsNew.py
+%if 0%{?rhel_version} || 0%{?centos_version}
+	%{_libexecdir}/%{name}
+	%{_libexecdir}/%{name}/getPidForUrl.r
+	%{_libexecdir}/%{name}/getUrlForPid.r
+	%{_libexecdir}/%{name}/packBinsNew.py
+%endif
 
 %{_datadir}/%{name}
 %{_datadir}/%{name}/autoOptimization.bashlib
@@ -138,6 +154,12 @@ rm -rf %{buildroot}
 %{_datadir}/%{name}/alias.bashlib
 %{_datadir}/%{name}/pids/irodsMicroService.bashlib
 %{_datadir}/%{name}/multipathing.bashlib
+%if 0%{?suse_version}
+	%{_datadir}/%{name}
+	%{_datadir}/%{name}/getPidForUrl.r
+	%{_datadir}/%{name}/getUrlForPid.r
+	%{_datadir}/%{name}/packBinsNew.py
+%endif
 
 %{_mandir}/man1/gtransfer.1.gz
 %{_mandir}/man1/gt.1.gz
@@ -148,6 +170,9 @@ rm -rf %{buildroot}
 %{_mandir}/man1/halias.1.gz
 
 %changelog
+* Fri Apr 23 2015 Frank Scheiner <scheiner@hlrs.de> 0.3.0RC1-2
+- Introduced specific behaviour for SLES and RHEL compatible. Also added "%config" tags for some config files.
+
 * Fri Apr 17 2015 Frank Scheiner <scheiner@hlrs.de> 0.3.0RC1-1
 - Updated source package and version number to upstream version.
 
