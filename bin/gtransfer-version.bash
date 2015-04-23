@@ -5,7 +5,7 @@
 
 :<<COPYRIGHT
 
-Copyright (C) 2014 Frank Scheiner, HLRS, Universitaet Stuttgart
+Copyright (C) 2014-2015 Frank Scheiner, HLRS, Universitaet Stuttgart
 
 The program is distributed under the terms of the GNU General Public License
 
@@ -29,7 +29,7 @@ COPYRIGHT
 ################################################################################
 
 readonly _program=$( basename "$0" )
-readonly _gtransferToolkitVersion="0.3.0RC1"
+readonly _gtransferToolkitVersion="0.3.0"
 
 readonly _gtransferTools=( "gtransfer"
 			   "dpath"
