@@ -4,8 +4,8 @@ Release:	1%{?dist}
 Summary:	Advanced data transfer tool for GridFTP
 Group:		base
 License:	GPLv3
-URL:		https://github.com/fscheiner/%{name}
-Source0:	https://github.com/fscheiner/%{name}/archive/v%{version}.tar.gz
+URL:		https://github.com/fr4nk5ch31n3r/%{name}
+Source0:	https://github.com/fr4nk5ch31n3r/%{name}/archive/v%{version}.tar.gz
 BuildRoot:	%{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildArch:	noarch
 Requires:	coreutils,grep,sed,telnet,tgftp,uberftp,globus-gass-copy-progs

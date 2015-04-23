@@ -1,6 +1,24 @@
-2014-02-20  Frank Scheiner <frank.scheiner@web.de>
+2015-04-23  Frank Scheiner <scheiner@hlrs.de>
 
 *0.3.0 (gtransfer dist):
+
+- New functionality
+
+Data transfer using multipathing: Gtransfer can now distribute a data transfer
+over multiple paths. This way users can benefit from the combined bandwidth of
+multiple paths. For more details please have a look into the [README].
+
+[README]: https://github.com/fr4nk5ch31n3r/gtransfer#data-transfer-using-multipathing
+
+- Fixes
+
+Included a workaround for an old `globus-url-copy` (guc) [bug]: A transfer list
+created for a single file does not contain the size of the file. gt now
+determines the file size in this case with `uberftp` and updates the transfer
+list. The file size is needed for calculating the transfer rate and for the
+bin packing heuristics used by the multipathing functionality.
+
+[bug]: https://globus.atlassian.net/browse/GT-318
 
 For native OS packages (like RPMs) all tools now use `/usr/share/gtransfer` as
 base path for bash libraries. This fixes [issue #26].
