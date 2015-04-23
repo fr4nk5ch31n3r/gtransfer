@@ -1,5 +1,5 @@
 Name:		gtransfer
-Version:	0.3.0RC1
+Version:	0.3.0RC2
 Release:	1%{?dist}
 Summary:	Advanced data transfer tool for GridFTP
 Group:		base
@@ -170,7 +170,7 @@ rm -rf %{buildroot}
 %{_mandir}/man1/halias.1.gz
 
 %changelog
-* Fri Apr 23 2015 Frank Scheiner <scheiner@hlrs.de> 0.3.0RC1-2
+* Fri Apr 23 2015 Frank Scheiner <scheiner@hlrs.de> 0.3.0RC2-1
 - Introduced specific behaviour for SLES and RHEL compatible. Also added "%config" tags for some config files.
 
 * Fri Apr 17 2015 Frank Scheiner <scheiner@hlrs.de> 0.3.0RC1-1
