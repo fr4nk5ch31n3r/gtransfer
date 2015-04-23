@@ -30,7 +30,7 @@ readonly _false=0
 
 readonly __GLOBAL__programName=$( basename "$0" )
 
-readonly __GLOBAL__version="0.1.3"
+readonly __GLOBAL__version="0.2.0"
 
 version="$__GLOBAL__version"
 
@@ -40,7 +40,7 @@ if [[ -e "/etc/gtransfer" ]]; then
         configurationFilesPath="/etc/gtransfer"
         #  gtransfer is installed in "/usr/bin", hence the base path is "/usr"
         basePath="/usr"
-        libPath="$basePath/lib"
+        libPath="$basePath/share"
 
 #  For installation with "install.sh".
 #sed#elif [[ -e "<GTRANSFER_BASE_PATH>/etc" ]]; then
@@ -62,14 +62,14 @@ elif [[ -e "/etc/opt/gtransfer" ]]; then
 #	libPath="$gtransferBasePath/lib"
 
 #  For user install in $HOME:
-elif [[ -e "$HOME/.gtransfer" ]]; then
+elif [[ -e "$HOME/opt/gtransfer" ]]; then
         configurationFilesPath="$HOME/.gtransfer"
         basePath="$HOME/opt/gtransfer"
         libPath="$basePath/lib"
 
 #  For git deploy, use $BASH_SOURCE
 elif [[ -e "$( dirname $BASH_SOURCE )/../etc" ]]; then
-	configurationFilesPath="$( dirname $BASH_SOURCE )/../etc"
+	configurationFilesPath="$( dirname $BASH_SOURCE )/../etc/gtransfer"
 	basePath="$( dirname $BASH_SOURCE )/../"
 	libPath="$basePath/lib"
 fi

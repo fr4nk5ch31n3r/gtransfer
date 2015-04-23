@@ -3,6 +3,7 @@
 :<<COPYRIGHT
 
 Copyright (C) 2012 Frank Scheiner
+Copyright (C) 2014-2015 Frank Scheiner, HLRS, Universitaet Stuttgart
 
 The program is distributed under the terms of the GNU General Public License
 
@@ -25,7 +26,7 @@ COPYRIGHT
 #  DEFINES
 ################################################################################
 
-readonly _helperFunctions_Version="0.1.0"
+readonly _helperFunctions_Version="0.4.0"
 
 ################################################################################
 #  INCLUDES
@@ -276,7 +277,7 @@ helperFunctions/xtractXMLAttributeValue()
 	#  attribute may contain arguments ('attribute arg="0"') or can be
 	#+ without
 
-	local attributeOpen="<$1>"
+	local attributeOpen="<${1}.*>"
 	
 	#echoDebug "stderr" "DEBUG1" "Open: $attributeOpen"
 
@@ -545,7 +546,7 @@ helperFunctions/isValidUrl()
 		#+ to indicate a general problem.
 		hostName=$( helperFunctions/getFQDNFromURL "$url" )
 		if [[ "$hostName" != "" ]]; then
-			ping -c 1 "$hostName" &>/dev/null
+			ping -w 1 -c 1 "$hostName" &>/dev/null
 			
 			if [[ $? -eq 2 ]]; then
 				return 1
@@ -601,6 +602,53 @@ helperFunctions/getPortNumberFromURL()
         else
                 return 1
         fi
+}
+
+
+helperFunctions/indicateProgress()
+{
+	while [[ 1 ]]; do
+		echo -n "$gtProgressIndicator"
+		sleep 2
+	done
+
+	return
+}
+
+
+helperFunctions/isValidMetric()
+{
+	local _dpath="$1"
+	local _metric="$2"
+
+	if grep '^<path .*metric=' < "$_dpath" | grep -o 'metric="[[:digit:]]*"' | sed -e 's/^metric="//' -e 's/"$//' | grep $_metric &>/dev/null; then
+		return 0
+	else
+		return 1
+	fi
+}
+
+# Return the maximum value from the given array.
+#
+# helperFunctions/getMax "${_arrayOfValues[*]}"
+#
+# $1 (_values) - The given values (array of positive numbers)
+helperFunctions/getMax()
+{
+	local -a _values=($1)
+
+	local _max=0
+
+	for _value in "${_values[@]}"; do
+
+		if [[ $_value -gt $_max ]]; then
+			_max=$_value
+		fi
+	done
+
+	echo "$_max"
+
+	return
 }
 ################################################################################
 #  CHECKS

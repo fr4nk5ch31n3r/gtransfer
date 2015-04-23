@@ -1,0 +1,437 @@
+#!/bin/bash
+
+# multipathing.bashlib - library functions for gtransfer multipathing support
+
+:<<COPYRIGHT
+
+Copyright (C) 2014-2015 Frank Scheiner, HLRS, Universitaet Stuttgart
+
+The program is distributed under the terms of the GNU General Public License
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+COPYRIGHT
+
+################################################################################
+# DEFINES
+################################################################################
+
+readonly _gtransfer_multipathing_version="0.3.0"
+readonly _gtransfer_multipathing_selfName="gtransfer/multipathing"
+
+readonly __GLOBAL__proportionsFileName="bandwidthProportions"
+readonly __GLOBAL__proportionsFile="$__GLOBAL__gtTmpDir/$__GLOBAL__proportionsFileName"
+
+################################################################################
+# EXTERNAL VARIABLES
+################################################################################
+
+# __GLOBAL__gtTmpDir
+# _GTRANSFER_LIBEXECPATH
+
+################################################################################
+# INCLUDES
+################################################################################
+
+# None
+
+################################################################################
+# FUNCTIONS
+################################################################################
+
+# Determine if given value contains multiple metrics
+#
+# $1 (_value) - The value to check for multiple metrics (string)
+#
+# Returns 0 if multiple metrics are set, 1 otherwise.
+multipathing/multipleMetricsSet()
+{
+	local _value="$1"
+	
+	local _metrics
+	
+	if [[ "$_value" == "all" ]]; then
+		return 0
+	fi
+
+	_metrics=( $( echo "$_value" | tr ',' ' ' ) )
+	
+	if [[ ${#_metrics[@]} -gt 1 ]]; then
+
+		return 0
+	else
+		return 1
+	fi
+}
+
+
+# Return the names of the transfer lists created by the multipathing
+# functionality for the given metrics value
+#
+# $1 (_metrics)            - The metrics value (e.g. "1,2,3" or "all")
+multipathing/getTransferLists()
+{
+	local _inputTransferList="$1"
+	local _metrics="$2"
+	
+	echo "${_transferLists[@]}"
+	
+	return
+}
+
+
+# Create distinct transfer lists with bin packing
+#
+# $1 (_inputTransferList) - The transfer list to split up with multipathing
+# $2 (_dpath)             - The dpath file name (string)
+# $3 (_metrics)           - The metrics value (e.g. "1,2,3" or "1")
+multipathing/createTransferLists()
+{
+	local _inputTransferList="$1"
+	local _dpath="$2"
+	local _metrics="$3"
+
+	# if bandwidth proportions file is already existing, don't recreate it
+	# (in case of restarted transfers)
+	if [[ ! -e $__GLOBAL__proportionsFile ]]; then
+	
+		local -a _bandwidths=( $( multipathing/getNormalizedBandwidths "$_dpath" "$_metrics" ) )
+
+		#echo "DEBUG: _bandwidths=\"$( echo "${_bandwidths[@]}" )\"" 1>&2
+
+		local -a _proportions=( $( multipathing/normalizeProportions "${_bandwidths[*]}" ) )
+
+		#echo "DEBUG: _proportions=\"$( echo "${_proportions[@]}" )\"" 1>&2
+
+		> "$__GLOBAL__proportionsFile"
+	
+		for _proportion in "${_proportions[@]}"; do
+
+			echo "$_proportion" >> "$__GLOBAL__proportionsFile"
+		done
+	fi
+	
+	# if the first list is existing, don't recreate lists with bin packing,
+	# because gt doesn't remove lists until it finished the whole transfer
+	# successfully. So existing lists don't need to be recreated, saving
+	# some cycles.
+	if [[ ! -e "$__GLOBAL__gtTmpDir/0.list" ]]; then
+
+		# forward both transfer list and proportions file to the bin packing script
+		local -a _transferListNames
+		_transferListNames=( $( cd $__GLOBAL__gtTmpDir; $_GTRANSFER_LIBEXECPATH/packBinsNew.py "$_inputTransferList" "$__GLOBAL__proportionsFile" 2>/dev/null ) )
+	
+		for _transferListName in "${_transferListNames[@]}"; do
+
+			echo -n "$__GLOBAL__gtTmpDir/$_transferListName "
+		done
+	else
+		echo $__GLOBAL__gtTmpDir/*.list
+	fi
+	
+	echo ""
+	
+	return
+}
+
+
+# Get bandwidths from dpath
+#
+# $1 (_dpath)   - The dpath file name (string)
+# $2 (_metrics) - The metrics value (e.g. "1,2,3" or "all")
+multipathing/getNormalizedBandwidths()
+{
+	local _dpath="$1"
+	local _metrics="$2"
+	
+	local -a _arrayOfMetrics
+	local -a _arrayOfBandwidths
+	
+	local _bandwidth=""
+	
+	local _index=0
+	
+	if [[ "$_metrics" != "all" ]]; then
+		
+		_arrayOfMetrics=( $( echo "$_metrics" | tr ',' ' ' ) )
+	else
+		_arrayOfMetrics=( $( grep '^<path .*metric=' < "$_dpath" | grep -o 'metric="[[:digit:]]*"' | sed -e 's/^metric="//' -e 's/"$//' ) )	
+	fi
+	
+	for _metric in "${_arrayOfMetrics[@]}"; do
+
+		#_arrayOfBandwidths[$_index]=$( grep '^<path .*metric="'$_metric'"' < "$_dpath" | grep -o 'bandwidth="[[:alnum:]]*"' | sed -e 's/^bandwidth="//' -e 's/"$//' )
+		_tmpBandwidth=$( grep '^<path .*metric="'$_metric'"' < "$_dpath" | grep -o 'bandwidth="[[:alnum:]]*"' | sed -e 's/^bandwidth="//' -e 's/"$//' )
+		if [[ "$_tmpBandwidth" == "" ]]; then
+			# assume same bandwidth (10 Gb) for all metrics
+			# if not specified in dpath
+			_arrayOfBandwidths[$_index]="10Gb"
+		else
+			_arrayOfBandwidths[$_index]="$_tmpBandwidth"
+		fi
+
+		_index=$(( $_index + 1 ))
+	done
+
+	# Normalize to Mb
+	_index=0
+	for _bandwidth in "${_arrayOfBandwidths[@]}"; do
+		#echo "[DEBUG] $_bandwidth" 1>&2
+		_arrayOfBandwidths[$_index]=$( multipathing/normalizeBandwidthToMb "$_bandwidth" )
+		
+		_index=$(( $_index + 1 ))
+	done
+	
+	
+	echo "${_arrayOfBandwidths[@]}"
+	
+	return
+}
+
+
+# Normalize given bandwidth to Mb (Megabit)
+#
+# $1 (_bandwidth) - The bandwidth (string) to normalize (e.g. 1Gb, 10Gb, 100Mb)
+multipathing/normalizeBandwidthToMb()
+{
+	local _bandwidth="$1"
+	
+	local _bandwidthValue="${_bandwidth%%[[:alpha:]]*}"
+	local _bandwidthUnit="${_bandwidth##*[[:digit:]]}"
+
+	#echo "[DEBUG] $_bandwidthValue $_bandwidthUnit" 1>&2
+
+	if [[ "$_bandwidthUnit" == "Gb" ]]; then
+	
+		_bandwidth="$(( $_bandwidthValue * 1000 ))"
+	else
+		_bandwidth="$_bandwidthValue"
+	fi
+	
+	echo "$_bandwidth"
+	
+	return
+}
+
+
+# "Normalize" proportions to percent values. Use it like that:
+#
+# multipathing/normalizeProportions "${_arrayOfProportions[*]}"
+#
+# NOTICE: The result is not exact and the biggest percentage gets added 1
+# percent to compensate for the rounding errors. This because the biggest
+# percentage resembles the path with the greatest bandwidth.
+#
+# $1 (_proportions) - The given proportions (array of numbers)
+multipathing/normalizeProportions()
+{
+	local -a _proportions=($1)
+
+	local -a _proportionsInPercent
+	
+	local _totalValue=0
+	local _maxProportion=0
+	local _indexOfMaxProportion=0
+
+	local _index=0
+	
+	for _proportion in "${_proportions[@]}"; do
+	
+		_totalValue=$(( $_totalValue + $_proportion ))
+
+		# Remember max proportion
+		if [[ $_proportion -gt $_maxProportion ]]; then
+			_maxProportion=$_proportion
+			_indexOfMaxProportion=$_index
+		fi
+		
+		_index=$(( $index + 1 ))
+	done
+	
+	_index=0
+	
+	for _proportion in "${_proportions[@]}"; do
+
+		_proportionsInPercent[$_index]=$(( ( $_proportion * 100 ) / $_totalValue ))
+		
+		_index=$(( $_index + 1 ))
+	done
+
+	local _sum=0
+
+	for _proportion in "${_proportionsInPercent[@]}"; do
+	
+		_sum=$(( $_sum + $_proportion ))
+	done
+
+	# Increase value of max proportion by one, to compensate for the
+	# rounding errors - if all proportions don't sum up to 100!
+	if [[ $_sum -lt 100 ]]; then
+		_proportionsInPercent[$_indexOfMaxProportion]=$(( _proportionsInPercent[$_indexOfMaxProportion] + 1 ))
+	fi
+	
+	echo "${_proportionsInPercent[@]}"
+	
+	return
+}
+
+
+multipathing/checkProcessActivity()
+{
+	local -a _pids=($1)
+
+	local _index=0
+	local -a _processActivity
+	local _numberOfActiveProcesses=0
+
+	for _pid in "${_pids[@]}"; do
+
+		if kill -0 $_pid &>/dev/null; then
+			#echo -n "$_index"
+			_processActivity[$_index]=1
+		else
+			_processActivity[$_index]=0
+		fi
+
+		_index=$(( $_index + 1 ))
+	done
+
+	for _activityIndicator in "${_processActivity[@]}"; do
+
+		_numberOfActiveProcesses=$(( $_numberOfActiveProcesses + $_activityIndicator ))
+	done
+
+	if [[ $_numberOfActiveProcesses -gt 0 ]]; then
+		return 0
+	else
+		return 1
+	fi
+}
+
+
+# Transfer data using multipathing.
+multipathing/performTransfer()
+{
+	local _transferList="$1"
+	local _dpath="$2"
+	local _dpathMetric="$3"
+	local _autoOptimize="$4"
+	local _verboseOption="$5"
+
+	local _transferLists
+
+	#multipathing/createTransferLists
+	#echo "DEBUG: _transferLists=( multipathing/createTransferLists "$gsiftpTransferListClean" "$_dpath" "$dataPathMetric" )"
+	#multipathing/getTransferLists "$gsiftpTransferListClean" "$_dpath" "$dataPathMetric"
+	_transferLists=( $( multipathing/createTransferLists "$_transferList" "$_dpath" "$_dpathMetric" ) )
+
+	#echo "DEBUG: _transferLists=\"$( echo "${_transferLists[@]}" )\"" 1>&2
+
+	#exit
+
+	local -a _gtSubProcesses
+	local -a _gtSubProcessesExitValues
+	local _index
+	local _currentMetric
+
+	_index=0
+	for _transferList in "${_transferLists[@]}"; do
+
+		if [[ -e "${_transferList}.finished" ]]; then
+
+			_index=$(( $_index + 1 ))
+			# skip finished transfers
+			continue
+		fi
+
+		# To support multiple transfers with identical metric, the current metric
+		# is taken from the metrics Array build further up.
+		_currentMetric=${_dpathMetricArray[$_index]}
+
+		#echo "DEBUG: _currentMetric=\"$( echo "${_currentMetric[@]}" )\"" 1>&2
+
+		# transfer each list with gtransfer and create an indicator for
+		# finished transfers.
+		if [[ $_autoOptimize -eq 1 ]]; then
+
+			gt -f "$_transferList" \
+			   -m "$_currentMetric" \
+			   -o "$transferMode" \
+			   --gt-progress-indicator "$_index" \
+			   "$_verboseOption" && touch "${_transferList}.finished" &
+		else
+			gt -f "$_transferList" \
+			   -m "$_currentMetric" \
+			   --gt-progress-indicator "$_index" \
+			   "$_verboseOption" && touch "${_transferList}.finished" &
+		fi
+
+		_gtSubProcesses[$_index]=$!
+		_index=$(( $_index + 1 ))
+	done
+
+	#echo "DEBUG: _gtSubProcesses=\"$( echo "${_gtSubProcesses[@]}" )\"" 1>&2
+
+	# wait until all gt children have finished
+	while multipathing/checkProcessActivity "${_gtSubProcesses[*]}"; do
+
+		sleep 2
+	done
+
+	_index=0
+	for _pid in "${_gtSubProcesses[@]}"; do
+
+		# get exit value of gt sub process
+		wait $_pid
+
+		_gtSubProcessesExitValues[$index]=$?
+		_index=$(( $_index + 1 ))
+	done
+
+	# This function will exit with 0 or the first non-zero exit value of its
+	# gt sub processes. Assuming, that the sub processes won't exit with
+	# non-temporary errors, this should be sufficient for signalling e.g.
+	# gsatellite that the transfer needs to be restarted to finish the
+	# transfer. Any already finished sub transfers should be skipped
+	# automatically.
+	for _exitValue in "${_gtSubProcessesExitValues[@]}"; do
+		if [[ ! $_exitValue -eq 0 ]]; then
+			break
+		fi
+	done
+
+	echo ""
+
+	return $_exitValue
+}
+
+:<<comment
+
+# Determine proportions #
+
+* Allow Mb (Megabit) and Gb (Gigabit) as possible units for bandwidths
+
+* "Normalize" all bandwidths to Mb
+
+* The numbers give the proportions, but they should be transformed to smaller
+  numbers, i.e. percentage values
+
+# Forward proportions to bin packing script #
+
+* save all proportions to a file
+
+* call bin packing script with this file and the transfer list as arguments
+
+comment
+

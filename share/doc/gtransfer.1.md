@@ -1,6 +1,6 @@
-% GTRANSFER(1) gtransfer 0.2.0 | User Commands
+% GTRANSFER(1) gtransfer 0.3.0 | User Commands
 % Frank Scheiner
-% Aug 22, 2013
+% Apr 16, 2015
 
 
 # NAME #
@@ -36,6 +36,11 @@ advanced command line interface for performing GridFTP data transfers.
 **gtransfer** can transfer files along predefined paths by using transit sites
 and can therefore bridge different network domains. See **dpath(5)** for more
 details.
+
+## Data transfer using multipathing ##
+**gtransfer** can distribute a data transfer over multiple paths. This way users
+can benefit from the combined bandwidth of multiple paths. See option **-m** for
+usage details.
 
 ## Optimized data transfer performance ##
 **gtransfer** supports usage of pre-optimized data transfer parameters for
@@ -155,15 +160,19 @@ Be verbose.
 
 ## **[-m, \--metric _dataPathMetric_]** ##
 
-Set the metric to select the corresponding path of a data path.
+Set the metric to select the corresponding path of a data path. To enable
+multipathing, use either the keyword "all" to transfer data using all available
+paths or use a comma separated list with the metric values of the paths that
+should be used (e.g. "0,1,2"). You can also use metric values multiple times
+(e.g. "0,0").
 
 
 ## **[-l, \--logfile _logfile_]** ##
 
 Set the name for the logfile, tgftp will generate for each transfer. If
-specified with ".log" as extension, gtransfer will insert a "\_\_step_#" string to
-the name of the logfile ("#" is the number of the transfer step performed). If
-omitted gtransfer will automatically generate a name for the logfile(s).
+specified with ".log" as extension, gtransfer will insert a "\_\_step_#" string
+to the name of the logfile ("#" is the number of the transfer step performed).
+If omitted gtransfer will automatically generate a name for the logfile(s).
 
 
 ## **[-a, \--auto-clean]** ##
@@ -209,6 +218,29 @@ Prints out a help message.
 Prints out version information.
 
 
+# ENVIRONMENT VARIABLES #
+
+## **GUC_MAX_RETRIES** ##
+
+See option **\--guc-max-retries** for details.
+
+## **GT_MAX_RETRIES** ##
+
+See option **\--gt-max-retries** for details.
+
+## **GT_KEEP_TMP_DIR** ##
+
+If set to 1, gt will keep its used temporary directory below ~/.gtransfer/tmp
+for inspection when exiting.
+
+## **GT_NO_RELIABILITY** ##
+
+If set to 1, gt will not make use of the reliabilty functionality of guc. This
+means that transfers always start from the beginning. I.e. transfers cannot be
+interrupted and later continued from where they were interrupted and transfers
+that failed temporarily will also start from the beginning, when retried.
+
+
 # FILES #
        
 ## _[...]/gtransfer.conf_ ##
@@ -234,7 +266,7 @@ specific file size class.
 
 Example:
 
-    #  MIN_SIZE_IN_MB;MAX_SIZE_IN_MB;GUC_PARAMETERS
+    #MIN_SIZE_IN_MB;MAX_SIZE_IN_MB;GUC_PARAMETERS
     min;50;-cc 16 -tcp-bs 4M -stripe -sbs 4M -cd
     50;250;-cc 8 -tcp-bs 8M -stripe -sbs 4M -cd
     250;max;-cc 6 -p 4 -tcp-bs 8M -stripe -sbs 8M -g2 -cd

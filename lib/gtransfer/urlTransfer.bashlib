@@ -3,6 +3,7 @@
 :<<COPYRIGHT
 
 Copyright (C) 2012, 2013 Frank Scheiner
+Copyright (C) 2014 Frank Scheiner, HLRS, Universitaet Stuttgart
 
 The program is distributed under the terms of the GNU General Public License
 
@@ -25,7 +26,7 @@ COPYRIGHT
 #  DEFINES
 ################################################################################
 
-readonly _urlTransfer_Version="0.1.0"
+readonly _urlTransfer_Version="0.2.0"
 
 ################################################################################
 #  INCLUDES
@@ -654,6 +655,8 @@ urlTransfer/doTransferStep()
                 touch "$__GLOBAL__gtTmpDir/${transferId}.finished"
                 rm -f "$tgftpTransferCommand" &>/dev/null
                 rm -f "${tgftpTransferCommand}Output" &>/dev/null
+        elif [[ $RETURN == 130 ]]; then
+		:
         else
         #  if transfer step failed print the output of the tgftp command
                 cat "${tgftpTransferCommand}Output"
@@ -828,7 +831,11 @@ urlTransfer/transferData()
 		local RETURN="$?"
 
 		#  did the current transfer step work?
-		if [[ $? == 2 ]]; then
+		if [[ $RETURN -eq 130 ]]; then
+			# no, it was interrupted
+			kill -SIGINT $$
+
+		elif [[ $RETURN -eq 2 ]]; then
 			#  no, it failed completely (e.g. hosts couldn't be
 			#+ reached)
 			helperFunctions/echoIfVerbose ""
@@ -859,7 +866,7 @@ urlTransfer/transferData()
 	done
 
         #  if the whole transfer succeeded,
-        if [[ "$?" == "0" ]]; then
+        if [[ "$RETURN" == "0" ]]; then
                 #  reactivate filename globbing for temp file deletion
                 set +f
                 #  ...remove temporary files

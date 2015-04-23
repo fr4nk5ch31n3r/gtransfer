@@ -6,7 +6,7 @@
 
 :<<COPYRIGHT
 
-Copyright (C) 2010, 2011, 2013 Frank Scheiner, HLRS, Universitaet Stuttgart
+Copyright (C) 2010, 2011, 2013-2015 Frank Scheiner, HLRS, Universitaet Stuttgart
 Copyright (C) 2011, 2012, 2013 Frank Scheiner
 
 The program is distributed under the terms of the GNU General Public License
@@ -30,10 +30,17 @@ contract number RI-222919.
 
 COPYRIGHT
 
+# Reset the signal handler (possibly inherited from the caller) for SIGINT
+trap - SIGINT
+
 #  prevent "*" expansion (filename globbing)
 #set -f
 
-version="0.2.1"
+readonly _program=$( basename "$0" )
+readonly _gtransferVersion="0.3.0"
+
+version="$_gtransferVersion"
+
 gsiftpUserParams=""
 
 #  path to configuration files (prefer system paths!)
@@ -42,8 +49,8 @@ if [[ -e "/etc/gtransfer" ]]; then
         gtransferConfigurationFilesPath="/etc/gtransfer"
         #  gtransfer is installed in "/usr/bin", hence the base path is "/usr"
         gtransferBasePath="/usr"
-        gtransferLibPath="$gtransferBasePath/lib"
-        gtransferLibexecPath="$gtransferBasePath/libexec"
+        gtransferLibPath="$gtransferBasePath/share"
+        gtransferLibexecPath="$gtransferBasePath/libexec/gtransfer"
 
 #  For installation with "install.sh".
 #sed#elif [[ -e "<GTRANSFER_BASE_PATH>/etc" ]]; then
@@ -67,7 +74,8 @@ elif [[ -e "/etc/opt/gtransfer" ]]; then
         gtransferLibexecPath="$gtransferBasePath/libexec"
 
 #  For user install in $HOME:
-elif [[ -e "$HOME/.gtransfer" ]]; then
+#elif [[ -e "$HOME/.gtransfer" ]]; then
+elif [[ -e "$HOME/opt/gtransfer" ]]; then
         gtransferConfigurationFilesPath="$HOME/.gtransfer"
         gtransferBasePath="$HOME/opt/gtransfer"
         gtransferLibPath="$gtransferBasePath/lib"
@@ -75,7 +83,7 @@ elif [[ -e "$HOME/.gtransfer" ]]; then
 
 #  For git deploy, use $BASH_SOURCE
 elif [[ -e "$( dirname $BASH_SOURCE )/../etc" ]]; then
-	gtransferConfigurationFilesPath="$( dirname $BASH_SOURCE )/../etc"
+	gtransferConfigurationFilesPath="$( dirname $BASH_SOURCE )/../etc/gtransfer"
 	gtransferBasePath="$( dirname $BASH_SOURCE )/../"
 	gtransferLibPath="$gtransferBasePath/lib"
 	gtransferLibexecPath="$gtransferBasePath/libexec"
@@ -87,24 +95,45 @@ chunkConfig="$gtransferConfigurationFilesPath/chunkConfig"
 
 #  Set $_LIB so gtransfer and its libraries can find their includes
 readonly _LIB="$gtransferLibPath"
-readonly _GTRANSFER_LIBEXECPATH="$gtransferLibexecPath"
 
 readonly _gtransfer_libraryPrefix="gtransfer"
+readonly _GTRANSFER_LIBPATH="$_LIB/gtransfer"
+
+# On SLES these files are located in `$_LIB/gtransfer`
+if [[ -e "$_GTRANSFER_LIBPATH/getPidForUrl.r" && \
+      -e "$_GTRANSFER_LIBPATH/getUrlForPid.r" && \
+      -e "$_GTRANSFER_LIBPATH/packBinsNew.py" ]]; then
+
+	readonly _GTRANSFER_LIBEXECPATH="$_GTRANSFER_LIBPATH"
+else
+	readonly _GTRANSFER_LIBEXECPATH="$gtransferLibexecPath"
+fi
 
 readonly __GLOBAL__gtTmpSuffix="#gt#tmp#"
 readonly __GLOBAL__gtCacheSuffix="#gt#cache#"
 
-################################################################################
-#  INCLUDE LIBRARY FUNCTIONS
-################################################################################
+readonly _true=1
+readonly _false=0
 
-. "$_LIB"/${_gtransfer_libraryPrefix}/exitCodes.bashlib
-. "$_LIB"/${_gtransfer_libraryPrefix}/urlTransfer.bashlib
-. "$_LIB"/${_gtransfer_libraryPrefix}/listTransfer.bashlib
-. "$_LIB"/${_gtransfer_libraryPrefix}/autoOptimization.bashlib
-. "$_LIB"/${_gtransfer_libraryPrefix}/pids/irodsMicroService.bashlib
 
 ################################################################################
+# INCLUDES
+################################################################################
+
+_neededLibraries=( "gtransfer/exitCodes.bashlib"
+                   "gtransfer/urlTransfer.bashlib"
+                   "gtransfer/listTransfer.bashlib"
+                   "gtransfer/autoOptimization.bashlib"
+                   "gtransfer/pids/irodsMicroService.bashlib"
+                   "gtransfer/multipathing.bashlib" )
+
+for _library in ${_neededLibraries[@]}; do
+
+	if ! . "$_LIB/$_library" 2>/dev/null; then
+		echo "$_program: Library \"$_LIB/$_library\" couldn't be read or is corrupted." 1>&2
+		exit 70
+	fi
+done
 
 
 ################################################################################
@@ -192,8 +221,12 @@ The options are as follows:
 [--verbose|-v]		Be verbose.
 
 [--metric|-m dataPathMetric]
-			Determine the metric to select the corresponding data
-			path.
+			Set the metric to select the corresponding data path. To
+			enable multipathing, use either the keyword "all" to
+			transfer data using all available paths or use a comma
+			separated list with the metric values of the paths that
+			should be used (e.g. "0,1,2"). You can also use metric
+			values multiple times (e.g. "0,0").
 
 [--logfile|-l logfile]	Determine the name for the logfile, tgftp will generate
 			for each transfer. If specified with ".log" as
@@ -285,7 +318,7 @@ echoDebug()
 	elif [[ "$fd" == "stderr" ]]; then
 		echo "$debugLevel: $debugString" 1>&2
 	else
-		echo "$debugLevel: $debugString" >$fd
+		echo "$debugLevel: $debugString" 1>$fd
 	fi		
 
 	return
@@ -303,6 +336,23 @@ onExit()
 
 	return
 }
+
+
+onSigint()
+{
+	# kill all gt subprocesses (from multipathing)
+	for _gtSubProcess in "${_gtSubProcesses[@]}"; do
+		kill -SIGINT $_gtSubProcess &>/dev/null
+	done
+
+	# restore signal handler to default one
+	trap - SIGINT
+
+	# kill self
+	kill -SIGINT $$
+
+	return
+}
 ################################################################################
 
 ################################################################################
@@ -310,6 +360,8 @@ onExit()
 ################################################################################
 
 trap 'onExit' EXIT
+
+trap 'onSigint' SIGINT
 
 #  check that all required tools are available
 helperFunctions/use cat grep sed cut sleep tgftp telnet uberftp || exit "$_gtransfer_exit_software"
@@ -321,6 +373,7 @@ tgftpLogfileNameSet="1"
 gtMaxRetries="3"
 gucMaxRetries="1"
 gtProgressIndicator="."
+gtInstance="$gtProgressIndicator"
 recursiveTransferSet=1
 
 #  The temp dir is named after the SHA1 hash of the command line.
@@ -366,7 +419,7 @@ while [[ "$1" != "" ]]; do
 		exit $_gtransfer_exit_usage
 	fi
 
-	#  "--"
+	#  "--" ################################################################
 	if [[ "$1" == "--" ]]; then
 		#  remove "--" from "$@"
 		shift 1
@@ -377,17 +430,17 @@ while [[ "$1" != "" ]]; do
 		#+ a "globus-url-copy" param).		
 		break
 
-	#  "--help"
+	#  "--help" ############################################################
 	elif [[ "$1" == "--help" ]]; then
 		helpMsg
 		exit $_gtransfer_exit_ok
 
-	#  "--version|-V"
+	#  "--version|-V" ######################################################
 	elif [[ "$1" == "--version" || "$1" == "-V" ]]; then
 		versionMsg
 		exit $_gtransfer_exit_ok
 
-	#  "--source|-s gsiftpSourceUrl"
+	#  "--source|-s gsiftpSourceUrl" #######################################
 	elif [[ "$1" == "--source" || "$1" == "-s" ]]; then
 		if [[ "$gsiftpSourceUrlSet" != "0" ]]; then
 			shift 1
@@ -396,11 +449,12 @@ while [[ "$1" != "" ]]; do
 			shift 1
 		else
 			#  duplicate usage of this parameter
-			echo "ERROR: The parameter \"--source|-s\" cannot be used multiple times!"
+			echo "${_program}: The parameter \"--source|-s\" cannot be used multiple times!"
+			echo "Try \`${_program} --help' for more information."
 			exit $_gtransfer_exit_usage
 		fi
 
-	#  "--destination|-d gsiftpDestinationUrl"
+	#  "--destination|-d gsiftpDestinationUrl" #############################
 	elif [[ "$1" == "--destination" || "$1" == "-d" ]]; then
 		if [[ "$gsiftpDestinationUrlSet" != "0" ]]; then
 			shift 1
@@ -409,11 +463,12 @@ while [[ "$1" != "" ]]; do
 			shift 1
 		else
 			#  duplicate usage of this parameter
-			echo "ERROR: The parameter \"--destination|-d\" cannot be used multiple times!"
+			echo "${_program}: The parameter \"--destination|-d\" cannot be used multiple times!"
+			echo "Try \`${_program} --help' for more information."
 			exit $_gtransfer_exit_usage
 		fi
 
-        #  "--transfer-list|-f transferList"
+        #  "--transfer-list|-f transferList" ###################################
 	elif [[ "$1" == "--transfer-list" || "$1" == "-f" ]]; then
 		if [[ ! $gsiftpTransferListSet -eq 1 ]]; then
 			shift 1
@@ -422,11 +477,12 @@ while [[ "$1" != "" ]]; do
 			shift 1
 		else
 			#  duplicate usage of this parameter
-			echo "ERROR: The parameter \"--transfer-list|-f\" cannot be used multiple times!"
+			echo "${_program}: The parameter \"--transfer-list|-f\" cannot be used multiple times!"
+			echo "Try \`${_program} --help' for more information."
 			exit $_gtransfer_exit_usage
 		fi
 
-	#  "--auto-optimize|-o transferMode"
+	#  "--auto-optimize|-o transferMode" ###################################
 	elif [[ "$1" == "--auto-optimize" || "$1" == "-o" ]]; then
 		if [[ "$autoOptimizeSet" != "0" ]]; then
 			shift 1
@@ -439,11 +495,12 @@ while [[ "$1" != "" ]]; do
 			shift 1
 		else
 			#  duplicate usage of this parameter
-			echo "ERROR: The parameter \"--auto-optimization|-o\" cannot be used multiple times!"
+			echo "${_program}: The parameter \"--auto-optimization|-o\" cannot be used multiple times!"
+			echo "Try \`${_program} --help' for more information."
 			exit $_gtransfer_exit_usage
 		fi
 
-        #  "--guc-max-retries gucMaxRetries"
+        #  "--guc-max-retries gucMaxRetries" ###################################
 	elif [[ "$1" == "--guc-max-retries" ]]; then
 		if [[ "$gucMaxRetriesSet" != "0" ]]; then
 			shift 1
@@ -452,11 +509,12 @@ while [[ "$1" != "" ]]; do
 			shift 1
 		else
 			#  duplicate usage of this parameter
-			echo "ERROR: The parameter \"--guc-max-retries\" cannot be used multiple times!"
+			echo "${_program}: The parameter \"--guc-max-retries\" cannot be used multiple times!"
+			echo "Try \`${_program} --help' for more information."
 			exit $_gtransfer_exit_usage
 		fi
 
-        #  "--gt-max-retries gtMaxRetries"
+        #  "--gt-max-retries gtMaxRetries" #####################################
 	elif [[ "$1" == "--gt-max-retries" ]]; then
 		if [[ "$gtMaxRetriesSet" != "0" ]]; then
 			shift 1
@@ -465,11 +523,12 @@ while [[ "$1" != "" ]]; do
 			shift 1
 		else
 			#  duplicate usage of this parameter
-			echo "ERROR: The parameter \"--gt-max-retries\" cannot be used multiple times!"
+			echo "${_program}: The parameter \"--gt-max-retries\" cannot be used multiple times!"
+			echo "Try \`${_program} --help' for more information."
 			exit $_gtransfer_exit_usage
 		fi
 
-        #  "--gt-progress-indicator indicatorCharacter"
+        #  "--gt-progress-indicator indicatorCharacter" ########################
         elif [[ "$1" == "--gt-progress-indicator" ]]; then
 		if [[ "$gtProgressIndicatorSet" != "0" ]]; then
 			shift 1
@@ -478,11 +537,12 @@ while [[ "$1" != "" ]]; do
 			shift 1
 		else
 			#  duplicate usage of this parameter
-			echo "ERROR: The parameter \"--gt-progress-indicator\" cannot be used multiple times!"
+			echo "${_program}: The parameter \"--gt-progress-indicator\" cannot be used multiple times!"
+			echo "Try \`${_program} --help' for more information."
 			exit $_gtransfer_exit_usage
 		fi
 
-	#  "--metric|-m dataPathMetric"
+	#  "--metric|-m dataPathMetric" ########################################
 	elif [[ "$1" == "--metric" || "$1" == "-m" ]]; then
 		if [[ "$dataPathMetricSet" != "0" ]]; then
 			shift 1
@@ -491,33 +551,36 @@ while [[ "$1" != "" ]]; do
 			shift 1
 		else
 			#  duplicate usage of this parameter
-			echo "ERROR: The parameter \"--metric|-m\" cannot be used multiple times!"
+			echo "${_program}: The parameter \"--metric|-m\" cannot be used multiple times!"
+			echo "Try \`${_program} --help' for more information."
 			exit $_gtransfer_exit_usage
 		fi
 
-	#  "--verbose|-v"
+	#  "--verbose|-v" ######################################################
 	elif [[ "$1" == "--verbose" || "$1" == "-v" ]]; then
 		if [[ $verboseExecSet != 0 ]]; then
 			shift 1
 			verboseExecSet=0
 		else
 			#  duplicate usage of this parameter
-			echo "ERROR: The parameter \"--verbose|-v\" cannot be used multiple times!"
+			echo "${_program}: The parameter \"--verbose|-v\" cannot be used multiple times!"
+			echo "Try \`${_program} --help' for more information."
 			exit $_gtransfer_exit_usage
 		fi
 		
-	#  "--recursive|-r"
+	#  "--recursive|-r" ####################################################
 	elif [[ "$1" == "--recursive" || "$1" == "-r" ]]; then
 		if [[ $recursiveTransferSet != 0 ]]; then
 			shift 1
 			recursiveTransferSet=0
 		else
 			#  duplicate usage of this parameter
-			echo "ERROR: The parameter \"--recursive|-r\" cannot be used multiple times!"
+			echo "${_program}: The parameter \"--recursive|-r\" cannot be used multiple times!"
+			echo "Try \`${_program} --help' for more information."
 			exit $_gtransfer_exit_usage
 		fi
 
-	#  "--auto-clean|-a"
+	#  "--auto-clean|-a" ###################################################
 	elif [[ "$1" == "--auto-clean" || "$1" == "-a" ]]; then
 		if [[ $autoCleanSet != 0 ]]; then
 			shift 1
@@ -525,11 +588,12 @@ while [[ "$1" != "" ]]; do
 			autoCleanSet=0
 		else
 			#  duplicate usage of this parameter
-			echo "ERROR: The parameter \"--auto-clean|-a\" cannot be used multiple times!"
+			echo "${_program}: The parameter \"--auto-clean|-a\" cannot be used multiple times!"
+			echo "Try \`${_program} --help' for more information."
 			exit $_gtransfer_exit_usage
 		fi
 
-	#  "--logfile|-l"
+	#  "--logfile|-l" ######################################################
 	elif [[ "$1" == "--logfile" || "$1" == "-l" ]]; then
 		if [[ $tgftpLogfileNameSet != 0 ]]; then
 			shift 1
@@ -538,11 +602,12 @@ while [[ "$1" != "" ]]; do
 			shift 1
 		else
 			#  duplicate usage of this parameter
-			echo "ERROR: The parameter \"--logfile|-l\" cannot be used multiple times!"
+			echo "${_program}: The parameter \"--logfile|-l\" cannot be used multiple times!"
+			echo "Try \`${_program} --help' for more information."
 			exit $_gtransfer_exit_usage
 		fi
 
-	#  "--configfile"
+	#  "--configfile" ######################################################
 	elif [[ "$1" == "--configfile" ]]; then
 		if [[ $gtransferConfigurationFileSet != 0 ]]; then
 			shift 1
@@ -551,7 +616,8 @@ while [[ "$1" != "" ]]; do
 			shift 1
 		else
 			#  duplicate usage of this parameter
-			echo "ERROR: The parameter \"--configfile\" cannot be used multiple times!"
+			echo "${_program}: The parameter \"--configfile\" cannot be used multiple times!"
+			echo "Try \`${_program} --help' for more information."
 			exit $_gtransfer_exit_usage
 		fi
 
@@ -563,23 +629,37 @@ done
 if [[ -e "$gtransferConfigurationFile" ]]; then
 	. "$gtransferConfigurationFile"
 else
-	echo "ERROR: gtransfer configuration file missing!"
+	echo "${_program}: gtransfer configuration file \"$gtransferConfigurationFile\" missing!" 1>&2
 	exit $_gtransfer_exit_software
 fi
+
+gtInstance="$gtProgressIndicator"
 
 #  verbose execution needed due to options?
 if [[ $verboseExecSet == 0 ]]; then
 	verboseExec=1
+	_verboseOption="-v"
+else
+	verboseExec=0
+	_verboseOption=""
 fi
 
 #  auto optimization requested?
 if [[ $autoOptimizeSet == 0 ]]; then
 	autoOptimize=1 # 1 on, 0 off
+else
+	autoOptimize=0
 fi
 
 #  set dpath metric
 if [[ "$dataPathMetricSet" != "0" ]]; then
 	dataPathMetric="$defaultDataPathMetric"
+elif [[ "$dataPathMetricSet" == "0" ]]; then
+	if multipathing/multipleMetricsSet "$dataPathMetric"; then
+		_activateMultipathing=1 # true => multipathing activated
+	else
+		_activateMultipathing=0 # false => multipathing not activated
+	fi
 fi
 
 #  set logfile name
@@ -592,18 +672,59 @@ if [[ "$gsiftpSourceUrl" == "" || \
       "$gsiftpDestinationUrl" == "" \
 ]]; then
         if [[ $gsiftpTransferListSet -eq 1 ]]; then
+		# skip transfer if transfer list is empty
+		if [[ ! -s "$gsiftpTransferList" ]]; then
+			helperFunctions/echoIfVerbose "${_program} [${gtInstance}]: Skipping empty transfer list."
+			exit 0
+		fi
+
 		#  create directory for temp files
 		mkdir -p "$__GLOBAL__gtTmpDir"
 		
 		#  strip comment lines from transfer list
-		gsiftpTransferListClean="$__GLOBAL__gtTmpDir/$$_transferList.${__GLOBAL__gtTmpSuffix}"		
+		gsiftpTransferListClean="$__GLOBAL__gtTmpDir/$$_transferList.${__GLOBAL__gtTmpSuffix}"
 		sed -e '/^#.*$/d' "$gsiftpTransferList" > "$gsiftpTransferListClean"
+
+		_transferListSource=$( listTransfer/getSourceFromTransferList "$gsiftpTransferListClean" )
+		_transferListDestination=$( listTransfer/getDestinationFromTransferList "$gsiftpTransferListClean" )
+		#_dpath=$( listTransfer/dpathAvailable "$_transferListSource" "$_transferListDestination" )
+		_dpath=$( listTransfer/getDpathFile "$_transferListSource" "$_transferListDestination" )
+
+		if [[ $_activateMultipathing -eq 1 ]]; then
+
+			#echo "DEBUG: Multipathing activated!" 1>&2
+
+			#echo "DEBUG: _dpath=\"$_dpath\"" 1>&2
+
+			# create array of metrics
+			declare -a _dpathMetricArray
+			if [[ "$dataPathMetric" == "all" ]]; then
+				_dpathMetricArray=( $( grep '^<path .*metric=' < "$_dpath" | grep -o 'metric="[[:digit:]]*"' | sed -e 's/^metric="//' -e 's/"$//' ) )
+			else
+				_dpathMetricArray=( $( echo "$dataPathMetric" | tr ',' ' ' ) )
+				for _dpathMetric in "${_dpathMetricArray[@]}"; do
+					if ! helperFunctions/isValidMetric $_dpath $_dpathMetric; then
+
+						echo "${_program} [${gtInstance}]: Invalid metric value(s) used! Please check the used dpath \"$_dpath\" for valid metrics." 1>&2
+						exit $_gtransfer_exit_usage
+					fi
+				done
+			fi
+
+			multipathing/performTransfer "$gsiftpTransferList" "$_dpath" "$dataPathMetric" "$autoOptimize" "$_verboseOption"
 
 		#  TODO:
 		#  Use temporary dir for temp files (.gtransfer/<transferID>)
 		#  1. Determine transfer id for original transfer list
 		#  2. Create temp dir (e.g. _tempDir=$( echo "$0" "$@" | sha1sum )) and store path in global var
-		if [[ $autoOptimize -eq 1 ]]; then
+		elif [[ $autoOptimize -eq 1 ]]; then
+
+			if ! helperFunctions/isValidMetric "$_dpath" "$dataPathMetric"; then
+
+				echo "${_program} [${gtInstance}]: Invalid metric value(s) used! Please check the used dpath \"$_dpath\" for valid metrics." 1>&2
+				exit $_gtransfer_exit_usage
+			fi
+
 			#  only perform auto-optimization if there are at least
 			#+ 100 files in the transfer list. If not perform simple
 			#+ list transfer.
@@ -613,6 +734,12 @@ if [[ "$gsiftpSourceUrl" == "" || \
 				listTransfer/performTransfer "$gsiftpTransferListClean" "$dataPathMetric" "$tgftpLogfileName"
 			fi
 		else
+			if ! helperFunctions/isValidMetric "$_dpath" "$dataPathMetric"; then
+
+				echo "${_program} [${gtInstance}]: Invalid metric value(s) used! Please check the used dpath \"$_dpath\" for valid metrics." 1>&2
+				exit $_gtransfer_exit_usage
+			fi
+
 			listTransfer/performTransfer "$gsiftpTransferListClean" "$dataPathMetric" "$tgftpLogfileName"
 		fi
 	else
@@ -637,15 +764,15 @@ else
 	
 		_tmpSourceAliasValue=$( halias --dealias "$_tmpSourceAlias" )
 		if [[ $? != 0 ]]; then
-			echo "E: Dealiasing failed!"
+			echo "${_program} [${gtInstance}]: Dealiasing failed for source URL!" 1>&2
 			exit $_gtransfer_exit_software
 		fi
 		_tmpDestinationAliasValue=$( halias --dealias "$_tmpDestinationAlias" )
 		if [[ $? != 0 ]]; then
-			echo "E: Dealiasing failed!"
+			echo "${_program} [${gtInstance}]: Dealiasing failed for destination URL!" 1>&2
 			exit $_gtransfer_exit_software
 		fi
-	
+
 		# check if the alias value is different from the alias itself
 		if [[ "$_tmpSourceAlias" != "$_tmpSourceAliasValue" ]]; then
 	
@@ -671,13 +798,13 @@ else
 			_resolvedUrl=$( pids/irodsMicroService/resolvePid "$_pid" )
 		
 			if [[ $? != 0 ]]; then
-				echo "E: Given PID \"$_pid\" could not be resolved. Exiting." 1>&2
+				echo "${_program} [${gtInstance}]: Given PID \"$_pid\" could not be resolved. Exiting." 1>&2
 				exit $_gtransfer_exit_software
 			fi
 		
 			gsiftpSourceUrl="$_resolvedUrl"
 		else
-			echo "E: Cannot resolve PID without \"irule\" tool. Exiting" 1>&2
+			echo "${_program} [${gtInstance}]: Cannot resolve PID without \"irule\" tool. Exiting" 1>&2
 			exit $_gtransfer_exit_software
 		fi
 	# Handle a list of persistent identifiers (PIDs) as source	
@@ -687,23 +814,23 @@ else
 			_pidFile="${gsiftpSourceUrl/pidfile:\/\/}"
 			
 			if [[ ! -e "$_pidFile" ]]; then
-				echo "E: PID file \"$_pidFile\" cannot be found! Exiting." 1>&2
+				echo "${_program} [${gtInstance}]: PID file \"$_pidFile\" cannot be found! Exiting." 1>&2
 				exit $_gtransfer_exit_usage
 			fi
 			
-			helperFunctions/echoIfVerbose "I: Resolving PID file..."
+			helperFunctions/echoIfVerbose "${_program} [${gtInstance}]: Resolving PID file..."
 			_resolvedPids=$( pids/irodsMicroService/resolvePidFile "$_pidFile" )
 			
 			if [[ $? -ne 0 ]]; then
-				echo "W: At least one PID could not be resolved."
+				echo "${_program} [${gtInstance}]: At least one PID could not be resolved."
 			fi
 			
 			if [[ -z "$_resolvedPids" ]]; then
-				echo "E: PIDs in PID file \"$_pidFile\" could not be resolved! Exiting." 1>&2
+				echo "${_program} [${gtInstance}]: PIDs in PID file \"$_pidFile\" could not be resolved! Exiting." 1>&2
 				exit $_gtransfer_exit_software
 			fi
 			
-			helperFunctions/echoIfVerbose "I: Building transfer list..."
+			helperFunctions/echoIfVerbose "${_program} [${gtInstance}]: Building transfer list..."
 			gsiftpTransferList=$( pids/irodsMicroService/buildTransferList "$_resolvedPids" "$gsiftpDestinationUrl" )
 			
 			# exchange source URL specification with transfer list
@@ -723,32 +850,98 @@ else
 			$_modifiedGtCommandLine
 			exit $?
 		else
-			echo "E: Cannot resolve PIDs without \"irule\" tool. Exiting" 1>&2
+			echo "${_program} [${gtInstance}]: Cannot resolve PIDs without \"irule\" tool. Exiting." 1>&2
 			exit $_gtransfer_exit_software
 		fi	
 	fi
 
-	if [[ $autoOptimize -eq 1 ]]; then
-		gsiftpTransferList=$( listTransfer/createTransferList "$gsiftpSourceUrl" "$gsiftpDestinationUrl" )
+	#                     automatically strips commend lines!
+	gsiftpTransferList=$( listTransfer/createTransferList "$gsiftpSourceUrl" "$gsiftpDestinationUrl" )
+
+	# TODO:
+	# Check that this does not fail! Because for a case where one wants to
+	# transfer two files to /dev/null with multipathing and usage of two
+	# paths enabled (i.e. each file uses another path, so it should be
+	# basically ok to transfer to /dev/null, because only one file is
+	# transferred to /dev/null) the `guc -do [...]` call that creates the
+	# transfer list will fail with:
+	# ```
+	# $ globus-url-copy -do transferlist 'gsiftp://server1/dev/shm/testfiles-mem2mem/1*' gsiftp://server2/dev/null
+	#
+	# error: Multiple source urls must be transferred to a directory destination url:
+	# gsiftp://server2/dev/null
+	# $ echo $?
+	# 1
+	# ```
+
+	_transferListSource=$( listTransfer/getSourceFromTransferList "$gsiftpTransferList" )
+	_transferListDestination=$( listTransfer/getDestinationFromTransferList "$gsiftpTransferList" )
+	#_dpath=$( listTransfer/dpathAvailable "$_transferListSource" "$_transferListDestination" )
+	_dpath=$( listTransfer/getDpathFile "$_transferListSource" "$_transferListDestination" )
+
+	if [[ $_activateMultipathing -eq 1 ]]; then
+
+		#echo "DEBUG: Multipathing activated!" 1>&2
+
+		#echo "DEBUG: _dpath=\"$_dpath\"" 1>&2
+
+		# create array of metrics
+		declare -a _dpathMetricArray
+		if [[ "$dataPathMetric" == "all" ]]; then
+			_dpathMetricArray=( $( grep '^<path .*metric=' < "$_dpath" | grep -o 'metric="[[:digit:]]*"' | sed -e 's/^metric="//' -e 's/"$//' ) )
+		else
+			_dpathMetricArray=( $( echo "$dataPathMetric" | tr ',' ' ' ) )
+			for _dpathMetric in "${_dpathMetricArray[@]}"; do
+				if ! helperFunctions/isValidMetric $_dpath $_dpathMetric; then
+
+					echo "${_program} [${gtInstance}]: Invalid metric value(s) used! Please check the used dpath \"$_dpath\" for valid metrics." 1>&2
+					exit $_gtransfer_exit_usage
+				fi
+			done
+		fi
+
+		multipathing/performTransfer "$gsiftpTransferList" "$_dpath" "$dataPathMetric" "$autoOptimize" "$_verboseOption"
+
+	elif [[ $autoOptimize -eq 1 ]]; then
+
+		if ! helperFunctions/isValidMetric "$_dpath" "$dataPathMetric"; then
+
+			echo "${_program} [${gtInstance}]: Invalid metric value used! Please check the used dpath \"$_dpath\" for valid metrics." 1>&2
+			exit $_gtransfer_exit_usage
+		fi
+
 		#  only perform auto-optimization if there are at least
 		#+ 100 files in the transfer list. If not perform simple
 		#+ list transfer.
 		if [[ $( listTransfer/getNumberOfFilesFromTransferList "$gsiftpTransferList" ) -ge 100 ]]; then
+
 			autoOptimization/performTransfer "$gsiftpTransferList"  "$dataPathMetric" "$tgftpLogfileName" "$chunkConfig" "$transferMode"
 		else
-			rm "$gsiftpTransferList"
-			urlTransfer/transferData "$gsiftpSourceUrl" "$gsiftpDestinationUrl" "$dataPathMetric" "$tgftpLogfileName"
+			# Only perform list transfers from now on
+			#rm "$gsiftpTransferList"
+			#urlTransfer/transferData "$gsiftpSourceUrl" "$gsiftpDestinationUrl" "$dataPathMetric" "$tgftpLogfileName"
+			listTransfer/performTransfer "$gsiftpTransferList" "$dataPathMetric" "$tgftpLogfileName"
 		fi
 	else
-		urlTransfer/transferData "$gsiftpSourceUrl" "$gsiftpDestinationUrl" "$dataPathMetric" "$tgftpLogfileName"
+
+		if ! helperFunctions/isValidMetric "$_dpath" "$dataPathMetric"; then
+
+			echo "${_program} [${gtInstance}]: Invalid metric value used! Please check the used dpath \"$_dpath\" for valid metrics." 1>&2
+			exit $_gtransfer_exit_usage
+		fi
+
+		# Only perform list transfers from now on
+		#urlTransfer/transferData "$gsiftpSourceUrl" "$gsiftpDestinationUrl" "$dataPathMetric" "$tgftpLogfileName"
+		listTransfer/performTransfer "$gsiftpTransferList" "$dataPathMetric" "$tgftpLogfileName"
 	fi
 fi
 
 #transferData "$gsiftpSourceUrl" "$gsiftpDestinationUrl" "$dataPathMetric" "$tgftpLogfileName"
-transferDataReturnValue="$?"
+transferDataReturnValue=$?
 
 #  if transfer was successful, remove dir for temp files
-if [[ $transferDataReturnValue -eq 0 ]]; then
+if [[ $transferDataReturnValue -eq 0 && \
+      $GT_KEEP_TMP_DIR -ne 1 ]]; then
 	rm -rf "$__GLOBAL__gtTmpDir"
 fi
 

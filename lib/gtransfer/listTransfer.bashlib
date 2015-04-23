@@ -1,8 +1,10 @@
+#!/bin/bash
 #  listTransfer.bashlib - library functions for transferring lists
 
 :<<COPYRIGHT
 
 Copyright (C) 2012, 2013 Frank Scheiner
+Copyright (C) 2015 Frank Scheiner, HLRS, Universitaet Stuttgart
 
 The program is distributed under the terms of the GNU General Public License
 
@@ -25,7 +27,7 @@ COPYRIGHT
 #  DEFINES
 ################################################################################
 
-readonly _listTransfer_Version="0.1.1"
+readonly _listTransfer_Version="0.3.0"
 
 ################################################################################
 #  INCLUDES
@@ -139,6 +141,61 @@ listTransfer/dpathAvailable()
 }
 
 
+# Return the dpath file name that corresponds to the given source and
+# destination URLs.
+#
+# $1 (_source)      - The source URL (e.g.
+#                     "gsiftp://user@host.domain:2811/path/to/files")
+# $2 (_destination) - The destination URL (similar to source URL)
+#
+# Returns the file name and path of the corresponding dpath if it is available.
+# If it is not available, it creates a temporary dpath in gt's temp dir for the
+# current transfer and returns its name and path.
+listTransfer/getDpathFile()
+{
+	local _source="$1"
+	local _destination="$2"
+
+	local _dpathFile=""
+
+	_dpathFile=$( listTransfer/dpathAvailable "$_source" "$_destination" )
+
+	# If no pre-created dpath is available, create a temporary one.
+	if [[ $? -ne 0 ]]; then
+
+		local _sourceWithoutPath=$( helperFunctions/getURLWithoutPath "$_source" )
+		local _destinationWithoutPath=$( helperFunctions/getURLWithoutPath "$_destination" )
+
+		local _dpathFilename=$( helperFunctions/hashSourceDestination $( echo $_sourceWithoutPath | sed -e 's/:\/\/.*@/:\/\//' ) $( echo $_destinationWithoutPath | sed -e 's/:\/\/.*@/:\/\//' ) )
+
+		_dpathFile="${__GLOBAL__gtTmpDir}/$_dpathFilename"
+
+		# Set bandwidth to 10 Gb, even if we don't know, which bandwidth the
+		# connection really provides. This is ok, because when multiple differing
+		# metrics are selected by a user, we cannot continue either, because the
+		# temp path only provides one metric. In a case where a user selects metric 0
+		# multiple times (e.g. to get a sort of striping), this works fine because
+		# the bandwidth proportions are then always 1 to 1 ( to 1 [...]). Would be
+		# be the same for a dpath with multiple metrics.
+		cat > "$_dpathFile" <<-EOF
+		<source>
+		$_sourceWithoutPath
+		</source>
+		<destination>
+		$_destinationWithoutPath
+		</destination>
+		<path metric="0" bandwidth="10Gb">
+		$_sourceWithoutPath;$_destinationWithoutPath
+		</path>
+		EOF
+	fi
+
+	echo "$_dpathFile"
+
+	return
+}
+
+
 #  getDpathData() - get dpath data with one line per transfer step
 #+ @source:      The source URL (e.g.
 #+               "gsiftp://user@host.domain:2811/path/to/files")
@@ -170,7 +227,7 @@ listTransfer/getDpathData()
 	
 		#helperFunctions/echoIfVerbose -e "Dpath used:\n$_dPathFile"
 		
-		local -a _dpathArray=( $( helperFunctions/xtractXMLAttributeValue "path metric=\"$_metric\"" $_dpathFile ) )
+		local -a _dpathArray=( $( helperFunctions/xtractXMLAttributeValue "path .*metric=\"$_metric\"" $_dpathFile ) )
 		
 		echo ${_dpathArray[@]}
 		
@@ -317,7 +374,8 @@ listTransfer/performTransfer()
 		if [[ -e "$_dpathFile" && \
 		      $memToMem != 0 \
 		]]; then
-			helperFunctions/echoIfVerbose -e "Data path used:\n$_dpathFile"
+			helperFunctions/echoIfVerbose ""
+			helperFunctions/echoIfVerbose -e "${_program} [${gtInstance}]: Data path used:\n$_dpathFile"
 		fi
 		
 		#  get dpath array
@@ -374,7 +432,8 @@ listTransfer/performTransfer()
 			#  temporary transfer lists
 			rm -f "${__GLOBAL__gtTmpDir}/"*.transferList &>/dev/null
 
-			helperFunctions/echoIfVerbose -e "INFO: The transfer succeeded!"
+			helperFunctions/echoIfVerbose ""
+			helperFunctions/echoIfVerbose -e "${_program} [${gtInstance}]: The transfer succeeded!"
 	
 			if [[ $gtProgressIndicatorSet != 0 ]]; then
 				echo ""
@@ -552,7 +611,7 @@ listTransfer/transferData()
 		#	transferStepNumber=$(( $transferStepNumber + 1 ))
 		#	continue
 		#else
-	   	helperFunctions/echoIfVerbose "Transfer step: $transferStepNumber"
+		helperFunctions/echoIfVerbose -e "\n${_program} [${gtInstance}]: Transfer step: $transferStepNumber"
 		listTransfer/doTransferStep "$transferStepSource" \
 					    "$transferStepDestination" \
 					    "$transferStepNumber" \
@@ -570,38 +629,44 @@ listTransfer/transferData()
 
 		local RETURN="$?"
 
-		#  did the current transfer step work?
-		if [[ $RETURN -eq 4 ]]; then
-			#  already finished, can be skipped
-			helperFunctions/echoIfVerbose "Skipped because already finished!"
+		# Did the current transfer step work?
+		if [[ $RETURN -eq 130 ]]; then
+
+			# no, it was interrupted
+			kill -SIGINT $$
+
+		elif [[ $RETURN -eq 4 ]]; then
+
+			# yes, it was already finished in the past, so can be skipped
+			helperFunctions/echoIfVerbose -e "\n${_program} [${gtInstance}]: Transfer step $transferStepNumber skipped because already finished!"
 			transferStepNumber=$(( $transferStepNumber + 1 ))
 			continue
 
 		elif [[ $RETURN -eq 2 ]]; then
-			#  no, it failed completely (e.g. hosts couldn't be
-			#+ reached)
-			helperFunctions/echoIfVerbose ""
-			helperFunctions/echoIfVerbose "ERROR: Transfer step #$transferStepNumber failed!" #\
-				 #"Please see \"${tgftpTransferCommand}Output\" for details!"
+
+			# no, it failed, but can be retried later (e.g. hosts couldn't be reached)
+			helperFunctions/echoIfVerbose -e "\n${_program} [${gtInstance}]: Transfer step #$transferStepNumber failed!"
 			exit $_gtransfer_exit_tempfail
 
-		elif [[ $RETURN -ne 0 && "$retries" -lt "$maxRetries" ]]; then
+		elif [[ $RETURN -ne 0 && $retries -lt $maxRetries ]]; then
+
+			# no, but can be retried instantly
 			retries=$(( $retries + 1 ))
-			#  no
-			helperFunctions/echoIfVerbose ""
-			helperFunctions/echoIfVerbose "ERROR: Transfer step #$transferStepNumber failed! Retrying!" #\
-				 #"Please see \"${tgftpTransferCommand}Output\" for details!"
+			helperFunctions/echoIfVerbose -e "\n${_program} [${gtInstance}]: Transfer step #$transferStepNumber failed! Retrying!"
+			continue
 
 		elif [[ $RETURN -eq 0 ]]; then
-			#  yes
+
+			# yes
+			# reset retries value
 			retries="0"
 			#touch "${_transferId}.step_${transferStepNumber}.finished"
-
 			transferStepNumber=$(( $transferStepNumber + 1 ))
 
 		elif [[ "$retries" -eq "$maxRetries" ]]; then
-			echo ""
-			echo "ERROR: Transfer step #$transferStepNumber failed after $retries retries! Exiting."
+
+			# max number of retries reached, try again later
+			echo -e "\n${_program} [${gtInstance}]: Transfer step #$transferStepNumber failed after $retries retries! Exiting." 1>&2
 			exit $_gtransfer_exit_tempfail
 
 		fi
@@ -694,18 +759,18 @@ listTransfer/doTransferStep()
 	else
 		if ! helperFunctions/checkConnection "$transferStepSourceWithoutPath" && \
 		   ! helperFunctions/checkConnection "$transferStepDestinationWithoutPath"; then
-			echo "ERROR: Cannot connect to neither \"$transferStepSourceWithoutPath\" nor \"$transferStepDestinationWithoutPath\"! Either try again or correct your input!"
+			echo -e "\n${_program} [${gtInstance}]: Cannot connect to neither \"$transferStepSourceWithoutPath\" nor \"$transferStepDestinationWithoutPath\"! Either try again or correct your input!" 1>&2
 			#  we assume that source and destination strings are correct,
 			#+ and they're just unavailable currently. If the user just used
 			#+ a nonexistent host, he can detect this by reading the error
 			#+ message
 			return 2
 		elif ! helperFunctions/checkConnection "$transferStepSourceWithoutPath"; then
-			echo "ERROR: Cannot connect to \"$transferStepSourceWithoutPath\"! Either try again or correct your input!"
+			echo -e "\n${_program} [${gtInstance}]: Cannot connect to \"$transferStepSourceWithoutPath\"! Either try again or correct your input!" 1>&2
 			#  same as above
 			return 2
 		elif ! helperFunctions/checkConnection "$transferStepDestinationWithoutPath"; then
-			echo "ERROR: Cannot connect to \"$transferStepDestinationWithoutPath\"! Either try again or correct your input!"
+			echo -e "\n${_program} [${gtInstance}]: Cannot connect to \"$transferStepDestinationWithoutPath\"! Either try again or correct your input!" 1>&2
 			#  same as above
 			return 2
 		fi
@@ -765,6 +830,10 @@ listTransfer/doTransferStep()
 			#  ...just return "4" (SKIP_TRANSFER_STEP),
 			return 4
 		else
+			if [[ -e "${__GLOBAL__gtTmpDir}/${_tmpTransferId}.dumpfile" && \
+			      ! -s "${__GLOBAL__gtTmpDir}/${_tmpTransferId}.dumpfile" ]]; then
+				rm -f "${__GLOBAL__gtTmpDir}/${_tmpTransferId}.dumpfile"
+			fi
 			# ...if not, rename temporary copy
 			mv "$_tempTransferList" "${__GLOBAL__gtTmpDir}/${_tmpTransferId}.transferList"
 
@@ -782,11 +851,11 @@ listTransfer/doTransferStep()
 			#simulateTransfer
 
 			if [[ $? != 0 ]]; then
-				echo "ERROR: tgftp transfer command couldn't be created!"
+				echo -e "\n${_program} [${gtInstance}]: tgftp transfer command couldn't be created!" 1>&2
 				exit $_gtransfer_exit_software
 			fi
 
-			helperFunctions/catIfVerbose "$tgftpTransferCommand"
+			helperFunctions/echoIfVerbose -e "\n${_program} [${gtInstance}]: tgftp transfer command:\n$( helperFunctions/catIfVerbose "$tgftpTransferCommand" )"
 
 			bash $tgftpTransferCommand &>"${tgftpTransferCommand}Output" &
 			#true &
@@ -817,6 +886,10 @@ listTransfer/doTransferStep()
 			#  ...just return "4" (SKIP_TRANSFER_STEP),
 			return 4
 		else
+			if [[ -e "${__GLOBAL__gtTmpDir}/${_tmpTransferId}.dumpfile" && \
+			      ! -s "${__GLOBAL__gtTmpDir}/${_tmpTransferId}.dumpfile" ]]; then
+				rm -f "${__GLOBAL__gtTmpDir}/${_tmpTransferId}.dumpfile"
+			fi
 			# ...if not, rename temporary copy
 			mv "$_tempTransferList" "${__GLOBAL__gtTmpDir}/${_tmpTransferId}.transferList"
 
@@ -835,11 +908,11 @@ listTransfer/doTransferStep()
 			#simulateError
 
 			if [[ $? != 0 ]]; then
-				echo "ERROR: tgftp transfer command couldn't be created!"
+				echo -e "\n${_program} [${gtInstance}]: tgftp transfer command couldn't be created!" 1>&2
 				exit $_gtransfer_exit_software
 			fi
 
-			helperFunctions/catIfVerbose "$tgftpTransferCommand"
+			helperFunctions/echoIfVerbose -e "\n${_program} [${gtInstance}]: tgftp transfer command:\n$( helperFunctions/catIfVerbose "$tgftpTransferCommand" )"
 
 			bash $tgftpTransferCommand &>"${tgftpTransferCommand}Output" &
 			#true &
@@ -870,6 +943,10 @@ listTransfer/doTransferStep()
 			#  ...just return "4" (SKIP_TRANSFER_STEP),
 			return 4
 		else
+			if [[ -e "${__GLOBAL__gtTmpDir}/${_tmpTransferId}.dumpfile" && \
+			      ! -s "${__GLOBAL__gtTmpDir}/${_tmpTransferId}.dumpfile" ]]; then
+				rm -f "${__GLOBAL__gtTmpDir}/${_tmpTransferId}.dumpfile"
+			fi
 			# ...if not, rename temporary copy
 			mv "$_tempTransferList" "${__GLOBAL__gtTmpDir}/${_tmpTransferId}.transferList"
 
@@ -887,11 +964,11 @@ listTransfer/doTransferStep()
 			#simulateTransfer
 
 			if [[ $? != 0 ]]; then
-				echo "ERROR: tgftp transfer command couldn't be created!"
+				echo -e "\n${_program} [${gtInstance}]: tgftp transfer command couldn't be created!" 1>&2
 				exit $_gtransfer_exit_software
 			fi
 
-			helperFunctions/catIfVerbose "$tgftpTransferCommand"
+			helperFunctions/echoIfVerbose -e "\n${_program} [${gtInstance}]: tgftp transfer command:\n$( helperFunctions/catIfVerbose "$tgftpTransferCommand" )"
 
 			bash $tgftpTransferCommand &>${tgftpTransferCommand}Output &
 			#true &
@@ -921,9 +998,15 @@ listTransfer/doTransferStep()
 
 		#  if this transferStep was already finished,
 		if [[ -e "${__GLOBAL__gtTmpDir}/${_tmpTransferId}.finished" ]]; then
+
 			#  ...just return "4" (SKIP_TRANSFER_STEP),
 			return 4
 		else
+			if [[ -e "${__GLOBAL__gtTmpDir}/${_tmpTransferId}.dumpfile" && \
+			      ! -s "${__GLOBAL__gtTmpDir}/${_tmpTransferId}.dumpfile" ]]; then
+				rm -f "${__GLOBAL__gtTmpDir}/${_tmpTransferId}.dumpfile"
+			fi
+
 			# ...if not, rename temporary copy
 			mv "$_tempTransferList" "${__GLOBAL__gtTmpDir}/${_tmpTransferId}.transferList"
 
@@ -942,11 +1025,11 @@ listTransfer/doTransferStep()
 			#simulateError
 
 			if [[ $? != 0 ]]; then
-				echo "ERROR: tgftp transfer command couldn't be created!"
+				echo -e "\n${_program} [${gtInstance}]: tgftp transfer command couldn't be created!" 1>&2
 				exit $_gtransfer_exit_software
 			fi
 
-			helperFunctions/catIfVerbose "$tgftpTransferCommand"
+			helperFunctions/echoIfVerbose -e "\n${_program} [${gtInstance}]: tgftp transfer command:\n$( helperFunctions/catIfVerbose "$tgftpTransferCommand" )"
 
 			bash $tgftpTransferCommand &>${tgftpTransferCommand}Output &
 			#true &
@@ -979,6 +1062,8 @@ listTransfer/doTransferStep()
 		touch "${__GLOBAL__gtTmpDir}/${_tmpTransferId}.finished"
 		rm -f "$tgftpTransferCommand" &>/dev/null
 		rm -f "${tgftpTransferCommand}Output" &>/dev/null
+	elif [[ $RETURN == 130 ]]; then
+		:
 	else
 		#  if transfer step failed print the output of the tgftp command
 		cat ${tgftpTransferCommand}Output
@@ -1060,15 +1145,25 @@ listTransfer/createTgftpTransferCommand()
 	#+ * source URL
 	#+ * destination URL
 	#+ * offset
-	local addGsiftpParams="-restart -rst-retries $gucMaxRetries -dumpfile $dumpfileName -stall-timeout 30 -sync -sync-level 1"
 
-	#+ Filter "-pp" from "gsiftpParams", as pipelining and reliability don't
-	#+ work well in conjunction.
-	#
-	#  Just remove the "-pp" param, because this will leave two spaces at the
-	#+ position where "-pp" was removed. This way one can detect that a param
-	#+ was removed by gt.
-	gsiftpParams=$( echo "$gsiftpParams" | sed -e 's/-pp//' )
+	# Deactivate reliability (GT_NO_RELIABILITY=1) if needed.
+	#local addGsiftpParams
+	local _gucReliabilityOptions
+	if [[ $GT_NO_RELIABILITY -eq 1 ]]; then
+
+		_gucReliabilityOptions=""
+	else
+		_gucReliabilityOptions="-restart -rst-retries $gucMaxRetries -dumpfile $dumpfileName -stall-timeout 30"
+		# Filter "-pp" from "gsiftpParams", as pipelining and reliability don't
+		# work well in conjunction.
+		#
+		# Just remove the "-pp" param, because this will leave two spaces at the
+		# position where "-pp" was removed. This way one can detect that a param
+		# was removed by gt.
+		gsiftpParams=$( echo "$gsiftpParams" | sed -e 's/-pp//' )
+	fi
+
+	local _gucSyncOptions="-sync -sync-level 1"
 
 	#  perform recursive transfer
 	if [[ $recursiveTransferSet -eq 0 ]]; then
@@ -1132,15 +1227,16 @@ listTransfer/createTgftpTransferCommand()
 	#  |  | |
 	#  |  | | toTransitSite (0 false, 1 true)
 	#  |  | | |
-	#  4  1 0 0 source -> dest
-	#  5  1 0 1 source -> transit
-	#  8  1 1 1 transit -> transit
-	#  6  1 1 0 transit -> dest
 	#
 	#  0  0 0 0 source -> dest
 	#  1  0 0 1 source -> transit
-	#  3  0 1 1 transit -> transit
 	#  2  0 1 0 transit -> dest
+	#  3  0 1 1 transit -> transit
+	#
+	#  4  1 0 0 source -> dest
+	#  5  1 0 1 source -> transit
+	#  6  1 1 0 transit -> dest
+	#  7  1 1 1 transit -> transit
 
 	#  case 4
 	if [[ $verboseExec -eq 1 && \
@@ -1151,7 +1247,7 @@ listTransfer/createTgftpTransferCommand()
 		     "--log-filename \"$logfileName\"" \
 		     "--force-log-overwrite" \
 		     "$tgftpPostCommandParam" \"$tgftpPostCommand\" \
-		     "-- -dbg $gsiftpParams $addGsiftpParams -f $_transferList" > "$tgftpTransferCommand"
+		     "-- -dbg $gsiftpParams $_gucReliabilityOptions $_gucSyncOptions -f $_transferList" > "$tgftpTransferCommand"
 
 	#  case 5
 	elif [[ $verboseExec -eq 1 && \
@@ -1163,9 +1259,9 @@ listTransfer/createTgftpTransferCommand()
 		     "--force-log-overwrite" \
 		     "$tgftpPreCommandParam" \"$tgftpPreCommand\" \
 		     "$tgftpPostCommandParam" \"$tgftpPostCommand\" \
-		     "-- -dbg $gsiftpParams $addGsiftpParams -f $_transferList" > "$tgftpTransferCommand"
+		     "-- -dbg $gsiftpParams $_gucReliabilityOptions $_gucSyncOptions -f $_transferList" > "$tgftpTransferCommand"
 
-	#  case 8
+	#  case 7
 	elif [[ $verboseExec -eq 1 && \
 		$fromTransitSite -eq 1 && \
 		$toTransitSite -eq 1 \
@@ -1175,7 +1271,7 @@ listTransfer/createTgftpTransferCommand()
 		     "--force-log-overwrite" \
 		     "$tgftpPreCommandParam" \"$tgftpPreCommand\" \
 		     "$tgftpPostCommandParam" \"$tgftpPostCommand\" \
-		     "-- -dbg $gsiftpParams $addGsiftpParams -f $_transferList" > "$tgftpTransferCommand"
+		     "-- -dbg $gsiftpParams $_gucReliabilityOptions $_gucSyncOptions -f $_transferList" > "$tgftpTransferCommand"
 
 	#  case 6
 	elif [[ $verboseExec -eq 1 && \
@@ -1186,7 +1282,7 @@ listTransfer/createTgftpTransferCommand()
 		     "--log-filename \"$logfileName\"" \
 		     "--force-log-overwrite" \
 		     "$tgftpPostCommandParam" \"$tgftpPostCommand\" \
-		     "-- -dbg $gsiftpParams $addGsiftpParams -f $_transferList" > "$tgftpTransferCommand"
+		     "-- -dbg $gsiftpParams $_gucReliabilityOptions $_gucSyncOptions -f $_transferList" > "$tgftpTransferCommand"
 
 	#  case 0
 	elif [[ $verboseExec -eq 0 && \
@@ -1197,7 +1293,7 @@ listTransfer/createTgftpTransferCommand()
 		     "--log-filename \"$logfileName\"" \
 		     "--force-log-overwrite" \
 		     "$tgftpPostCommandParam" \"$tgftpPostCommand\" \
-		     "-- $gsiftpParams $addGsiftpParams -f $_transferList" > "$tgftpTransferCommand"
+		     "-- $gsiftpParams $_gucReliabilityOptions $_gucSyncOptions -f $_transferList" > "$tgftpTransferCommand"
 
 	#  case 1
 	elif [[ $verboseExec -eq 0 && \
@@ -1209,7 +1305,7 @@ listTransfer/createTgftpTransferCommand()
 		     "--force-log-overwrite" \
 		     "$tgftpPreCommandParam" \"$tgftpPreCommand\" \
 		     "$tgftpPostCommandParam" \"$tgftpPostCommand\" \
-		     "-- $gsiftpParams $addGsiftpParams -f $_transferList" > "$tgftpTransferCommand"
+		     "-- $gsiftpParams $_gucReliabilityOptions $_gucSyncOptions -f $_transferList" > "$tgftpTransferCommand"
 
 	#  case 3
 	elif [[ $verboseExec -eq 0 && \
@@ -1221,7 +1317,7 @@ listTransfer/createTgftpTransferCommand()
 		     "--force-log-overwrite" \
 		     "$tgftpPreCommandParam" \"$tgftpPreCommand\" \
 		     "$tgftpPostCommandParam" \"$tgftpPostCommand\" \
-		     "-- $gsiftpParams $addGsiftpParams -f $_transferList" > "$tgftpTransferCommand"
+		     "-- $gsiftpParams $_gucReliabilityOptions $_gucSyncOptions -f $_transferList" > "$tgftpTransferCommand"
 
 	#  case 2
 	elif [[ $verboseExec -eq 0 && \
@@ -1232,7 +1328,7 @@ listTransfer/createTgftpTransferCommand()
 		     "--log-filename \"$logfileName\"" \
 		     "--force-log-overwrite" \
 		     "$tgftpPostCommandParam" \"$tgftpPostCommand\" \
-		     "-- $gsiftpParams $addGsiftpParams -f $_transferList" > "$tgftpTransferCommand"
+		     "-- $gsiftpParams $_gucReliabilityOptions $_gucSyncOptions -f $_transferList" > "$tgftpTransferCommand"
 
 	fi
 
@@ -1266,16 +1362,16 @@ listTransfer/createTransferList() {
 
 	#  Check if valid URLs are provided
 	if ! helperFunctions/isValidUrl $_source; then
-		echo "ERROR: \"$_source\" invalid source URL (check FQDN or protocol part)!" 1>&2
+		echo -e "\n${_program} [${gtInstance}]: \"$_source\" invalid source URL (check FQDN or protocol part)!" 1>&2
 		return 1
 	elif ! helperFunctions/isValidUrl $_destination; then
-		echo "ERROR: \"$_destination\" invalid destination URL (check FQDN or protocol part)!" 1>&2
+		echo -e "\n${_program} [${gtInstance}]: \"$_destination\" invalid destination URL (check FQDN or protocol part)!" 1>&2
 		return 1
 	#  check if target URL is a "http://" URL
 	elif [[ "$( helperFunctions/getProtocolSpecifier $_destination )" == "http://" || \
 		"$( helperFunctions/getProtocolSpecifier $_destination )" == "https://" \
 	]]; then
-		echo "ERROR: Target URL cannot be a \"http[s]://\" URL!" 1>&2
+		echo -e "\n${_program} [${gtInstance}]: Target URL cannot be a \"http[s]://\" URL!" 1>&2
 		return 1
 	fi
 	
@@ -1292,6 +1388,28 @@ listTransfer/createTransferList() {
 	if [[ "$?" == "0" && -e "$_transferListFile" ]]; then
 		#  strip comment lines
 		sed -i -e '/^#.*$/d' "$_transferListFile"
+
+		# Now check if the transfer list only has one line (i.e. only
+		# one file should be transferred). If this is the case, the
+		# transfer list does not contain the size of the file. This is
+		# a bug in guc that is still existing in version 9.11. The
+		# Globus JIRA ticket is at `https://globus.atlassian.net/browse/GT-318`
+		# and also it is stated there that this bug is fixed, I still
+		# run into it when trying to transfer one file only.
+
+		if [[ $( wc -l "$_transferListFile" | cut -d ' ' -f 1) == "1" ]]; then
+
+			# If there's only one line in the transfer list, we need to add
+			# the missing file size information manually, e.g. with uberftp.
+			local _fileSize=$( uberftp -size "$_source" )
+
+			# remove newline from end of file
+			truncate -s -1 "$_transferListFile"
+
+			# add size
+			echo " 0,-1 size=$_fileSize;" >> "$_transferListFile"
+		fi
+
 		echo "$_transferListFile"
 		return 0
 	else
