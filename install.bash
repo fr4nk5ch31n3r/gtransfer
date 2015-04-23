@@ -4,6 +4,7 @@
 
 # if a (prefix) directory is provided, switch to system install
 if [[ "$1" != "" ]]; then
+
 	# user install activated? 0 => no, 1 => yes
 	userInstall=0
 
@@ -28,7 +29,9 @@ if [[ "$(basename $0)" == "install.bash" ]]; then
 
 	# first create bin dir in home, if not already existing
 	if [[ $userInstall -eq 1 ]]; then
+
 		if [[ ! -e "$HOME/bin" ]]; then
+
 			mkdir -p "$HOME/bin" &>/dev/null
 		fi
 	fi
@@ -71,6 +74,7 @@ if [[ "$(basename $0)" == "install.bash" ]]; then
 
 	# ...make links and...
 	if [[ $userInstall -eq 1 ]]; then
+
 		linkPath="$HOME/bin"
 		
 		ln -s "$binDir/gtransfer.bash" "$linkPath/gtransfer"
@@ -117,7 +121,9 @@ elif [[ "$(basename $0)" == "uninstall.bash" ]]; then
 
 	#  remove a system installed gtransfer
 	if [[ "$1" != "" ]]; then
+
 		rm -r "$prefixDir/gtransfer"
+
 	#  remove a user installed gtransfer
 	else
 		#  remove scripts and links "$HOME/bin"
@@ -129,9 +135,6 @@ elif [[ "$(basename $0)" == "uninstall.bash" ]]; then
 
 		#  remove gtransfer dir
 		rm -r "$prefixDir/gtransfer"
-
-		#  remove basedir for dpaths, dparams and configuration files
-		#rm -r "$HOME/.gtransfer"
 	fi
 fi
 

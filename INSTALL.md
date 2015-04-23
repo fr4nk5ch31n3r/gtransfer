@@ -14,6 +14,7 @@
 
 ****
 
+
 ## (1) Dependencies ##
 
 To run the _gtransfer_ scripts, some dependencies have to be met first. They
@@ -35,6 +36,7 @@ Toolkit >= v4.2.0) and is available from [GitHub].
 
 [GitHub]: https://github.com/fr4nk5ch31n3r/tgftp/
 
+
 ## (2) Installation ##
 
 The gtransfer installer script (`install.sh`) supports two modes of
@@ -42,6 +44,7 @@ installation:
 
 * System installation (for multiple users)
 * User installation (for a single user)
+
 
 ### (2.1) System installation ###
 
@@ -114,6 +117,7 @@ the methods described above if you install below a `PROVIDER` directory.
 
 [FHS v2.3 standard]: http://www.pathname.com/fhs/pub/fhs-2.3.html
 
+
 ### (2.2) User installation ###
 
 It's also possible to install and run gtransfer from your home directory. For
@@ -130,6 +134,7 @@ this dir - if existing - is usually in `$PATH` by default. If it's not already
 existing, it will be created. Another difference is that the configuration files
 are copied to `$HOME/.gtransfer` for a user install. Please adapt the
 configuration files to your local configuration after installation.
+
 
 ### (2.3) Git deployment ###
 
@@ -164,6 +169,7 @@ the file names to the installed version of gtransfer (e.g. "gtransfer-version"
 
 [modules environment]: http://en.wikipedia.org/wiki/Modules_Environment
 
+
 #### (2.4.2) Bash completion ####
 
 To even more ease usage of this tool a bash completion file was created. This
@@ -172,13 +178,13 @@ related file is stored in `./etc/bash_completion.d/` in the package dir. Please
 move this file to a convenient location and make sure it is sourced by the
 users' bash shells.
 
+
 ## (3) Uninstallation ##
 
 For uninstallation just run the link `./uninstall.sh`. This will remove the
-gtransfer distribution and the directory `$HOME/.gtransfer`. Hence if you want
-to retain your dpaths and dparams, make a backup before uninstalling gtransfer.
-If you add the original install path for a system installation, e.g.
-`./uninstall.sh /opt`, the gtransfer distribution will be removed from there
-instead. Because the modulefile and the bash completion file have to be
-installed manually, they're not removed by the uninstallation procedure.
+gtransfer distribution but not the directory `$HOME/.gtransfer`. If you add the
+original install path for a system installation, e.g. `./uninstall.sh /opt`, the
+gtransfer distribution will be removed from there instead.  
+Because the modulefile and the bash completion file have to be installed
+manually, they're not removed by the uninstallation procedure.
 
