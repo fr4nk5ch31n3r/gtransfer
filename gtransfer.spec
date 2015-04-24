@@ -1,6 +1,6 @@
 Name:		gtransfer
 Version:	0.3.0
-Release:	1%{?dist}
+Release:	2%{?dist}
 Summary:	Advanced data transfer tool for GridFTP
 Group:		base
 License:	GPLv3
@@ -30,7 +30,7 @@ mkdir -p %{buildroot}%{_sysconfdir}/%{name}/aliases
 mkdir -p %{buildroot}%{_sysconfdir}/bash_completion.d
 mkdir -p %{buildroot}%{_bindir}
 # SLES does not have a "libexec" dir!
-%if 0%{?rhel_version} || 0%{?centos_version}
+%if 0%{?rhel}
 	mkdir -p %{buildroot}%{_libexecdir}/%{name}
 %endif	
 mkdir -p %{buildroot}%{_datadir}/%{name}/pids
@@ -82,7 +82,7 @@ ln -s gtransfer-version.bash %{buildroot}%{_bindir}/gt-version
 ################################################################################
 # * Additional (internal) tools
 ################################################################################
-%if 0%{?rhel_version} || 0%{?centos_version}
+%if 0%{?rhel}
 	cp libexec/getPidForUrl.r %{buildroot}%{_libexecdir}/%{name}/
 	cp libexec/getUrlForPid.r %{buildroot}%{_libexecdir}/%{name}/
 	cp libexec/packBinsNew.py %{buildroot}%{_libexecdir}/%{name}/
@@ -138,7 +138,7 @@ rm -rf %{buildroot}
 %{_bindir}/gtransfer-version.bash
 %{_bindir}/gt-version
 
-%if 0%{?rhel_version} || 0%{?centos_version}
+%if 0%{?rhel}
 	%{_libexecdir}/%{name}
 	%{_libexecdir}/%{name}/getPidForUrl.r
 	%{_libexecdir}/%{name}/getUrlForPid.r
@@ -170,11 +170,14 @@ rm -rf %{buildroot}
 %{_mandir}/man1/halias.1.gz
 
 %changelog
-* Tue Apr 23 2015 Frank Scheiner <scheiner@hlrs.de> 0.3.0-1
+* Fri Apr 24 2015 Frank Scheiner <scheiner@hlrs.de> 0.3.0-2
+- Changed if clauses to detect all RHEL compatible distributions (Scientific Linux was missing).
+
+* Thu Apr 23 2015 Frank Scheiner <scheiner@hlrs.de> 0.3.0-1
 - Updated source package and version number to new release.
 
-* Fri Apr 23 2015 Frank Scheiner <scheiner@hlrs.de> 0.3.0RC2-1
-- Introduced specific behaviour for SLES and RHEL compatible. Also added "%config" tags for some config files.
+* Thu Apr 23 2015 Frank Scheiner <scheiner@hlrs.de> 0.3.0RC2-1
+- Introduced specific behaviour for SLES and RHEL compatible. Also added "%%config" tags for some config files.
 
 * Fri Apr 17 2015 Frank Scheiner <scheiner@hlrs.de> 0.3.0RC1-1
 - Updated source package and version number to upstream version.
