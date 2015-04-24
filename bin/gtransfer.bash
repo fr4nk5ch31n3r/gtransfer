@@ -874,6 +874,11 @@ else
 	# 1
 	# ```
 
+	if [[ ! -s "$gsiftpTransferList" ]]; then
+		helperFunctions/echoIfVerbose "${_program} [${gtInstance}]: Couldn't create transfer list. Exiting." 1>&2
+		exit $_gtransfer_exit_software
+	fi
+
 	_transferListSource=$( listTransfer/getSourceFromTransferList "$gsiftpTransferList" )
 	_transferListDestination=$( listTransfer/getDestinationFromTransferList "$gsiftpTransferList" )
 	#_dpath=$( listTransfer/dpathAvailable "$_transferListSource" "$_transferListDestination" )
