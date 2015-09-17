@@ -635,6 +635,7 @@ while [[ "$1" != "" ]]; do
 			echo "${_program}: The parameter \"--encrypt-data-channel|-e\" cannot be used multiple times!"
 			echo "Try \`${_program} --help' for more information."
 			exit $_gtransfer_exit_usage
+		fi
 
 	#  "--auto-clean|-a" ###################################################
 	elif [[ "$1" == "--auto-clean" || "$1" == "-a" ]]; then
