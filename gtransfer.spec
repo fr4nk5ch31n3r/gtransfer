@@ -1,6 +1,6 @@
 Name:		gtransfer
-Version:	0.3.0
-Release:	2%{?dist}
+Version:	0.4.0
+Release:	1%{?dist}
 Summary:	Advanced data transfer tool for GridFTP
 Group:		base
 License:	GPLv3
@@ -170,6 +170,9 @@ rm -rf %{buildroot}
 %{_mandir}/man1/halias.1.gz
 
 %changelog
+* Thu Sep 17 2015 Frank Scheiner <scheiner@hlrs.de> 0.4.0-1
+- Updated source package and version number to new release.
+
 * Fri Apr 24 2015 Frank Scheiner <scheiner@hlrs.de> 0.3.0-2
 - Changed if clauses to detect all RHEL compatible distributions (Scientific Linux was missing).
 

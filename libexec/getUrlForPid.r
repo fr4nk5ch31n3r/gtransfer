@@ -1,5 +1,5 @@
 igetURLrule {
-    getURL(*pid, *response);
+    EUDATeURLsearch(*pid, *response);
     writeLine("stdout","Output: *response");
 }
 

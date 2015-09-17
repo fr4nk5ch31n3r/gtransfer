@@ -1,4 +1,4 @@
-.TH GTRANSFER 1 "Apr 16, 2015" "gtransfer 0.3.0" "User Commands"
+.TH GTRANSFER 1 "Sep 17, 2015" "gtransfer 0.4.0" "User Commands"
 .SH NAME
 .PP
 \f[B]gtransfer\f[] - The GridFTP data transfer script
@@ -7,6 +7,7 @@
 \f[B]{gtransfer|gt} [--source|-s \f[I]sourceUrl\f[]] [--destination|-d
 \f[I]destinationUrl\f[]] [--transfer-list|-f \f[I]transferList\f[]]
 [--auto-optimize|-o \f[I]transferMode\f[]] [--recursive|-r]
+[--checksum-data-channel|-c] [--encrypt-data-channel|-e]
 [--guc-max-retries \f[I]gucMaxRetries\f[]] [--gt-max-retries
 \f[I]gtMaxRetries\f[]] [--gt-progress-indicator
 \f[I]indicatorCharacter\f[]] [--verbose|-v] [--metric|-m
@@ -125,6 +126,14 @@ See \f[B]FILES\f[] section below for more details.
 .SS \f[B][-r, --recursive]\f[]
 .PP
 Transfer files recursively.
+.SS \f[B][-c, --checksum-data-channel]\f[]
+.PP
+Enable checksumming on the data channel.
+Cannot be used in conjunction with "-e"!
+.SS \f[B][-e, --encrypt-data-channel]\f[]
+.PP
+Enable encryption on the data channel.
+Cannot be used in conjunction with "-c"!
 .SS \f[B][--guc-max-retries \f[I]gucMaxRetries\f[]]\f[]
 .PP
 This option sets the maximum number of retries globus-url-copy (guc)

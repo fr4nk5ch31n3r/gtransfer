@@ -37,15 +37,22 @@ trap - SIGINT
 #set -f
 
 readonly _program=$( basename "$0" )
-readonly _gtransferVersion="0.3.0"
+readonly _gtransferVersion="0.4.0"
 
 version="$_gtransferVersion"
 
 gsiftpUserParams=""
 
-#  path to configuration files (prefer system paths!)
+#  path to configuration files (prefer git deploy!)
+#  For git deploy, use $BASH_SOURCE
+if [[ -e "$( dirname $BASH_SOURCE )/../etc" ]]; then
+	gtransferConfigurationFilesPath="$( dirname $BASH_SOURCE )/../etc/gtransfer"
+	gtransferBasePath="$( dirname $BASH_SOURCE )/../"
+	gtransferLibPath="$gtransferBasePath/lib"
+	gtransferLibexecPath="$gtransferBasePath/libexec"
+
 #  For native OS packages:
-if [[ -e "/etc/gtransfer" ]]; then
+elif [[ -e "/etc/gtransfer" ]]; then
         gtransferConfigurationFilesPath="/etc/gtransfer"
         #  gtransfer is installed in "/usr/bin", hence the base path is "/usr"
         gtransferBasePath="/usr"
@@ -81,12 +88,6 @@ elif [[ -e "$HOME/opt/gtransfer" ]]; then
         gtransferLibPath="$gtransferBasePath/lib"
         gtransferLibexecPath="$gtransferBasePath/libexec"
 
-#  For git deploy, use $BASH_SOURCE
-elif [[ -e "$( dirname $BASH_SOURCE )/../etc" ]]; then
-	gtransferConfigurationFilesPath="$( dirname $BASH_SOURCE )/../etc/gtransfer"
-	gtransferBasePath="$( dirname $BASH_SOURCE )/../"
-	gtransferLibPath="$gtransferBasePath/lib"
-	gtransferLibexecPath="$gtransferBasePath/libexec"
 fi
 
 gtransferConfigurationFile="$gtransferConfigurationFilesPath/gtransfer.conf"
@@ -217,6 +218,14 @@ The options are as follows:
 			transferred. Currently only "seq[uential]" is possible.
 			
 [--recursive|-r]	Transfer files recursively.
+
+[--checksum-data-channel|-c]
+			Enable checksumming on the data channel. Cannot be used
+			in conjunction with "-e"!
+
+[--encrypt-data-channel|-e]
+			Enable encryption on the data channel. Cannot be used
+			in conjunction with "-c"!
 
 [--verbose|-v]		Be verbose.
 
@@ -366,15 +375,22 @@ trap 'onSigint' SIGINT
 #  check that all required tools are available
 helperFunctions/use cat grep sed cut sleep tgftp telnet uberftp || exit "$_gtransfer_exit_software"
 
-dataPathMetricSet="1"
-tgftpLogfileNameSet="1"
 
-#  Defaults
+# Defaults #####################################################################
 gtMaxRetries="3"
 gucMaxRetries="1"
 gtProgressIndicator="."
 gtInstance="$gtProgressIndicator"
+
+# 1 means not set (false), 0 means set (true) in this case, as like the
+# exit/return value of shell functions/scripts.
+dataPathMetricSet="1"
+tgftpLogfileNameSet="1"
 recursiveTransferSet=1
+_checksumDataChannelSet=1
+_encryptDataChannelSet=1
+################################################################################
+
 
 #  The temp dir is named after the SHA1 hash of the command line.
 readonly __GLOBAL__gtTmpDirName=$( echo "$0 $@" | sha1sum | cut -d ' ' -f 1 )
@@ -412,6 +428,8 @@ while [[ "$1" != "" ]]; do
                 "$1" != "--gt-progress-indicator" && \
                 "$1" != "--auto-optimize" && "$1" != "-o" && \
                 "$1" != "--recursive" && "$1" != "-r" && \
+                "$1" != "--checksum-data-channel" && "$1" != "-c" && \
+                "$1" != "--encrypt-data-channel" && "$1" != "-e" && \
 		"$1" != "--" \
 	]]; then
 		#  no, so output a usage message
@@ -576,6 +594,46 @@ while [[ "$1" != "" ]]; do
 		else
 			#  duplicate usage of this parameter
 			echo "${_program}: The parameter \"--recursive|-r\" cannot be used multiple times!"
+			echo "Try \`${_program} --help' for more information."
+			exit $_gtransfer_exit_usage
+		fi
+
+	#  "--checksum-data-channel|-c" ########################################
+	elif [[ "$1" == "--checksum-data-channel" || "$1" == "-c" ]]; then
+		if [[ $_checksumDataChannelSet -ne 0 ]]; then
+
+			if [[ $_encryptDataChannelSet -ne 0 ]]; then
+
+				shift 1
+				_checksumDataChannelSet=0
+			else
+				echo "${_program}: The parameter \"--checksum-data-channel|-c\" cannot be used in conjunction with the parameter \"--encrypt-data-channel|-e\"!"
+				echo "Try \`${_program} --help' for more information."
+				exit $_gtransfer_exit_usage
+			fi
+		else
+			#  duplicate usage of this parameter
+			echo "${_program}: The parameter \"--checksum-data-channel|-c\" cannot be used multiple times!"
+			echo "Try \`${_program} --help' for more information."
+			exit $_gtransfer_exit_usage
+		fi
+
+	#  "--encrypt-data-channel|-e" #########################################
+	elif [[ "$1" == "--encrypt-data-channel" || "$1" == "-e" ]]; then
+		if [[ $_encryptDataChannelSet -ne 0 ]]; then
+
+			if [[ $_checksumDataChannelSet -ne 0 ]]; then
+
+				shift 1
+				_encryptDataChannelSet=0
+			else
+				echo "${_program}: The parameter \"--encrypt-data-channel|-e\" cannot be used in conjunction with the parameter \"--checksum-data-channel|-c\"!"
+				echo "Try \`${_program} --help' for more information."
+				exit $_gtransfer_exit_usage
+			fi
+		else
+			#  duplicate usage of this parameter
+			echo "${_program}: The parameter \"--encrypt-data-channel|-e\" cannot be used multiple times!"
 			echo "Try \`${_program} --help' for more information."
 			exit $_gtransfer_exit_usage
 		fi

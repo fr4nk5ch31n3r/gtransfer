@@ -1,6 +1,6 @@
-% GTRANSFER(1) gtransfer 0.3.0 | User Commands
+% GTRANSFER(1) gtransfer 0.4.0 | User Commands
 % Frank Scheiner
-% Apr 16, 2015
+% Sep 17, 2015
 
 
 # NAME #
@@ -15,6 +15,8 @@
 [\--transfer-list|-f _transferList_] 
 [\--auto-optimize|-o _transferMode_] 
 [\--recursive|-r]
+[\--checksum-data-channel|-c]
+[\--encrypt-data-channel|-e]
 [\--guc-max-retries _gucMaxRetries_] 
 [\--gt-max-retries _gtMaxRetries_] 
 [\--gt-progress-indicator _indicatorCharacter_] 
@@ -134,6 +136,17 @@ the file _[...]/chunkConfig_. See **FILES** section below for more details.
 ## **[-r, \--recursive]** ##
 
 Transfer files recursively.
+
+
+## **[-c, \--checksum-data-channel]** ##
+
+Enable checksumming on the data channel. Cannot be used in conjunction with
+"-e"!
+
+
+## **[-e, \--encrypt-data-channel]** ##
+
+Enable encryption on the data channel. Cannot be used in conjunction with "-c"!
 
 
 ## **[\--guc-max-retries _gucMaxRetries_]** ##
