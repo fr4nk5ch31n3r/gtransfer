@@ -1,3 +1,17 @@
+2015-09-17  Frank Scheiner <scheiner@hlrs.de>
+
+*0.4.0 (gtransfer toolkit):
+
+- New functionality
+
+Users can now enable data channel checksumming or data channel encryption with a
+gtransfer option.
+
+- Fixes
+
+PID functionality: The rule for resolving a PID to an URL was adapted to backend
+changes in EUDAT.
+
 2015-04-23  Frank Scheiner <scheiner@hlrs.de>
 
 *0.3.0 (gtransfer dist):
