@@ -27,7 +27,7 @@ COPYRIGHT
 #  DEFINES
 ################################################################################
 
-readonly _listTransfer_Version="0.3.0"
+readonly _listTransfer_Version="0.4.0"
 
 ################################################################################
 #  INCLUDES
@@ -176,7 +176,7 @@ listTransfer/getDpathFile()
 		# temp path only provides one metric. In a case where a user selects metric 0
 		# multiple times (e.g. to get a sort of striping), this works fine because
 		# the bandwidth proportions are then always 1 to 1 ( to 1 [...]). Would be
-		# be the same for a dpath with multiple metrics.
+		# the same for a dpath with multiple metrics.
 		cat > "$_dpathFile" <<-EOF
 		<source>
 		$_sourceWithoutPath
@@ -1169,6 +1169,19 @@ listTransfer/createTgftpTransferCommand()
 	if [[ $recursiveTransferSet -eq 0 ]]; then
 		gsiftpParams="$gsiftpParams -r"
 	fi
+
+	# encrypt data channel?
+	if [[ $_encryptDataChannelSet -eq 0 ]]; then
+
+		gsiftpParams="$gsiftpParams -dcpriv"
+
+	# checksum data channel?
+	elif [[ $_checksumDataChannelSet -eq 0 ]]; then
+
+		gsiftpParams="$gsiftpParams -dcsafe"
+
+	fi
+
 
 	#  Do this only if uberftp is available!
 	if hash uberftp &>/dev/null; then
