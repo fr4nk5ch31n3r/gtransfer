@@ -27,7 +27,7 @@ COPYRIGHT
 # DEFINES
 ################################################################################
 
-readonly _gtransfer_multipathing_version="0.3.0"
+readonly _gtransfer_multipathing_version="0.4.0"
 readonly _gtransfer_multipathing_selfName="gtransfer/multipathing"
 
 readonly __GLOBAL__proportionsFileName="bandwidthProportions"
@@ -344,6 +344,7 @@ multipathing/performTransfer()
 	local -a _gtSubProcessesExitValues
 	local _index
 	local _currentMetric
+	local _gtOptions
 
 	_index=0
 	for _transferList in "${_transferLists[@]}"; do
@@ -363,20 +364,31 @@ multipathing/performTransfer()
 
 		# transfer each list with gtransfer and create an indicator for
 		# finished transfers.
+		
+		# Define standard options
+		_gtOptions="-f $_transferList \
+			   -m $_currentMetric \
+			   --gt-progress-indicator $_index \
+			   $_verboseOption"
+		
+		# Add additional options
 		if [[ $_autoOptimize -eq 1 ]]; then
 
-			gt -f "$_transferList" \
-			   -m "$_currentMetric" \
-			   -o "$transferMode" \
-			   --gt-progress-indicator "$_index" \
-			   "$_verboseOption" && touch "${_transferList}.finished" &
-		else
-			gt -f "$_transferList" \
-			   -m "$_currentMetric" \
-			   --gt-progress-indicator "$_index" \
-			   "$_verboseOption" && touch "${_transferList}.finished" &
+			_gtOptions="$_gtOptions -o $transferMode"
 		fi
 
+		if [[ $_checksumDataChannelSet -eq 0 ]]; then
+
+			_gtOptions="$_gtOptions -c"
+
+		elif [[ $_encryptDataChannelSet -eq 0 ]]; then
+		
+			_gtOptions="$_gtOptions -e"
+		fi		
+		
+		# Actually run gt
+		gt "$_gtOptions" && touch "${_transferList}.finished" &
+		
 		_gtSubProcesses[$_index]=$!
 		_index=$(( $_index + 1 ))
 	done
