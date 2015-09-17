@@ -366,10 +366,7 @@ multipathing/performTransfer()
 		# finished transfers.
 		
 		# Define standard options
-		_gtOptions="-f $_transferList \
-			   -m $_currentMetric \
-			   --gt-progress-indicator $_index \
-			   $_verboseOption"
+		_gtOptions="-f $_transferList -m $_currentMetric --gt-progress-indicator $_index $_verboseOption"
 		
 		# Add additional options
 		if [[ $_autoOptimize -eq 1 ]]; then
@@ -387,7 +384,9 @@ multipathing/performTransfer()
 		fi		
 		
 		# Actually run gt
-		gt "$_gtOptions" && touch "${_transferList}.finished" &
+		#echo "$( which gt )" 1>&2
+		#echo "gt \"$_gtOptions\" && touch \"${_transferList}.finished\"" 1>&2
+		gt $_gtOptions && touch "${_transferList}.finished" &
 		
 		_gtSubProcesses[$_index]=$!
 		_index=$(( $_index + 1 ))
