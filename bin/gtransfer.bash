@@ -43,9 +43,16 @@ version="$_gtransferVersion"
 
 gsiftpUserParams=""
 
-#  path to configuration files (prefer system paths!)
+#  path to configuration files (prefer git deploy!)
+#  For git deploy, use $BASH_SOURCE
+if [[ -e "$( dirname $BASH_SOURCE )/../etc" ]]; then
+	gtransferConfigurationFilesPath="$( dirname $BASH_SOURCE )/../etc/gtransfer"
+	gtransferBasePath="$( dirname $BASH_SOURCE )/../"
+	gtransferLibPath="$gtransferBasePath/lib"
+	gtransferLibexecPath="$gtransferBasePath/libexec"
+
 #  For native OS packages:
-if [[ -e "/etc/gtransfer" ]]; then
+elif [[ -e "/etc/gtransfer" ]]; then
         gtransferConfigurationFilesPath="/etc/gtransfer"
         #  gtransfer is installed in "/usr/bin", hence the base path is "/usr"
         gtransferBasePath="/usr"
@@ -81,12 +88,6 @@ elif [[ -e "$HOME/opt/gtransfer" ]]; then
         gtransferLibPath="$gtransferBasePath/lib"
         gtransferLibexecPath="$gtransferBasePath/libexec"
 
-#  For git deploy, use $BASH_SOURCE
-elif [[ -e "$( dirname $BASH_SOURCE )/../etc" ]]; then
-	gtransferConfigurationFilesPath="$( dirname $BASH_SOURCE )/../etc/gtransfer"
-	gtransferBasePath="$( dirname $BASH_SOURCE )/../"
-	gtransferLibPath="$gtransferBasePath/lib"
-	gtransferLibexecPath="$gtransferBasePath/libexec"
 fi
 
 gtransferConfigurationFile="$gtransferConfigurationFilesPath/gtransfer.conf"
