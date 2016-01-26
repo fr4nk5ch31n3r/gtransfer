@@ -769,7 +769,7 @@ if [[ "$gsiftpSourceUrl" == "" || \
 				done
 			fi
 
-			multipathing/performTransfer "$gsiftpTransferList" "$_dpath" "$dataPathMetric" "$autoOptimize" "$_verboseOption"
+			multipathing/performTransfer "$gsiftpTransferListClean" "$_dpath" "$dataPathMetric" "$autoOptimize" "$_verboseOption"
 
 		#  TODO:
 		#  Use temporary dir for temp files (.gtransfer/<transferID>)
