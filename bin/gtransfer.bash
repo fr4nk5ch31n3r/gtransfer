@@ -6,7 +6,7 @@
 
 :<<COPYRIGHT
 
-Copyright (C) 2010, 2011, 2013-2015 Frank Scheiner, HLRS, Universitaet Stuttgart
+Copyright (C) 2010, 2011, 2013-2016 Frank Scheiner, HLRS, Universitaet Stuttgart
 Copyright (C) 2011, 2012, 2013 Frank Scheiner
 
 The program is distributed under the terms of the GNU General Public License
@@ -37,7 +37,7 @@ trap - SIGINT
 #set -f
 
 readonly _program=$( basename "$0" )
-readonly _gtransferVersion="0.4.0"
+readonly _gtransferVersion="0.4.1"
 
 version="$_gtransferVersion"
 
@@ -739,9 +739,14 @@ if [[ "$gsiftpSourceUrl" == "" || \
 		#  create directory for temp files
 		mkdir -p "$__GLOBAL__gtTmpDir"
 		
-		#  strip comment lines from transfer list
 		gsiftpTransferListClean="$__GLOBAL__gtTmpDir/$$_transferList.${__GLOBAL__gtTmpSuffix}"
-		sed -e '/^#.*$/d' "$gsiftpTransferList" > "$gsiftpTransferListClean"
+		# do not remove commented lines, as guc stores directories in commented lines and if
+		# those are empty, meaning no other uncommented source or destination URL contains a
+		# file in such a dir, guc will not create those directories, if the commented lines
+		# are removed from a transfer list, as no other URL references those dirs then!
+		# strip comment lines from transfer list
+		#sed -e '/^#.*$/d' "$gsiftpTransferList" > "$gsiftpTransferListClean"
+		cat "$gsiftpTransferList" > "$gsiftpTransferListClean"
 
 		_transferListSource=$( listTransfer/getSourceFromTransferList "$gsiftpTransferListClean" )
 		_transferListDestination=$( listTransfer/getDestinationFromTransferList "$gsiftpTransferListClean" )
