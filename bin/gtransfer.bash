@@ -746,7 +746,10 @@ if [[ "$gsiftpSourceUrl" == "" || \
 		# are removed from a transfer list, as no other URL references those dirs then!
 		# strip comment lines from transfer list
 		#sed -e '/^#.*$/d' "$gsiftpTransferList" > "$gsiftpTransferListClean"
-		cat "$gsiftpTransferList" > "$gsiftpTransferListClean"
+		#cat "$gsiftpTransferList" > "$gsiftpTransferListClean"
+		# Uncomment directory lines (the URLs there end with a `/`!), so at that least dirs containing
+		# other empty dirs are created on the destination side
+		sed -e '/^#\".*\/\" \".*\/\" .*/s/^#//g' "$gsiftpTransferList" > "$gsiftpTransferListClean"
 
 		_transferListSource=$( listTransfer/getSourceFromTransferList "$gsiftpTransferListClean" )
 		_transferListDestination=$( listTransfer/getDestinationFromTransferList "$gsiftpTransferListClean" )
