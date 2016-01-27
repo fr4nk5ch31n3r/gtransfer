@@ -4,7 +4,7 @@
 :<<COPYRIGHT
 
 Copyright (C) 2012, 2013 Frank Scheiner
-Copyright (C) 2015 Frank Scheiner, HLRS, Universitaet Stuttgart
+Copyright (C) 2015, 2016 Frank Scheiner, HLRS, Universitaet Stuttgart
 
 The program is distributed under the terms of the GNU General Public License
 
@@ -27,7 +27,7 @@ COPYRIGHT
 #  DEFINES
 ################################################################################
 
-readonly _listTransfer_Version="0.4.0"
+readonly _listTransfer_Version="0.5.0"
 
 ################################################################################
 #  INCLUDES
@@ -1357,30 +1357,30 @@ listTransfer/createTgftpTransferCommand()
 
 
 listTransfer/createTransferList() {
-	#  create transfer list from source and destination URLs
+	# create transfer list from source and destination URLs
 	#
-	#  usage:
-	#+ listTransfer/createTransferList gsiftpSourceUrl gsiftpDestinationUrl
+	# usage:
+	# listTransfer/createTransferList gsiftpSourceUrl gsiftpDestinationUrl
 	#
-	#  prints the transfer list filename to stdout
+	# prints the transfer list filename to stdout
 	#
-	#  returns:
-	#+ 0 if everything is allright
-	#+ 1 otherwise
+	# returns:
+	# 0 if everything is allright
+	# 1 otherwise
 
 	local _source="$1"
 	local _destination="$2"
 	
 	local _transferListFile="${__GLOBAL__gtTmpDir}/$$_transferList.$__GLOBAL__gtTmpSuffix"
 
-	#  Check if valid URLs are provided
+	# Check if valid URLs are provided
 	if ! helperFunctions/isValidUrl $_source; then
 		echo -e "\n${_program} [${gtInstance}]: \"$_source\" invalid source URL (check FQDN or protocol part)!" 1>&2
 		return 1
 	elif ! helperFunctions/isValidUrl $_destination; then
 		echo -e "\n${_program} [${gtInstance}]: \"$_destination\" invalid destination URL (check FQDN or protocol part)!" 1>&2
 		return 1
-	#  check if target URL is a "http://" URL
+	# check if target URL is a "http://" URL
 	elif [[ "$( helperFunctions/getProtocolSpecifier $_destination )" == "http://" || \
 		"$( helperFunctions/getProtocolSpecifier $_destination )" == "https://" \
 	]]; then
@@ -1388,19 +1388,26 @@ listTransfer/createTransferList() {
 		return 1
 	fi
 	
-	#  perform recursive transfer
+	# perform recursive transfer
 	if [[ $recursiveTransferSet -eq 0 ]]; then
 		local _recursive="-r"
 	else
 		local _recursive=""
 	fi
 	
-	#  to get the transfer list we use guc with "-do" option
+	# to get the transfer list we use guc with "-do" option
 	globus-url-copy -do "$_transferListFile" $_recursive "$_source" "$_destination"
 
 	if [[ "$?" == "0" && -e "$_transferListFile" ]]; then
-		#  strip comment lines
-		sed -i -e '/^#.*$/d' "$_transferListFile"
+		# strip comment lines
+		#sed -i -e '/^#.*$/d' "$_transferListFile"
+		# Reverted, as this breaks the multi-step functionality, because if an empty dir is included in the transfer
+		# but not created on the transit site(s), the transfer lists for the second step and following steps
+		# will contain a reference to a non-existing directory on the source side (which is a transit site during
+		# these steps).
+		# Uncomment directory lines (the URLs there end with a `/`!), so that at least dirs containing
+		# other empty dirs are created on the destination side
+		#sed -e '/^#\".*\/\" \".*\/\" .*/s/^#//g' -i "$_transferListFile"
 
 		# Now check if the transfer list only has one line (i.e. only
 		# one file should be transferred). If this is the case, the
@@ -1507,24 +1514,29 @@ listTransfer/getTransferIdForTransferList() {
 
 
 listTransfer/getTransferSizeFromTransferList() {
-	#  gets the complete size of all data transferred with the provided
-	#+ transfer list
+	# gets the complete size of all data transferred with the provided
+	# transfer list, but does not count the size of directories, because
+	# guc does not store a size datum for directories in transfer lists.
 	#
-	#  usage:
-	#+ listTransfer/getTransferSizeFromTransferList transferList
+	# usage:
+	# listTransfer/getTransferSizeFromTransferList transferList
 	
 	local _transferList="$1"
 
-	#  format of transfer list (guc v8.2):
-	#													offset
-	#  source					     destination					|    size, modify timestamp and permissions
-	#  |						  |						  |    |
-	#  "ftp://vserver1.asc:2811/~/files/test4/file.00355" "ftp://vserver2.asc:2811/~/files/test4/file.00355" 0,-1 size=0;modify=1328981550;mode=0644;
+	local _sum=0
 
-	#  get all file sizes of the transfer list, one each line
-	local _fileSizes=$( cut -d ' ' -f 4 "$_transferList" | cut -d ';' -f 1 | cut -d '=' -f 2 )
+	# format of transfer list (guc v8.2):
+	#                                                                                                       offset
+	# source                                             destination                                        |    size, modify timestamp and permissions
+	# |						     |                                                  |    |
+	# "ftp://vserver1.asc:2811/~/files/test4/file.00355" "ftp://vserver2.asc:2811/~/files/test4/file.00355" 0,-1 size=0;modify=1328981550;mode=0644;
 
-	#  now sum up all file sizes
+	# get all file sizes of the transfer list, one each line, but:
+	# * ignore lines starting with `#`
+	# * ignore lines not containing a `size=` string
+	local _fileSizes=$( grep -v '^#' "$_transferList" | grep 'size=' | cut -d ' ' -f 4 | cut -d ';' -f 1 | cut -d '=' -f 2 )
+
+	# now sum up all file sizes
 	for _size in $( echo $_fileSizes ); do
 		_sum=$(( $_sum + $_size ))
 		if [[ "$?" != "0" ]]; then

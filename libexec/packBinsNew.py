@@ -139,9 +139,10 @@ if __name__ == '__main__':
     # http://stackoverflow.com/questions/13890935/timestamp-python
     print(time.time(), 'START: Read transfer list file', file=sys.stderr)
     for line in open(sys.argv[1]):
-        # get size from each line
-        size = getSize(line)
-        combinedList.append([size, line])
+        if not line.startswith("#"):
+            # get size from each line
+            size = getSize(line)
+            combinedList.append([size, line])
     print(time.time(), 'END: Read transfer list file', file=sys.stderr)
 
     # arbitrary number of paths possible

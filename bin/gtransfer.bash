@@ -6,7 +6,7 @@
 
 :<<COPYRIGHT
 
-Copyright (C) 2010, 2011, 2013-2015 Frank Scheiner, HLRS, Universitaet Stuttgart
+Copyright (C) 2010, 2011, 2013-2016 Frank Scheiner, HLRS, Universitaet Stuttgart
 Copyright (C) 2011, 2012, 2013 Frank Scheiner
 
 The program is distributed under the terms of the GNU General Public License
@@ -37,7 +37,7 @@ trap - SIGINT
 #set -f
 
 readonly _program=$( basename "$0" )
-readonly _gtransferVersion="0.4.0"
+readonly _gtransferVersion="0.4.1"
 
 version="$_gtransferVersion"
 
@@ -739,9 +739,21 @@ if [[ "$gsiftpSourceUrl" == "" || \
 		#  create directory for temp files
 		mkdir -p "$__GLOBAL__gtTmpDir"
 		
-		#  strip comment lines from transfer list
 		gsiftpTransferListClean="$__GLOBAL__gtTmpDir/$$_transferList.${__GLOBAL__gtTmpSuffix}"
-		sed -e '/^#.*$/d' "$gsiftpTransferList" > "$gsiftpTransferListClean"
+		# do not remove commented lines, as guc stores directories in commented lines and if
+		# those are empty, meaning no other uncommented source or destination URL contains a
+		# file in such a dir, guc will not create those directories, if the commented lines
+		# are removed from a transfer list, as no other URL references those dirs then!
+		# strip comment lines from transfer list
+		#sed -e '/^#.*$/d' "$gsiftpTransferList" > "$gsiftpTransferListClean"
+		cat "$gsiftpTransferList" > "$gsiftpTransferListClean"
+		# Reverted, as this breaks the multi-step functionality, because if an empty dir is included in the transfer
+		# but not created on the transit site(s), the transfer lists for the second step and following steps
+		# will contain a reference to a non-existing directory on the source side (which is a transit site during
+		# these steps).
+		# Uncomment directory lines (the URLs there end with a `/`!), so at that least dirs containing
+		# other empty dirs are created on the destination side
+		#sed -e '/^#\".*\/\" \".*\/\" .*/s/^#//g' "$gsiftpTransferList" > "$gsiftpTransferListClean"
 
 		_transferListSource=$( listTransfer/getSourceFromTransferList "$gsiftpTransferListClean" )
 		_transferListDestination=$( listTransfer/getDestinationFromTransferList "$gsiftpTransferListClean" )
@@ -769,7 +781,7 @@ if [[ "$gsiftpSourceUrl" == "" || \
 				done
 			fi
 
-			multipathing/performTransfer "$gsiftpTransferList" "$_dpath" "$dataPathMetric" "$autoOptimize" "$_verboseOption"
+			multipathing/performTransfer "$gsiftpTransferListClean" "$_dpath" "$dataPathMetric" "$autoOptimize" "$_verboseOption"
 
 		#  TODO:
 		#  Use temporary dir for temp files (.gtransfer/<transferID>)

@@ -1,6 +1,6 @@
-% GTRANSFER(1) gtransfer 0.4.0 | User Commands
+% GTRANSFER(1) gtransfer 0.4.1 | User Commands
 % Frank Scheiner
-% Sep 17, 2015
+% Jan 27, 2016
 
 
 # NAME #
@@ -29,10 +29,11 @@
 
 
 # DESCRIPTION #
-**gtransfer** is a wrapper script for the **tgftp(1)** tool and provides an
-advanced command line interface for performing GridFTP data transfers.
+**gtransfer** or short **gt** is a wrapper script for the **tgftp(1)** tool and
+provides an advanced command line interface for performing GridFTP data
+transfers.
 
-**gtransfer** has the following features:
+**gt** has the following features:
 
 ## Multi-step data transfers ##
 **gtransfer** can transfer files along predefined paths by using transit sites
@@ -46,16 +47,15 @@ usage details.
 
 ## Optimized data transfer performance ##
 **gtransfer** supports usage of pre-optimized data transfer parameters for
-specific connections. See dparam(5) for more details. In addition **gtransfer**
+specific connections. See **dparam(5)** for more details. In addition **gt**
 can also automatically optimize a data transfer depending on the size of the
 files.
 
 ## Data transfer interruption and continuation ##
 **gtransfer** supports interruption and continuation of transfers. You can
 interrupt a transfer by hitting `CTRL+C`. To continue an interrupted transfer
-simply issue the very same command, **gtransfer** will then continue the
-transfer where it was interrupted. The same procedure works for a failed
-transfer.
+simply issue the very same command, **gt** will then continue the transfer where
+it was interrupted. The same procedure works for a failed transfer.
 
 ## Data transfer reliability ##
 **gtransfer** supports automatic retries of failed transfer steps. The number of
@@ -125,45 +125,50 @@ required for the destination URL host part.
 ## **[-o, \--auto-optimize _transferMode_]** ##
 
 This option activates an automatic optimization of transfers depending on the
-size of files to be transferred. If less than 100 files are  going to be
-transferred, gtransfer will fall back to URL or list transfer depending on
-command line options. The _transferMode_ controls how files of different size
-classes are transferred. Currently "seq[uential]" (different size classes are
-transferred sequentially) is possible. To define different file size classes use
-the file _[...]/chunkConfig_. See **FILES** section below for more details.
+size of files to be transferred. If less than 100 files are going to be
+transferred, gtransfer will fall back to list transfer. The _transferMode_
+controls how files of different size classes are transferred. Currently
+"seq[uential]" (different size classes are transferred sequentially) is
+possible. To define different file size classes use the file 
+_[...]/chunkConfig_. See **FILES** section below for more details.
 
 
 ## **[-r, \--recursive]** ##
 
 Transfer files recursively.
 
+**NOTICE:** **globus-url-copy(1)** (even with option **-cd**) and therefore also
+**gt** will not create directories on the destination side that are empty on the
+source side.
+
 
 ## **[-c, \--checksum-data-channel]** ##
 
 Enable checksumming on the data channel. Cannot be used in conjunction with
-"-e"!
+**-e**!
 
 
 ## **[-e, \--encrypt-data-channel]** ##
 
-Enable encryption on the data channel. Cannot be used in conjunction with "-c"!
+Enable encryption on the data channel. Cannot be used in conjunction with
+**-c**!
 
 
 ## **[\--guc-max-retries _gucMaxRetries_]** ##
 
-This option sets the maximum number of retries globus-url-copy (guc) will do for
-a transfer of a single file. By default this is set to 1, which means that guc
-will tolerate at max. one transfer error per file and retry the transfer once.
-Alternatively this option can also be set through the environment variable
-**GUC_MAX_RETRIES**.
+This option sets the maximum number of retries **globus-url-copy(1)** will do
+for a transfer of a single file. By default this is set to 1, which means that
+**globus-url-copy(1)** will tolerate at max. one transfer error per file and
+retry the transfer once. Alternatively this option can also be set with the
+environment variable **GUC_MAX_RETRIES**.
 
 
 ## **[\--gt-max-retries _gtMaxRetries_]** ##
 
-This  option sets the maximum number of retries gt will do for a single transfer
-step. By default this is set to 3, which means that gt will try to finish a
-single transfer step three times or fail. Alternatively  this option can also be
-set through the environment variable **GT_MAX_RETRIES**.
+This option sets the maximum number of retries **gt** will do for a single
+transfer step. By default this is set to 3, which means that **gt** will try to
+finish a single transfer step three times or fail. Alternatively this option can
+also be set with the environment variable **GT_MAX_RETRIES**.
 
 
 ## **[-v, \--verbose]** ##
@@ -182,10 +187,10 @@ should be used (e.g. "0,1,2"). You can also use metric values multiple times
 
 ## **[-l, \--logfile _logfile_]** ##
 
-Set the name for the logfile, tgftp will generate for each transfer. If
-specified with ".log" as extension, gtransfer will insert a "\_\_step_#" string
+Set the name for the logfile, **tgftp(1)** will generate for each transfer. If
+specified with ".log" as extension, **gt** will insert a "\_\_step_#" string
 to the name of the logfile ("#" is the number of the transfer step performed).
-If omitted gtransfer will automatically generate a name for the logfile(s).
+If omitted **gt** will automatically generate a name for the logfile(s).
 
 
 ## **[-a, \--auto-clean]** ##
@@ -195,26 +200,25 @@ Remove logfiles automatically after the transfer completed.
 
 ## **[\--configfile _configurationFile_]** ##
 
-Set the name of the configuration file for gtransfer. If not set, this defaults
-to:
+Set the name of the configuration file for **gt**. If not set, this defaults to:
 
 1. "/etc/gtransfer/gtransfer.conf" or
 2. "<GTRANSFER_BASE_PATH>/etc/gtransfer.conf" or
 3. "/etc/opt/gtransfer/gtransfer.conf" or
-4. "$HOME/.gtransfer/gtransfer.conf" in this order.
+4. "$HOME/.gtransfer/gtransfer.conf" or
+5. "\$( dirname \$BASH_SOURCE )/../etc/gtransfer/gtransfer.conf" in this order.
 
 
 ## **[\-- _gucParameters_]** ##
 
 Set the **globus-url-copy(1)** parameters that should be used for all transfer
 steps. Notice the space between "\--" and the actual parameters. This overwrites
-any available default parameters and is not recommended for regular usage. There
-exists one exception for the `-len|-partial-length X` option. If this is
-provided, it will only be added to the transfer parameters from a dparam for a
-connection or - if no dparam is available - to the builtin default transfer
-parameters.
+any available dparams and is not recommended for regular usage. There exists
+one exception for the **-len|-partial-length X** option. If this is provided, it
+will only be added to the transfer parameters from a dparam for a connection or
+- if no dparam is available - to the builtin default transfer parameters.
 
-**NOTICE:** If specified, this option must be the last one in a **gtransfer**
+**NOTICE:** If specified, this option must be the last one in a **gt**
 command line.
 
 
@@ -243,22 +247,23 @@ See option **\--gt-max-retries** for details.
 
 ## **GT_KEEP_TMP_DIR** ##
 
-If set to 1, gt will keep its used temporary directory below ~/.gtransfer/tmp
-for inspection when exiting.
+If set to 1, **gt** will keep its used temporary directory below
+~/.gtransfer/tmp for inspection when exiting.
 
 ## **GT_NO_RELIABILITY** ##
 
-If set to 1, gt will not make use of the reliabilty functionality of guc. This
-means that transfers always start from the beginning. I.e. transfers cannot be
-interrupted and later continued from where they were interrupted and transfers
-that failed temporarily will also start from the beginning, when retried.
+If set to 1, **gt** will not make use of the reliabilty functionality of
+**globus-url-copy(1)**. This means that transfers always start from the
+beginning. I.e. transfers cannot be interrupted and later continued from where
+they were interrupted and transfers that failed temporarily will also start from
+the beginning, when retried.
 
 
 # FILES #
        
 ## _[...]/gtransfer.conf_ ##
 
-The **gtransfer** configuration file.
+The **gt** configuration file.
 
 
 ## _[...]/chunkConfig_ ##
@@ -287,26 +292,24 @@ Example:
 
 ## _[...]/dpaths/_ ##
 
-This directory contains the system dpaths usable by **gtransfer** and is
-configurable.
+This directory contains the system dpaths usable by **gt** and is configurable.
 
 
 ## _[...]/dparams/_ ##
 
-This directory contains the system dparams usable by **gtransfer** and is
-configurable.
+This directory contains the system dparams usable by **gt** and is configurable.
 
 
 ## _$HOME/.gtransfer/dpaths/_ ##
 
-This directory contains the user dpaths usable by **gtransfer**. Can be created
-with **dpath(1)**. If existing, dpaths in this directory have precedence.
+This directory contains the user dpaths usable by **gt**. Can be created with
+**dpath(1)**. If existing, dpaths in this directory have precedence.
 
 
 ## _$HOME/.gtransfer/dparams/_ ##
 
-This directory contains the user dparams usable by **gtransfer**. Can be created
-with **dparam(1)**. If existing, dparams in this directory have precedence.
+This directory contains the user dparams usable by **gt**. Can be created with
+**dparam(1)**. If existing, dparams in this directory have precedence.
 
 
 # SEE ALSO #

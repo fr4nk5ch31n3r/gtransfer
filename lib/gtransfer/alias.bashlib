@@ -2,7 +2,7 @@
 
 :<<COPYRIGHT
 
-Copyright (C) 2013 Frank Scheiner, HLRS, Universitaet Stuttgart
+Copyright (C) 2013, 2015 Frank Scheiner, HLRS, Universitaet Stuttgart
 
 The program is distributed under the terms of the GNU General Public License
 
@@ -93,7 +93,7 @@ INCLUDE
 # VARIABLES
 ################################################################################
 
-readonly _alias_Version="0.1.0"
+readonly _alias_Version="0.2.0"
 
 ################################################################################
 # FUNCTIONS
@@ -176,6 +176,8 @@ alias/dealiasWithFile()
 		_value=$( grep "^${_alias};" "$_aliasesSource" | cut -d ';' -f 2 )
 		if [[ "$_value" != "" ]]; then
 			_alias="$_value"
+		else
+			return 1
 		fi
 	done
 
@@ -214,6 +216,8 @@ alias/dealiasWithDir()
 		_value=$( cat "${_aliasesSource}/${_alias}" )
 		if [[ "$_value" != "" ]]; then
 			_alias="$_value"
+		else
+			return 1
 		fi
 	done
 
