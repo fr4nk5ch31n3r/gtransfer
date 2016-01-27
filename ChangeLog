@@ -1,3 +1,16 @@
+2016-01-27  Frank Scheiner <scheiner@hlrs.de>
+
+*0.4.1 (gtransfer toolkit):
+
+- Fixes
+
+Multipathing: A wrong variable name was corrected which prevented correct
+functioning of multipathing when using a transfer list as input to gt.
+
+Host aliases: Until now when trying to dealias host aliases that cannot be
+accessed by the effective user, the halias tool didn't exit a while loop and
+hence looped until interrupted by the user. This is now corrected.
+
 2015-09-17  Frank Scheiner <scheiner@hlrs.de>
 
 *0.4.0 (gtransfer toolkit):
