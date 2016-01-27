@@ -1,27 +1,27 @@
-.TH GTRANSFER 1 "Sep 17, 2015" "gtransfer 0.4.0" "User Commands"
+.TH "GTRANSFER" "1" "Jan 27, 2016" "gtransfer 0.4.1" "User Commands"
 .SH NAME
 .PP
-\f[B]gtransfer\f[] - The GridFTP data transfer script
+\f[B]gtransfer\f[] \- The GridFTP data transfer script
 .SH SYNOPSIS
 .PP
-\f[B]{gtransfer|gt} [--source|-s \f[I]sourceUrl\f[]] [--destination|-d
-\f[I]destinationUrl\f[]] [--transfer-list|-f \f[I]transferList\f[]]
-[--auto-optimize|-o \f[I]transferMode\f[]] [--recursive|-r]
-[--checksum-data-channel|-c] [--encrypt-data-channel|-e]
-[--guc-max-retries \f[I]gucMaxRetries\f[]] [--gt-max-retries
-\f[I]gtMaxRetries\f[]] [--gt-progress-indicator
-\f[I]indicatorCharacter\f[]] [--verbose|-v] [--metric|-m
-\f[I]dataPathMetric\f[]] [--logfile|-l \f[I]logfile\f[]]
-[--auto-clean|-a] [--configfile \f[I]configurationFile\f[]] [--
-\f[I]gucParameters\f[]]\f[]
+\f[B]{gtransfer|gt} [\-\-source|\-s \f[I]sourceUrl\f[]]
+[\-\-destination|\-d \f[I]destinationUrl\f[]] [\-\-transfer\-list|\-f
+\f[I]transferList\f[]] [\-\-auto\-optimize|\-o \f[I]transferMode\f[]]
+[\-\-recursive|\-r][\-\-checksum\-data\-channel|\-c]
+[\-\-encrypt\-data\-channel|\-e][\-\-guc\-max\-retries
+\f[I]gucMaxRetries\f[]] [\-\-gt\-max\-retries \f[I]gtMaxRetries\f[]]
+[\-\-gt\-progress\-indicator \f[I]indicatorCharacter\f[]]
+[\-\-verbose|\-v] [\-\-metric|\-m \f[I]dataPathMetric\f[]]
+[\-\-logfile|\-l \f[I]logfile\f[]] [\-\-auto\-clean|\-a] [\-\-configfile
+\f[I]configurationFile\f[]] [\-\- \f[I]gucParameters\f[]]\f[]
 .SH DESCRIPTION
 .PP
-\f[B]gtransfer\f[] is a wrapper script for the \f[B]tgftp(1)\f[] tool
-and provides an advanced command line interface for performing GridFTP
-data transfers.
+\f[B]gtransfer\f[] or short \f[B]gt\f[] is a wrapper script for the
+\f[B]tgftp(1)\f[] tool and provides an advanced command line interface
+for performing GridFTP data transfers.
 .PP
-\f[B]gtransfer\f[] has the following features:
-.SS Multi-step data transfers
+\f[B]gt\f[] has the following features:
+.SS Multi\-step data transfers
 .PP
 \f[B]gtransfer\f[] can transfer files along predefined paths by using
 transit sites and can therefore bridge different network domains.
@@ -31,21 +31,20 @@ See \f[B]dpath(5)\f[] for more details.
 \f[B]gtransfer\f[] can distribute a data transfer over multiple paths.
 This way users can benefit from the combined bandwidth of multiple
 paths.
-See option \f[B]-m\f[] for usage details.
+See option \f[B]\-m\f[] for usage details.
 .SS Optimized data transfer performance
 .PP
-\f[B]gtransfer\f[] supports usage of pre-optimized data transfer
+\f[B]gtransfer\f[] supports usage of pre\-optimized data transfer
 parameters for specific connections.
-See dparam(5) for more details.
-In addition \f[B]gtransfer\f[] can also automatically optimize a data
-transfer depending on the size of the files.
+See \f[B]dparam(5)\f[] for more details.
+In addition \f[B]gt\f[] can also automatically optimize a data transfer
+depending on the size of the files.
 .SS Data transfer interruption and continuation
 .PP
 \f[B]gtransfer\f[] supports interruption and continuation of transfers.
 You can interrupt a transfer by hitting \f[C]CTRL+C\f[].
 To continue an interrupted transfer simply issue the very same command,
-\f[B]gtransfer\f[] will then continue the transfer where it was
-interrupted.
+\f[B]gt\f[] will then continue the transfer where it was interrupted.
 The same procedure works for a failed transfer.
 .SS Data transfer reliability
 .PP
@@ -71,7 +70,7 @@ EUDAT and provided by EPIC as source of a data transfer.
 .SH OPTIONS
 .PP
 The options are as follows:
-.SS \f[B][-s, --source \f[I]sourceUrl\f[]]\f[]
+.SS \f[B][\-s, \-\-source \f[I]sourceUrl\f[]]\f[]
 .PP
 Set the source URL for the transfer.
 .PP
@@ -82,7 +81,7 @@ Possible URL examples:
 [file://]/path/to/file
 .PP
 "FQDN" is the fully qualified domain name.
-.SS \f[B][-d, --destination \f[I]destinationUrl\f[]]\f[]
+.SS \f[B][\-d, \-\-destination \f[I]destinationUrl\f[]]\f[]
 .PP
 Set the destination URL for the transfer.
 .PP
@@ -93,7 +92,7 @@ Possible URL examples:
 [file://]/path/to/file
 .PP
 "FQDN" is the fully qualified domain name.
-.SS \f[B][-f, --transfer-list \f[I]transferList\f[]]\f[]
+.SS \f[B][\-f, \-\-transfer\-list \f[I]transferList\f[]]\f[]
 .PP
 As alternative to providing source and destination URLs on the command
 line, one can also provide a list of source and destination URLs in a
@@ -110,12 +109,12 @@ The format of each line of the transfer list file is as follows
 Throughout all lines the source URL host part (e.g.
 "<PROTOCOL>://<FQDN1>:<PORT>") has to be identical.
 This is also required for the destination URL host part.
-.SS \f[B][-o, --auto-optimize \f[I]transferMode\f[]]\f[]
+.SS \f[B][\-o, \-\-auto\-optimize \f[I]transferMode\f[]]\f[]
 .PP
 This option activates an automatic optimization of transfers depending
 on the size of files to be transferred.
 If less than 100 files are going to be transferred, gtransfer will fall
-back to URL or list transfer depending on command line options.
+back to list transfer.
 The \f[I]transferMode\f[] controls how files of different size classes
 are transferred.
 Currently "seq[uential]" (different size classes are transferred
@@ -123,37 +122,42 @@ sequentially) is possible.
 To define different file size classes use the file
 \f[I][...]/chunkConfig\f[].
 See \f[B]FILES\f[] section below for more details.
-.SS \f[B][-r, --recursive]\f[]
+.SS \f[B][\-r, \-\-recursive]\f[]
 .PP
 Transfer files recursively.
-.SS \f[B][-c, --checksum-data-channel]\f[]
+.PP
+\f[B]NOTICE:\f[] \f[B]globus\-url\-copy(1)\f[] (even with option
+\f[B]\-cd\f[]) and therefore also \f[B]gt\f[] will not create
+directories on the destination side that are empty on the source side.
+.SS \f[B][\-c, \-\-checksum\-data\-channel]\f[]
 .PP
 Enable checksumming on the data channel.
-Cannot be used in conjunction with "-e"!
-.SS \f[B][-e, --encrypt-data-channel]\f[]
+Cannot be used in conjunction with \f[B]\-e\f[]!
+.SS \f[B][\-e, \-\-encrypt\-data\-channel]\f[]
 .PP
 Enable encryption on the data channel.
-Cannot be used in conjunction with "-c"!
-.SS \f[B][--guc-max-retries \f[I]gucMaxRetries\f[]]\f[]
+Cannot be used in conjunction with \f[B]\-c\f[]!
+.SS \f[B][\-\-guc\-max\-retries \f[I]gucMaxRetries\f[]]\f[]
 .PP
-This option sets the maximum number of retries globus-url-copy (guc)
-will do for a transfer of a single file.
-By default this is set to 1, which means that guc will tolerate at max.
+This option sets the maximum number of retries
+\f[B]globus\-url\-copy(1)\f[] will do for a transfer of a single file.
+By default this is set to 1, which means that
+\f[B]globus\-url\-copy(1)\f[] will tolerate at max.
 one transfer error per file and retry the transfer once.
-Alternatively this option can also be set through the environment
-variable \f[B]GUC_MAX_RETRIES\f[].
-.SS \f[B][--gt-max-retries \f[I]gtMaxRetries\f[]]\f[]
+Alternatively this option can also be set with the environment variable
+\f[B]GUC_MAX_RETRIES\f[].
+.SS \f[B][\-\-gt\-max\-retries \f[I]gtMaxRetries\f[]]\f[]
 .PP
-This option sets the maximum number of retries gt will do for a single
-transfer step.
-By default this is set to 3, which means that gt will try to finish a
-single transfer step three times or fail.
-Alternatively this option can also be set through the environment
-variable \f[B]GT_MAX_RETRIES\f[].
-.SS \f[B][-v, --verbose]\f[]
+This option sets the maximum number of retries \f[B]gt\f[] will do for a
+single transfer step.
+By default this is set to 3, which means that \f[B]gt\f[] will try to
+finish a single transfer step three times or fail.
+Alternatively this option can also be set with the environment variable
+\f[B]GT_MAX_RETRIES\f[].
+.SS \f[B][\-v, \-\-verbose]\f[]
 .PP
 Be verbose.
-.SS \f[B][-m, --metric \f[I]dataPathMetric\f[]]\f[]
+.SS \f[B][\-m, \-\-metric \f[I]dataPathMetric\f[]]\f[]
 .PP
 Set the metric to select the corresponding path of a data path.
 To enable multipathing, use either the keyword "all" to transfer data
@@ -162,20 +166,21 @@ values of the paths that should be used (e.g.
 "0,1,2").
 You can also use metric values multiple times (e.g.
 "0,0").
-.SS \f[B][-l, --logfile \f[I]logfile\f[]]\f[]
+.SS \f[B][\-l, \-\-logfile \f[I]logfile\f[]]\f[]
 .PP
-Set the name for the logfile, tgftp will generate for each transfer.
-If specified with ".log" as extension, gtransfer will insert a
+Set the name for the logfile, \f[B]tgftp(1)\f[] will generate for each
+transfer.
+If specified with ".log" as extension, \f[B]gt\f[] will insert a
 "__step_#" string to the name of the logfile ("#" is the number of the
 transfer step performed).
-If omitted gtransfer will automatically generate a name for the
+If omitted \f[B]gt\f[] will automatically generate a name for the
 logfile(s).
-.SS \f[B][-a, --auto-clean]\f[]
+.SS \f[B][\-a, \-\-auto\-clean]\f[]
 .PP
 Remove logfiles automatically after the transfer completed.
-.SS \f[B][--configfile \f[I]configurationFile\f[]]\f[]
+.SS \f[B][\-\-configfile \f[I]configurationFile\f[]]\f[]
 .PP
-Set the name of the configuration file for gtransfer.
+Set the name of the configuration file for \f[B]gt\f[].
 If not set, this defaults to:
 .IP "1." 3
 "/etc/gtransfer/gtransfer.conf" or
@@ -184,45 +189,48 @@ If not set, this defaults to:
 .IP "3." 3
 "/etc/opt/gtransfer/gtransfer.conf" or
 .IP "4." 3
-"$HOME/.gtransfer/gtransfer.conf" in this order.
-.SS \f[B][-- \f[I]gucParameters\f[]]\f[]
+"$HOME/.gtransfer/gtransfer.conf" or
+.IP "5." 3
+"$( dirname $BASH_SOURCE )/../etc/gtransfer/gtransfer.conf" in this
+order.
+.SS \f[B][\-\- \f[I]gucParameters\f[]]\f[]
 .PP
-Set the \f[B]globus-url-copy(1)\f[] parameters that should be used for
+Set the \f[B]globus\-url\-copy(1)\f[] parameters that should be used for
 all transfer steps.
-Notice the space between "--" and the actual parameters.
-This overwrites any available default parameters and is not recommended
-for regular usage.
-There exists one exception for the \f[C]-len|-partial-length\ X\f[]
+Notice the space between "\-\-" and the actual parameters.
+This overwrites any available dparams and is not recommended for regular
+usage.
+There exists one exception for the \f[B]\-len|\-partial\-length X\f[]
 option.
 If this is provided, it will only be added to the transfer parameters
-from a dparam for a connection or - if no dparam is available - to the
+from a dparam for a connection or \- if no dparam is available \- to the
 builtin default transfer parameters.
 .PP
 \f[B]NOTICE:\f[] If specified, this option must be the last one in a
-\f[B]gtransfer\f[] command line.
+\f[B]gt\f[] command line.
 .PP
 General options:
-.SS \f[B][--help]\f[]
+.SS \f[B][\-\-help]\f[]
 .PP
 Prints out a help message.
-.SS \f[B][-V, --version]\f[]
+.SS \f[B][\-V, \-\-version]\f[]
 .PP
 Prints out version information.
 .SH ENVIRONMENT VARIABLES
 .SS \f[B]GUC_MAX_RETRIES\f[]
 .PP
-See option \f[B]--guc-max-retries\f[] for details.
+See option \f[B]\-\-guc\-max\-retries\f[] for details.
 .SS \f[B]GT_MAX_RETRIES\f[]
 .PP
-See option \f[B]--gt-max-retries\f[] for details.
+See option \f[B]\-\-gt\-max\-retries\f[] for details.
 .SS \f[B]GT_KEEP_TMP_DIR\f[]
 .PP
-If set to 1, gt will keep its used temporary directory below
+If set to 1, \f[B]gt\f[] will keep its used temporary directory below
 ~/.gtransfer/tmp for inspection when exiting.
 .SS \f[B]GT_NO_RELIABILITY\f[]
 .PP
-If set to 1, gt will not make use of the reliabilty functionality of
-guc.
+If set to 1, \f[B]gt\f[] will not make use of the reliabilty
+functionality of \f[B]globus\-url\-copy(1)\f[].
 This means that transfers always start from the beginning.
 I.e.
 transfers cannot be interrupted and later continued from where they were
@@ -231,12 +239,12 @@ the beginning, when retried.
 .SH FILES
 .SS \f[I][...]/gtransfer.conf\f[]
 .PP
-The \f[B]gtransfer\f[] configuration file.
+The \f[B]gt\f[] configuration file.
 .SS \f[I][...]/chunkConfig\f[]
 .PP
 The chunk configuration file.
 In this file you can define the different file size classes for the
-auto-optimization.
+auto\-optimization.
 Practically the file is a table with three columns:
 \f[B]MIN_SIZE_IN_MB\f[], \f[B]MAX_SIZE_IN_MB\f[] and
 \f[B]GUC_PARAMETERS\f[] separated by a semicolon.
@@ -257,33 +265,33 @@ Example:
 .nf
 \f[C]
 #MIN_SIZE_IN_MB;MAX_SIZE_IN_MB;GUC_PARAMETERS
-min;50;-cc\ 16\ -tcp-bs\ 4M\ -stripe\ -sbs\ 4M\ -cd
-50;250;-cc\ 8\ -tcp-bs\ 8M\ -stripe\ -sbs\ 4M\ -cd
-250;max;-cc\ 6\ -p\ 4\ -tcp-bs\ 8M\ -stripe\ -sbs\ 8M\ -g2\ -cd
+min;50;\-cc\ 16\ \-tcp\-bs\ 4M\ \-stripe\ \-sbs\ 4M\ \-cd
+50;250;\-cc\ 8\ \-tcp\-bs\ 8M\ \-stripe\ \-sbs\ 4M\ \-cd
+250;max;\-cc\ 6\ \-p\ 4\ \-tcp\-bs\ 8M\ \-stripe\ \-sbs\ 8M\ \-g2\ \-cd
 \f[]
 .fi
 .SS \f[I][...]/dpaths/\f[]
 .PP
-This directory contains the system dpaths usable by \f[B]gtransfer\f[]
-and is configurable.
+This directory contains the system dpaths usable by \f[B]gt\f[] and is
+configurable.
 .SS \f[I][...]/dparams/\f[]
 .PP
-This directory contains the system dparams usable by \f[B]gtransfer\f[]
-and is configurable.
+This directory contains the system dparams usable by \f[B]gt\f[] and is
+configurable.
 .SS \f[I]$HOME/.gtransfer/dpaths/\f[]
 .PP
-This directory contains the user dpaths usable by \f[B]gtransfer\f[].
+This directory contains the user dpaths usable by \f[B]gt\f[].
 Can be created with \f[B]dpath(1)\f[].
 If existing, dpaths in this directory have precedence.
 .SS \f[I]$HOME/.gtransfer/dparams/\f[]
 .PP
-This directory contains the user dparams usable by \f[B]gtransfer\f[].
+This directory contains the user dparams usable by \f[B]gt\f[].
 Can be created with \f[B]dparam(1)\f[].
 If existing, dparams in this directory have precedence.
 .SH SEE ALSO
 .PP
 \f[B]dparam(1)\f[], \f[B]dparam(5)\f[], \f[B]dpath(1)\f[],
-\f[B]dpath(5)\f[], \f[B]globus-url-copy(1)\f[], \f[B]tgftp(1)\f[],
+\f[B]dpath(5)\f[], \f[B]globus\-url\-copy(1)\f[], \f[B]tgftp(1)\f[],
 \f[B]uberftp(1C)\f[]
 .SH AUTHORS
 Frank Scheiner.
