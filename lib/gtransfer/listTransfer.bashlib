@@ -1403,7 +1403,7 @@ listTransfer/createTransferList() {
 		#sed -i -e '/^#.*$/d' "$_transferListFile"
 		# Uncomment directory lines (the URLs there end with a `/`!), so that at least dirs containing
 		# other empty dirs are created on the destination side
-		sed -e '/^#\".*\/\" \".*\/\" .*/s/^#//g' "$gsiftpTransferList" > "$gsiftpTransferListClean"
+		sed -e '/^#\".*\/\" \".*\/\" .*/s/^#//g' -i "$_transferListFile"
 
 		# Now check if the transfer list only has one line (i.e. only
 		# one file should be transferred). If this is the case, the
