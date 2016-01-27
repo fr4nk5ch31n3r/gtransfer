@@ -746,10 +746,14 @@ if [[ "$gsiftpSourceUrl" == "" || \
 		# are removed from a transfer list, as no other URL references those dirs then!
 		# strip comment lines from transfer list
 		#sed -e '/^#.*$/d' "$gsiftpTransferList" > "$gsiftpTransferListClean"
-		#cat "$gsiftpTransferList" > "$gsiftpTransferListClean"
+		cat "$gsiftpTransferList" > "$gsiftpTransferListClean"
+		# Reverted, as this breaks the multi-step functionality, because if an empty dir is included in the transfer
+		# but not created on the transit site(s), the transfer lists for the second step and following steps
+		# will contain a reference to a non-existing directory on the source side (which is a transit site during
+		# these steps).
 		# Uncomment directory lines (the URLs there end with a `/`!), so at that least dirs containing
 		# other empty dirs are created on the destination side
-		sed -e '/^#\".*\/\" \".*\/\" .*/s/^#//g' "$gsiftpTransferList" > "$gsiftpTransferListClean"
+		#sed -e '/^#\".*\/\" \".*\/\" .*/s/^#//g' "$gsiftpTransferList" > "$gsiftpTransferListClean"
 
 		_transferListSource=$( listTransfer/getSourceFromTransferList "$gsiftpTransferListClean" )
 		_transferListDestination=$( listTransfer/getDestinationFromTransferList "$gsiftpTransferListClean" )
