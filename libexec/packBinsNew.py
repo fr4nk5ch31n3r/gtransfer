@@ -5,7 +5,7 @@
 # Original author: Kent S Johnson <kent@kentsjohnson.com>
 # Website: http://kentsjohnson.com/
 
-# Adapted by Frank Scheiner 2014-2015
+# Adapted by Frank Scheiner 2014-2016
 
 ''' Partition a list into sublists whose sums don't exceed a maximum
      using a First Fit Decreasing algorithm. See
@@ -18,7 +18,7 @@
 # * [ ] Remove garbage und unneccessary comments
 # * [ ] Move functions and includes to respective blocks
 
-# version 0.2.0
+# version 0.3.0
 
 ################################################################################
 # INCLUDES
