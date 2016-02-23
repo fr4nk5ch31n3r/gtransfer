@@ -27,7 +27,7 @@ COPYRIGHT
 #  DEFINES
 ################################################################################
 
-readonly _listTransfer_Version="0.5.0"
+readonly _listTransfer_Version="0.6.0"
 
 ################################################################################
 #  INCLUDES
@@ -1419,9 +1419,19 @@ listTransfer/createTransferList() {
 
 		if [[ $( wc -l "$_transferListFile" | cut -d ' ' -f 1) == "1" ]]; then
 
+			local _file=""
+			local _fileSize=0
+
 			# If there's only one line in the transfer list, we need to add
 			# the missing file size information manually, e.g. with uberftp.
-			local _fileSize=$( uberftp -size "$_source" )
+			if [[ $( helperFunctions/getURLWithoutPath "$_source" ) == "file://" ]]; then
+
+				_file=$( helperFunctions/getPathFromURL "$_source")$( helperFunctions/getFilenameFromURL "$_source" )
+				_fileSize=$( stat -c %s "$_file" )
+
+			else
+				_fileSize=$( uberftp -size "$_source" )
+			fi
 
 			# remove newline from end of file
 			truncate -s -1 "$_transferListFile"
