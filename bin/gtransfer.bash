@@ -37,7 +37,7 @@ trap - SIGINT
 #set -f
 
 readonly _program=$( basename "$0" )
-readonly _gtransferVersion="0.4.1"
+readonly _gtransferVersion="0.5.0"
 
 version="$_gtransferVersion"
 
@@ -439,6 +439,7 @@ while [[ "$1" != "" ]]; do
 
 	#  "--" ################################################################
 	if [[ "$1" == "--" ]]; then
+
 		#  remove "--" from "$@"
 		shift 1
 		#  params forwarded to "globus-url-copy"
@@ -450,237 +451,145 @@ while [[ "$1" != "" ]]; do
 
 	#  "--help" ############################################################
 	elif [[ "$1" == "--help" ]]; then
+
 		helpMsg
 		exit $_gtransfer_exit_ok
 
 	#  "--version|-V" ######################################################
 	elif [[ "$1" == "--version" || "$1" == "-V" ]]; then
+
 		versionMsg
 		exit $_gtransfer_exit_ok
 
 	#  "--source|-s gsiftpSourceUrl" #######################################
 	elif [[ "$1" == "--source" || "$1" == "-s" ]]; then
-		if [[ "$gsiftpSourceUrlSet" != "0" ]]; then
-			shift 1
-			gsiftpSourceUrl="$1"
-			gsiftpSourceUrlSet="0"
-			shift 1
-		else
-			#  duplicate usage of this parameter
-			echo "${_program}: The parameter \"--source|-s\" cannot be used multiple times!"
-			echo "Try \`${_program} --help' for more information."
-			exit $_gtransfer_exit_usage
-		fi
+
+		shift 1
+		gsiftpSourceUrl="$1"
+		gsiftpSourceUrlSet="0"
+		shift 1
 
 	#  "--destination|-d gsiftpDestinationUrl" #############################
 	elif [[ "$1" == "--destination" || "$1" == "-d" ]]; then
-		if [[ "$gsiftpDestinationUrlSet" != "0" ]]; then
-			shift 1
-			gsiftpDestinationUrl="$1"
-			gsiftpDestinationUrlSet="0"
-			shift 1
-		else
-			#  duplicate usage of this parameter
-			echo "${_program}: The parameter \"--destination|-d\" cannot be used multiple times!"
-			echo "Try \`${_program} --help' for more information."
-			exit $_gtransfer_exit_usage
-		fi
+
+		shift 1
+		gsiftpDestinationUrl="$1"
+		gsiftpDestinationUrlSet="0"
+		shift 1
 
         #  "--transfer-list|-f transferList" ###################################
 	elif [[ "$1" == "--transfer-list" || "$1" == "-f" ]]; then
-		if [[ ! $gsiftpTransferListSet -eq 1 ]]; then
-			shift 1
-			gsiftpTransferList="$1"
-			gsiftpTransferListSet=1
-			shift 1
-		else
-			#  duplicate usage of this parameter
-			echo "${_program}: The parameter \"--transfer-list|-f\" cannot be used multiple times!"
-			echo "Try \`${_program} --help' for more information."
-			exit $_gtransfer_exit_usage
-		fi
+
+		shift 1
+		gsiftpTransferList="$1"
+		gsiftpTransferListSet=1
+		shift 1
 
 	#  "--auto-optimize|-o transferMode" ###################################
 	elif [[ "$1" == "--auto-optimize" || "$1" == "-o" ]]; then
-		if [[ "$autoOptimizeSet" != "0" ]]; then
-			shift 1
-			transferMode="$1"
-			# By default use "seq" transfer mode
-			if [[ -z "$transferMode" ]]; then
-				transferMode="seq"
-			fi
-			autoOptimizeSet="0"
-			shift 1
-		else
-			#  duplicate usage of this parameter
-			echo "${_program}: The parameter \"--auto-optimization|-o\" cannot be used multiple times!"
-			echo "Try \`${_program} --help' for more information."
-			exit $_gtransfer_exit_usage
+
+		shift 1
+		transferMode="$1"
+		# By default use "seq" transfer mode
+		if [[ -z "$transferMode" ]]; then
+			transferMode="seq"
 		fi
+		autoOptimizeSet="0"
+		shift 1
 
         #  "--guc-max-retries gucMaxRetries" ###################################
 	elif [[ "$1" == "--guc-max-retries" ]]; then
-		if [[ "$gucMaxRetriesSet" != "0" ]]; then
-			shift 1
-			gucMaxRetries="$1"
-			gucMaxRetriesSet="0"
-			shift 1
-		else
-			#  duplicate usage of this parameter
-			echo "${_program}: The parameter \"--guc-max-retries\" cannot be used multiple times!"
-			echo "Try \`${_program} --help' for more information."
-			exit $_gtransfer_exit_usage
-		fi
+
+		shift 1
+		gucMaxRetries="$1"
+		gucMaxRetriesSet="0"
+		shift 1
 
         #  "--gt-max-retries gtMaxRetries" #####################################
 	elif [[ "$1" == "--gt-max-retries" ]]; then
-		if [[ "$gtMaxRetriesSet" != "0" ]]; then
-			shift 1
-			gtMaxRetries="$1"
-			gtMaxRetriesSet="0"
-			shift 1
-		else
-			#  duplicate usage of this parameter
-			echo "${_program}: The parameter \"--gt-max-retries\" cannot be used multiple times!"
-			echo "Try \`${_program} --help' for more information."
-			exit $_gtransfer_exit_usage
-		fi
+
+		shift 1
+		gtMaxRetries="$1"
+		gtMaxRetriesSet="0"
+		shift 1
 
         #  "--gt-progress-indicator indicatorCharacter" ########################
         elif [[ "$1" == "--gt-progress-indicator" ]]; then
-		if [[ "$gtProgressIndicatorSet" != "0" ]]; then
-			shift 1
-			gtProgressIndicator="$1"
-			gtProgressIndicatorSet="0"
-			shift 1
-		else
-			#  duplicate usage of this parameter
-			echo "${_program}: The parameter \"--gt-progress-indicator\" cannot be used multiple times!"
-			echo "Try \`${_program} --help' for more information."
-			exit $_gtransfer_exit_usage
-		fi
+
+		shift 1
+		gtProgressIndicator="$1"
+		gtProgressIndicatorSet="0"
+		shift 1
 
 	#  "--metric|-m dataPathMetric" ########################################
 	elif [[ "$1" == "--metric" || "$1" == "-m" ]]; then
-		if [[ "$dataPathMetricSet" != "0" ]]; then
-			shift 1
-			dataPathMetric="$1"
-			dataPathMetricSet="0"
-			shift 1
-		else
-			#  duplicate usage of this parameter
-			echo "${_program}: The parameter \"--metric|-m\" cannot be used multiple times!"
-			echo "Try \`${_program} --help' for more information."
-			exit $_gtransfer_exit_usage
-		fi
+
+		shift 1
+		dataPathMetric="$1"
+		dataPathMetricSet="0"
+		shift 1
 
 	#  "--verbose|-v" ######################################################
 	elif [[ "$1" == "--verbose" || "$1" == "-v" ]]; then
-		if [[ $verboseExecSet != 0 ]]; then
-			shift 1
-			verboseExecSet=0
-		else
-			#  duplicate usage of this parameter
-			echo "${_program}: The parameter \"--verbose|-v\" cannot be used multiple times!"
-			echo "Try \`${_program} --help' for more information."
-			exit $_gtransfer_exit_usage
-		fi
+
+		shift 1
+		verboseExecSet=0
 		
 	#  "--recursive|-r" ####################################################
 	elif [[ "$1" == "--recursive" || "$1" == "-r" ]]; then
-		if [[ $recursiveTransferSet != 0 ]]; then
-			shift 1
-			recursiveTransferSet=0
-		else
-			#  duplicate usage of this parameter
-			echo "${_program}: The parameter \"--recursive|-r\" cannot be used multiple times!"
-			echo "Try \`${_program} --help' for more information."
-			exit $_gtransfer_exit_usage
-		fi
+
+		shift 1
+		recursiveTransferSet=0
 
 	#  "--checksum-data-channel|-c" ########################################
 	elif [[ "$1" == "--checksum-data-channel" || "$1" == "-c" ]]; then
-		if [[ $_checksumDataChannelSet -ne 0 ]]; then
 
-			if [[ $_encryptDataChannelSet -ne 0 ]]; then
+		if [[ $_encryptDataChannelSet -ne 0 ]]; then
 
-				shift 1
-				_checksumDataChannelSet=0
-			else
-				echo "${_program}: The parameter \"--checksum-data-channel|-c\" cannot be used in conjunction with the parameter \"--encrypt-data-channel|-e\"!"
-				echo "Try \`${_program} --help' for more information."
-				exit $_gtransfer_exit_usage
-			fi
+			shift 1
+			_checksumDataChannelSet=0
 		else
-			#  duplicate usage of this parameter
-			echo "${_program}: The parameter \"--checksum-data-channel|-c\" cannot be used multiple times!"
+			echo "${_program}: The parameter \"--checksum-data-channel|-c\" cannot be used in conjunction with the parameter \"--encrypt-data-channel|-e\"!"
 			echo "Try \`${_program} --help' for more information."
 			exit $_gtransfer_exit_usage
 		fi
 
 	#  "--encrypt-data-channel|-e" #########################################
 	elif [[ "$1" == "--encrypt-data-channel" || "$1" == "-e" ]]; then
-		if [[ $_encryptDataChannelSet -ne 0 ]]; then
 
-			if [[ $_checksumDataChannelSet -ne 0 ]]; then
+		if [[ $_checksumDataChannelSet -ne 0 ]]; then
 
-				shift 1
-				_encryptDataChannelSet=0
-			else
-				echo "${_program}: The parameter \"--encrypt-data-channel|-e\" cannot be used in conjunction with the parameter \"--checksum-data-channel|-c\"!"
-				echo "Try \`${_program} --help' for more information."
-				exit $_gtransfer_exit_usage
-			fi
+			shift 1
+			_encryptDataChannelSet=0
 		else
-			#  duplicate usage of this parameter
-			echo "${_program}: The parameter \"--encrypt-data-channel|-e\" cannot be used multiple times!"
+			echo "${_program}: The parameter \"--encrypt-data-channel|-e\" cannot be used in conjunction with the parameter \"--checksum-data-channel|-c\"!"
 			echo "Try \`${_program} --help' for more information."
 			exit $_gtransfer_exit_usage
 		fi
 
 	#  "--auto-clean|-a" ###################################################
 	elif [[ "$1" == "--auto-clean" || "$1" == "-a" ]]; then
-		if [[ $autoCleanSet != 0 ]]; then
-			shift 1
-			autoClean=0
-			autoCleanSet=0
-		else
-			#  duplicate usage of this parameter
-			echo "${_program}: The parameter \"--auto-clean|-a\" cannot be used multiple times!"
-			echo "Try \`${_program} --help' for more information."
-			exit $_gtransfer_exit_usage
-		fi
+
+		shift 1
+		autoClean=0
+		autoCleanSet=0
 
 	#  "--logfile|-l" ######################################################
 	elif [[ "$1" == "--logfile" || "$1" == "-l" ]]; then
-		if [[ $tgftpLogfileNameSet != 0 ]]; then
-			shift 1
-			tgftpLogfileName="$1"
-			tgftpLogfileNameSet=0
-			shift 1
-		else
-			#  duplicate usage of this parameter
-			echo "${_program}: The parameter \"--logfile|-l\" cannot be used multiple times!"
-			echo "Try \`${_program} --help' for more information."
-			exit $_gtransfer_exit_usage
-		fi
+
+		shift 1
+		tgftpLogfileName="$1"
+		tgftpLogfileNameSet=0
+		shift 1
 
 	#  "--configfile" ######################################################
 	elif [[ "$1" == "--configfile" ]]; then
-		if [[ $gtransferConfigurationFileSet != 0 ]]; then
-			shift 1
-			gtransferConfigurationFile="$1"
-			gtransferConfigurationFileSet=0
-			shift 1
-		else
-			#  duplicate usage of this parameter
-			echo "${_program}: The parameter \"--configfile\" cannot be used multiple times!"
-			echo "Try \`${_program} --help' for more information."
-			exit $_gtransfer_exit_usage
-		fi
 
+		shift 1
+		gtransferConfigurationFile="$1"
+		gtransferConfigurationFileSet=0
+		shift 1
 	fi
-
 done
 
 #  load configuration file
