@@ -27,7 +27,7 @@ COPYRIGHT
 #  DEFINES
 ################################################################################
 
-readonly _listTransfer_Version="0.6.0"
+readonly _listTransfer_Version="0.7.0"
 
 ################################################################################
 #  INCLUDES
@@ -1423,11 +1423,25 @@ listTransfer/createTransferList() {
 			local _fileSize=0
 
 			# If there's only one line in the transfer list, we need to add
-			# the missing file size information manually, e.g. with uberftp.
+			# the missing file size information manually, e.g. with uberftp or stat for
+			# local files.
 			if [[ $( helperFunctions/getURLWithoutPath "$_source" ) == "file://" ]]; then
 
-				_file=$( helperFunctions/getPathFromURL "$_source")$( helperFunctions/getFilenameFromURL "$_source" )
-				_fileSize=$( stat -c %s "$_file" )
+				local _filePath=$( helperFunctions/getPathFromURL "$_source" )
+				local _fileName=$( helperFunctions/getFilenameFromURL "$_source" )
+
+				# Anticipate the case where all files in a dir should be transferred
+				# but only one file exists in dir. If URL ends on '/', $_fileName would
+				# be empty. Hence use '*' and don't use double quotes in the stat call
+				# so the '*' is expanded to the one file in the dir.
+				if [[ "$_fileName" == "" ]]; then
+
+					_fileName="*"
+				fi
+
+				_file="${_filePath}${_fileName}"
+
+				_fileSize=$( stat -c %s $_file )
 
 			else
 				_fileSize=$( uberftp -size "$_source" )
