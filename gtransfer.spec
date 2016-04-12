@@ -170,7 +170,10 @@ rm -rf %{buildroot}
 %{_mandir}/man1/halias.1.gz
 
 %changelog
-* Thu Apr 12 2015 Frank Scheiner <scheiner@hlrs.de> 0.5.0-1
+* Thu Apr 12 2016 Frank Scheiner <scheiner@hlrs.de> 0.5.1-1
+- Updated source version number to new patch level.
+
+* Thu Apr 12 2016 Frank Scheiner <scheiner@hlrs.de> 0.5.0-1
 - Updated source package and version number to new release.
 
 * Wed Jan 27 2016 Frank Scheiner <scheiner@hlrs.de> 0.4.1-1
