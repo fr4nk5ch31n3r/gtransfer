@@ -1440,6 +1440,7 @@ listTransfer/createTransferList() {
 				fi
 
 				_file="${_filePath}${_fileName}"
+				_file=$( helperFunctions/urlDecode "$_file" )
 
 				_fileSize=$( stat -c %s $_file )
 
