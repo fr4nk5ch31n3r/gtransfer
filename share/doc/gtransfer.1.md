@@ -103,6 +103,22 @@ Possible URL examples:
 
 "FQDN" is the fully qualified domain name.
 
+**NOTICE:** Special chars in URLs (e.g. German umlauts, etc.) need to
+be given percent or URL encoded! You can use the following table for
+reference:
+
+| German umlaut | Percent/URL encoded |
+| ------------- | ------------------- |
+| ä             | %C3%A4              |
+| ö             | %C3%B6              |
+| ü             | %C3%BC              |
+| Ä             | %C3%84              |
+| Ö             | %C3%96              |
+| Ü             | %C3%9C              |
+| ß             | %C3%9F              |
+| " " (space)   | %20                 |
+
+A full table is available on `http://www.w3schools.com/tags/ref_urlencode.asp`
 
 ## **[-f, \--transfer-list _transferList_]** ##
 
