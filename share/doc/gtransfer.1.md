@@ -1,6 +1,6 @@
-% GTRANSFER(1) gtransfer 0.4.1 | User Commands
+% GTRANSFER(1) gtransfer 0.5.0 | User Commands
 % Frank Scheiner
-% Jan 27, 2016
+% Apr 12, 2016
 
 
 # NAME #
@@ -108,8 +108,7 @@ Possible URL examples:
 
 As alternative to providing source and destination URLs on the command line,
 one can also provide a list of source and destination URLs in a transfer
-list; **gtransfer** will then perform a _list transfer_ instead of an _URL 
-transfer_ when using source and destination URLs.
+list.
 
 The format of each line of the transfer list file is as follows (including
 the double quotes!):
