@@ -1,3 +1,21 @@
+2016-04-12  Frank Scheiner <scheiner@hlrs.de>
+
+*0.5.0 (gtransfer toolkit):
+
+- New functionality
+
+Gt options can now be used multiple times on the command line, the last
+setting of an option wins. This allows for setting gt default options
+via shell aliases.
+
+- Fixes
+
+Added missing gt options to bash completion.
+
+Enhanced the workaround for the guc bug (no size string in created
+transfer lists if only a single file is to be transferred) to get the
+size for `file://` source URLs with the `stat` tool locally.
+
 2016-01-27  Frank Scheiner <scheiner@hlrs.de>
 
 *0.4.1 (gtransfer toolkit):

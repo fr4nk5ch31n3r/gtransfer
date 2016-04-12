@@ -27,7 +27,7 @@ COPYRIGHT
 #  DEFINES
 ################################################################################
 
-readonly _listTransfer_Version="0.5.0"
+readonly _listTransfer_Version="0.6.0"
 
 ################################################################################
 #  INCLUDES
@@ -822,7 +822,7 @@ listTransfer/doTransferStep()
 			transferStepDestination=$( echo $transferStepDestination | sed -e "s|${transferStepDestinationProtoSpec}|${transferStepDestinationProtoSpec}${destinationUsernamePortion}|" )
 		fi
 
-		#  this is a direct transfer, so we can just use transfer list unchanged
+		#  this is a direct transfer, so we can just use the transfer list unchanged
 		local _tmpTransferId=$( listTransfer/getTransferIdForTransferList "$_tempTransferList" )
 		
 		#  if this transferStep was already finished,
@@ -876,7 +876,7 @@ listTransfer/doTransferStep()
 		transferStepSource=$( echo $transferStepSource | sed -e "s|${transferStepSourceProtoSpec}|${transferStepSourceProtoSpec}${sourceUsernamePortion}|" )
 
 		#  source can stay as it is (the username portion is contained in
-		#+ the transfer list), destination needs to be echanged
+		#+ the transfer list), destination needs to be changed
 		sed -e "s|$_destinationWithoutPath|${transferStepDestination}/${transitSiteTempDir}/|g" -i "$_tempTransferList"
 
 		local _tmpTransferId=$( listTransfer/getTransferIdForTransferList "$_tempTransferList" )
@@ -1419,9 +1419,19 @@ listTransfer/createTransferList() {
 
 		if [[ $( wc -l "$_transferListFile" | cut -d ' ' -f 1) == "1" ]]; then
 
+			local _file=""
+			local _fileSize=0
+
 			# If there's only one line in the transfer list, we need to add
 			# the missing file size information manually, e.g. with uberftp.
-			local _fileSize=$( uberftp -size "$_source" )
+			if [[ $( helperFunctions/getURLWithoutPath "$_source" ) == "file://" ]]; then
+
+				_file=$( helperFunctions/getPathFromURL "$_source")$( helperFunctions/getFilenameFromURL "$_source" )
+				_fileSize=$( stat -c %s "$_file" )
+
+			else
+				_fileSize=$( uberftp -size "$_source" )
+			fi
 
 			# remove newline from end of file
 			truncate -s -1 "$_transferListFile"
