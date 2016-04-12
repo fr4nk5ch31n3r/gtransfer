@@ -1,3 +1,4 @@
+.\"t
 .TH "GTRANSFER" "1" "Apr 12, 2016" "gtransfer 0.5.0" "User Commands"
 .SH NAME
 .PP
@@ -92,6 +93,64 @@ Possible URL examples:
 [file://]/path/to/file
 .PP
 "FQDN" is the fully qualified domain name.
+.PP
+\f[B]NOTICE:\f[] Special chars in URLs (e.g.
+German umlauts, etc.) need to be given percent or URL encoded! You can
+use the following table for reference:
+.PP
+.TS
+tab(@);
+l l.
+T{
+German umlaut
+T}@T{
+Percent/URL encoded
+T}
+_
+T{
+ä
+T}@T{
+%C3%A4
+T}
+T{
+ö
+T}@T{
+%C3%B6
+T}
+T{
+ü
+T}@T{
+%C3%BC
+T}
+T{
+Ä
+T}@T{
+%C3%84
+T}
+T{
+Ö
+T}@T{
+%C3%96
+T}
+T{
+Ü
+T}@T{
+%C3%9C
+T}
+T{
+ß
+T}@T{
+%C3%9F
+T}
+T{
+" " (space)
+T}@T{
+%20
+T}
+.TE
+.PP
+A full table is available on
+\f[C]http://www.w3schools.com/tags/ref_urlencode.asp\f[]
 .SS \f[B][\-f, \-\-transfer\-list \f[I]transferList\f[]]\f[]
 .PP
 As alternative to providing source and destination URLs on the command
