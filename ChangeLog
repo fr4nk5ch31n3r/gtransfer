@@ -1,5 +1,23 @@
 2016-04-12  Frank Scheiner <scheiner@hlrs.de>
 
+*0.5.1 (gtransfer toolkit):
+
+- Fixes
+
+Using a "/" or "/*" in a source URL to transfer all files in a given dir
+now no longer makes problems for "stat" if only one file existed in the
+given dir. This fixes issue #41.
+
+Special chars in URLs need to be percent or URL encoded when provided to
+globus-url-copy on the commandline. This means that currently URLs with
+special chars also have to be provided to gt percent or URL encoded.
+This is now also mentioned in the gt manpage.
+Before using stat, the path and file name in the source URL are now
+decoded beforehand, which makes the call to stat also working for
+URLs with special chars. This fixes issue #42.
+
+2016-04-12  Frank Scheiner <scheiner@hlrs.de>
+
 *0.5.0 (gtransfer toolkit):
 
 - New functionality
