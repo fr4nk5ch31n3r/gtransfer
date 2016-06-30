@@ -1,3 +1,16 @@
+2016-06-30  Frank Scheiner <scheiner@hlrs.de>
+
+*0.6.0 (gtransfer toolkit):
+
+- New functionality
+
+The stall timeout setting for globus-url-copy is now configurable via
+the gtransfer configuration file or from a dparam. If not configured in
+a dparam, the setting from the gtransfer configuration file is used. The
+old hard-coded default of 30 seconds is not necessarily suitable for
+data transfers from sites which first need to stage in files from e.g.
+tape before a data transfer can begin (e.g. sites using HPSS).
+
 2016-04-12  Frank Scheiner <scheiner@hlrs.de>
 
 *0.5.1 (gtransfer toolkit):
