@@ -27,7 +27,7 @@ COPYRIGHT
 #  DEFINES
 ################################################################################
 
-readonly _listTransfer_Version="0.7.0"
+readonly _listTransfer_Version="0.8.0"
 
 ################################################################################
 #  INCLUDES
@@ -1153,7 +1153,13 @@ listTransfer/createTgftpTransferCommand()
 
 		_gucReliabilityOptions=""
 	else
-		_gucReliabilityOptions="-restart -rst-retries $gucMaxRetries -dumpfile $dumpfileName -stall-timeout 30"
+		# NOTICE: Don't forget to escape "-" when using grep!
+		if echo "$gsiftpParams" | grep '\-stall\-timeout' &>/dev/null; then
+
+			_gucReliabilityOptions="-restart -rst-retries $gucMaxRetries -dumpfile $dumpfileName"
+		else
+			_gucReliabilityOptions="-restart -rst-retries $gucMaxRetries -dumpfile $dumpfileName -stall-timeout $__CONFIG__stallTimeout"
+		fi
 		# Filter "-pp" from "gsiftpParams", as pipelining and reliability don't
 		# work well in conjunction.
 		#
