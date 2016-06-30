@@ -87,7 +87,7 @@ substitution.
 This uses the same mapping as the file above and will be expanded the same way.
 
 ```
-$ ls -1 aliases.d
+$ ls -1 aliases
 alias1:
 myGridFTP:
 alias3:
