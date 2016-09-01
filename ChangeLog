@@ -1,3 +1,25 @@
+2016-09-01  Frank Scheiner <scheiner@hlrs.de>
+
+*0.7.0 (gtransfer toolkit):
+
+- New functionality
+
+Gt now also supports "<USER>@" as prefix to host aliases. This was
+already included in the Bash completion but not activated until now.
+
+- Fixes
+
+"helperFunctions/getURLWithoutPath()" did not anticipate user names in
+front of host addresses in GridFTP URLs. This is now corrected.
+
+Until now gt overwrote log files from unsuccessful tries and retries of
+a transfer. This was a source of irritation during evaluation of
+transfers as the start and stop timestamps did not resemble the start
+and stop of the whole transfer. And it also meant a loss of possibly
+helpful info. This was now changed so that older logfiles of the same
+transfer are preserved and newer ones get an additional identifier for
+each retry attached to their names.
+
 2016-06-30  Frank Scheiner <scheiner@hlrs.de>
 
 *0.6.0 (gtransfer toolkit):

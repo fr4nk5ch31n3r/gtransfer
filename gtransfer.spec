@@ -1,5 +1,5 @@
 Name:		gtransfer
-Version:	0.6.0
+Version:	0.7.0
 Release:	1%{?dist}
 Summary:	Advanced data transfer tool for GridFTP
 Group:		base
@@ -170,6 +170,9 @@ rm -rf %{buildroot}
 %{_mandir}/man1/halias.1.gz
 
 %changelog
+* Thu Sep 01 2016 Frank Scheiner <scheiner@hlrs.de> 0.7.0-1
+- Updated source package and version number to new release.
+
 * Thu Jun 30 2016 Frank Scheiner <scheiner@hlrs.de> 0.6.0-1
 - Updated source package and version number to new release.
 
