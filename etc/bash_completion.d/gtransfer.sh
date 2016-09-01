@@ -1,3 +1,29 @@
+:<<COPYRIGHT
+
+Copyright (C) 2010, 2011, 2013-2016 Frank Scheiner, HLRS, Universitaet Stuttgart
+Copyright (C) 2011, 2012, 2013 Frank Scheiner
+
+The program is distributed under the terms of the GNU General Public License
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+This product includes software developed by members of the DEISA project
+www.deisa.org. DEISA is an EU FP7 integrated infrastructure initiative under
+contract number RI-222919.
+
+COPYRIGHT
+
 _gtransfer() 
 {
 	########################################################################
@@ -167,10 +193,10 @@ _gtransfer()
 
 	local cur prev opts
 
-	#  defuse ":" in completions, as the ":" implies specifc readline
+	#  defuse ":" in completions, as the ":" implies specific readline
 	#+ behaviour.
 	COMP_WORDBREAKS=${COMP_WORDBREAKS//:}
-	#  also defuse "@" (used when usernames are provides in URLs)
+	#  also defuse "@" (used when usernames are provided in URLs)
 	COMP_WORDBREAKS=${COMP_WORDBREAKS//@}
 
 	COMPREPLY=()
@@ -219,26 +245,28 @@ _gtransfer()
 				if hash halias &>/dev/null; then
 					
 					alias="${cur%%/*}" ## remove path
-					#user="${alias%%@*}"
-					#alias="${alias#*@}" ## remove "user@"
+					user="${alias%%@*}"
+					alias="${alias#*@}" ## remove "user@"
 					
 					if halias --is-alias "$alias" &>/dev/null; then						
 				
 						userhost=$( halias --dealias "$alias" )
-						#if [[ "$user" != "" ]]; then
-						#	userhost=${userhost/:\/\//:\/\/$user@}
-						#fi
+
+						if [[ "$user" != "" ]]; then
+
+							userhost=${userhost/:\/\//:\/\/$user@}
+						fi
 						#echo -e "\n$userhost A$alias U$user" 1>&2
 						userpath=$( getPathFromAliasUrl "$cur" )
 						#echo "$userpath" 1>&2
 					
 						local remote_paths=( $( globus-url-copy -list "${userhost}${userpath}*" | sed -e 's/^\ *//' -e 1d ) )
 					
-						#if [[ "$user" != "" ]]; then
-						#	local remote_urls=$( for path in "${remote_paths[@]}"; do echo ${user}@${alias}${userpath}${path}; done )
-						#else
+						if [[ "$user" != "" ]]; then
+							local remote_urls=$( for path in "${remote_paths[@]}"; do echo ${user}@${alias}${userpath}${path}; done )
+						else
 							local remote_urls=$( for path in "${remote_paths[@]}"; do echo ${alias}${userpath}${path}; done )
-						#fi
+						fi
 						
 						COMPREPLY=( $(compgen -W "${remote_urls}" -- ${cur}) )
 						return 0
@@ -304,19 +332,30 @@ _gtransfer()
 				fi
 			
 				if hash halias &>/dev/null; then
+
+					alias="${cur%%/*}"
+					user="${alias%%@*}"
+					alias="${alias#*@}" ## remove "user@"
 					
-					if halias --is-alias "${cur%%/*}" &>/dev/null; then
+					if halias --is-alias "$alias" &>/dev/null; then
 				
-						alias="${cur%%/*}"
-				
-						userhost=$( halias --dealias "${cur%%/*}" )
+						userhost=$( halias --dealias "$alias" )
+
+						if [[ "$user" != "" ]]; then
+
+							userhost=${userhost/:\/\//:\/\/$user@}
+						fi
 						#echo -e "\n$userhost" 1>&2
 						userpath=$( getPathFromAliasUrl "$cur" )
 						#echo "$userpath" 1>&2
 					
 						local remote_paths=( $( globus-url-copy -list "${userhost}${userpath}*" | sed -e 's/^\ *//' -e 1d ) )
 					
-						local remote_urls=$( for path in "${remote_paths[@]}"; do echo ${alias}${userpath}${path}; done )
+						if [[ "$user" != "" ]]; then
+							local remote_urls=$( for path in "${remote_paths[@]}"; do echo ${user}@${alias}${userpath}${path}; done )
+						else
+							local remote_urls=$( for path in "${remote_paths[@]}"; do echo ${alias}${userpath}${path}; done )
+						fi
 						
 						COMPREPLY=( $(compgen -W "${remote_urls}" -- ${cur}) )
 						return 0

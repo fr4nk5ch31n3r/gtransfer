@@ -27,7 +27,7 @@ COPYRIGHT
 #  DEFINES
 ################################################################################
 
-readonly _listTransfer_Version="0.8.0"
+readonly _listTransfer_Version="0.9.0"
 
 ################################################################################
 #  INCLUDES
@@ -528,6 +528,7 @@ listTransfer/transferData()
 	#  max number of retries gtransfer will do
 	local maxRetries="${GT_MAX_RETRIES:-$gtMaxRetries}"
 	local retries=0
+	local _transferRetries=""
 
 	#  get source and destination URLs from transfer list
 	#
@@ -604,6 +605,16 @@ listTransfer/transferData()
 		#echo "($$) DEBUG: transferStepDestination=\"$transferStepDestination\""
 		#exit 1
 
+		# prepare variable for retried transfers, so logfiles can
+		# include this value and logfiles of older retries or the
+		# first try are not overwritten
+		if [[ $retries -gt 0 ]]; then
+
+			_transferRetries=$retries
+		else
+			_transferRetries=""
+		fi
+
 		#  if the current transfer step is/was already finished, skip it.
 		#if [[ -e "$transferId.finished" ]]; then
 		#	echoIfVerbose "Transfer step: $transferStepNumber"
@@ -624,7 +635,8 @@ listTransfer/transferData()
 					    ${destinationUsernamePortion:=NULL} \
 					    "$_transferId" \
 					    "$_transferList" \
-					    "$_transferParameters"
+					    "$_transferParameters" \
+		                            "$_transferRetries"
 		#fi
 
 		local RETURN="$?"
@@ -683,18 +695,19 @@ listTransfer/doTransferStep()
 	#
 	#  usage:
 	#+ listTransfer/doTransferStep transferStepSource\
-	#+			     transferStepDestination \
-	#+			     transferStepNumber \
-	#+			     transitSiteTempDir \
-	#+			     sourcePath \
-	#+			     destinationPath \
-	#+			     sourceFile \
-	#+			     destinationFile \
-	#+			     sourceUsernamePortion \
-	#+			     destinationUsernamePortion \
-	#+			     transferId \
-	#+			     transferList \
-	#+			     transferParameters
+	#+			       transferStepDestination \
+	#+			       transferStepNumber \
+	#+			       transitSiteTempDir \
+	#+			       sourcePath \
+	#+			       destinationPath \
+	#+			       sourceFile \
+	#+			       destinationFile \
+	#+			       sourceUsernamePortion \
+	#+			       destinationUsernamePortion \
+	#+			       transferId \
+	#+			       transferList \
+	#+			       transferParameters \
+	#+                             transferRetries
 
 	local transferStepSource="$1"
 	local transferStepDestination="$2"
@@ -729,6 +742,8 @@ listTransfer/doTransferStep()
 	local transferList="${12}"
 	
 	local transferParameters="${13}"
+
+	local transferRetries="${14}"
 
 	#echo "----"
 	#echo "($$) DEBUG: transferStepSource=\"$transferStepSource\""
@@ -778,8 +793,13 @@ listTransfer/doTransferStep()
 
 	#  (0) construct names for logfile and dumpfile
 	########################################################################
-	local tgftpLogfileName="${tgftpTempLogfileName/%.log/__step_${transferStepNumber}.log}"
+	# do not overwrite logfiles of previous tries
+	if [[ "$transferRetries" != "" ]]; then
 
+		local tgftpLogfileName="${tgftpTempLogfileName/%.log/__step_${transferStepNumber}__retry_#${transferRetries}.log}"
+	else
+		local tgftpLogfileName="${tgftpTempLogfileName/%.log/__step_${transferStepNumber}.log}"
+	fi
 	
 	transferStepDefaultParams="$transferParameters"
 	

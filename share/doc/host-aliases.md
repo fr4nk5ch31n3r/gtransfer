@@ -26,10 +26,7 @@ gt -s myGridFTP:/~/file1 -d myGridFTP:/~/file2
 ...will perform the same transfer. The gtransfer bash completion was also
 enhanced to support host aliases. Aliases are proposed as possible host
 addresses like regular host addresses. And you can also browse through remote
-directories when using aliases. Currently the addition of `user@` in front of
-the aliases does not work yet, so if you need to access GridFTP servers with
-non-standard user names, use the regular host addresses currently (e.g.
-`gsiftp://user@host.domain.tld:2811`).
+directories when using aliases.
 
 ## Alias syntax ##
 

@@ -37,7 +37,7 @@ trap - SIGINT
 #set -f
 
 readonly _program=$( basename "$0" )
-readonly _gtransferVersion="0.6.0"
+readonly _gtransferVersion="0.7.0"
 
 version="$_gtransferVersion"
 
@@ -737,17 +737,31 @@ else
 		# it's everything from start to the first forward slash.
 		_tmpSourceAlias=${gsiftpSourceUrl%%\/*}
 		_tmpDestinationAlias=${gsiftpDestinationUrl%%\/*}
-		
+
+		# anticipate "<USER>@" as possible prefix
+		# get user names for source and destination (if existing)
+		_tmpSourceUser="${_tmpSourceAlias%%@*}"
+		_tmpDestinationUser="${_tmpDestinationAlias%%@*}"
+
+		# remove user names and "@" from the aliases for later dealiasing
+		_tmpSourceAlias="${_tmpSourceAlias#*@}"
+		_tmpDestinationAlias="${_tmpDestinationAlias#*@}"
+
 		_originalGsiftpSourceUrl="$gsiftpSourceUrl"
 		_originalGsiftpDestinationUrl="$gsiftpDestinationUrl"
 	
 		_tmpSourceAliasValue=$( halias --dealias "$_tmpSourceAlias" )
+
 		if [[ $? != 0 ]]; then
+
 			echo "${_program} [${gtInstance}]: Dealiasing failed for source URL!" 1>&2
 			exit $_gtransfer_exit_software
 		fi
+
 		_tmpDestinationAliasValue=$( halias --dealias "$_tmpDestinationAlias" )
+
 		if [[ $? != 0 ]]; then
+
 			echo "${_program} [${gtInstance}]: Dealiasing failed for destination URL!" 1>&2
 			exit $_gtransfer_exit_software
 		fi
@@ -756,14 +770,27 @@ else
 		if [[ "$_tmpSourceAlias" != "$_tmpSourceAliasValue" ]]; then
 	
 			_tmpSourcePath=${gsiftpSourceUrl#*\/}
-			gsiftpSourceUrl="${_tmpSourceAliasValue}/${_tmpSourcePath}"
-		
+
+			if [[ "$_tmpSourceUser" != "" ]]; then
+
+				_tmpSourceAliasValue=${_tmpSourceAliasValue/:\/\//:\/\/$_tmpSourceUser@}
+				gsiftpSourceUrl="${_tmpSourceAliasValue}/${_tmpSourcePath}"
+			else
+				gsiftpSourceUrl="${_tmpSourceAliasValue}/${_tmpSourcePath}"
+			fi
 		fi
 	
 		if [[ "$_tmpDestinationAlias" != "$_tmpDestinationAliasValue" ]]; then
 				
 			_tmpDestinationPath=${gsiftpDestinationUrl#*\/}
-			gsiftpDestinationUrl="${_tmpDestinationAliasValue}/${_tmpDestinationPath}"
+
+			if [[ "$_tmpDestinationUser" != "" ]]; then
+
+				_tmpDestinationAliasValue=${_tmpDestinationAliasValue/:\/\//:\/\/$_tmpDestinationUser@}
+				gsiftpDestinationUrl="${_tmpDestinationAliasValue}/${_tmpDestinationPath}"
+			else
+				gsiftpDestinationUrl="${_tmpDestinationAliasValue}/${_tmpDestinationPath}"
+			fi
 		fi
 	fi
 

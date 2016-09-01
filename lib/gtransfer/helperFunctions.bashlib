@@ -3,7 +3,7 @@
 :<<COPYRIGHT
 
 Copyright (C) 2012 Frank Scheiner
-Copyright (C) 2014-2015 Frank Scheiner, HLRS, Universitaet Stuttgart
+Copyright (C) 2014-2016 Frank Scheiner, HLRS, Universitaet Stuttgart
 
 The program is distributed under the terms of the GNU General Public License
 
@@ -26,7 +26,7 @@ COPYRIGHT
 #  DEFINES
 ################################################################################
 
-readonly _helperFunctions_Version="0.5.0"
+readonly _helperFunctions_Version="0.5.1"
 
 ################################################################################
 #  INCLUDES
@@ -574,7 +574,7 @@ helperFunctions/getFQDNFromURL()
 
         local _url="$1"
 
-        local _fqdn=$( helperFunctions/getURLWithoutPath "$_url" | cut -d '/' -f 3 | cut -d ':' -f 1)
+        local _fqdn=$( helperFunctions/getURLWithoutPath "$_url" | cut -d '/' -f 3 | cut -d '@' -f 2 | cut -d ':' -f 1 )
 
         if [[ "$_fqdn" != "" ]]; then
                 echo "$_fqdn"
