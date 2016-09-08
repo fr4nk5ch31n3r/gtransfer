@@ -1,3 +1,15 @@
+2016-09-08  Frank Scheiner <scheiner@hlrs.de>
+
+*0.7.1 (gtransfer toolkit):
+
+- Fixes
+
+Due to an erroneous comparison, data transfers with URLs that contained
+host aliases that weren't prefixed with usernames failed. This because
+a wrong replacement in the GridFTP URLs was applied due to the
+erroneous comparison. This is now fixed both in gtransfer and the
+gtransfer bash completion.
+
 2016-09-01  Frank Scheiner <scheiner@hlrs.de>
 
 *0.7.0 (gtransfer toolkit):
