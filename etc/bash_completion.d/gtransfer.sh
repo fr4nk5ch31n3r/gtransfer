@@ -252,7 +252,7 @@ _gtransfer()
 				
 						userhost=$( halias --dealias "$alias" )
 
-						if [[ "$user" != "" ]]; then
+						if [[ "$user" != "$alias" ]]; then
 
 							userhost=${userhost/:\/\//:\/\/$user@}
 						fi
@@ -262,7 +262,7 @@ _gtransfer()
 					
 						local remote_paths=( $( globus-url-copy -list "${userhost}${userpath}*" | sed -e 's/^\ *//' -e 1d ) )
 					
-						if [[ "$user" != "" ]]; then
+						if [[ "$user" != "$alias" ]]; then
 							local remote_urls=$( for path in "${remote_paths[@]}"; do echo ${user}@${alias}${userpath}${path}; done )
 						else
 							local remote_urls=$( for path in "${remote_paths[@]}"; do echo ${alias}${userpath}${path}; done )

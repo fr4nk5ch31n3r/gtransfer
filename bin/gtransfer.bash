@@ -37,7 +37,7 @@ trap - SIGINT
 #set -f
 
 readonly _program=$( basename "$0" )
-readonly _gtransferVersion="0.7.0"
+readonly _gtransferVersion="0.7.1"
 
 version="$_gtransferVersion"
 
@@ -771,7 +771,7 @@ else
 	
 			_tmpSourcePath=${gsiftpSourceUrl#*\/}
 
-			if [[ "$_tmpSourceUser" != "" ]]; then
+			if [[ "$_tmpSourceUser" != "$_tmpSourceAlias" ]]; then
 
 				_tmpSourceAliasValue=${_tmpSourceAliasValue/:\/\//:\/\/$_tmpSourceUser@}
 				gsiftpSourceUrl="${_tmpSourceAliasValue}/${_tmpSourcePath}"
@@ -784,7 +784,7 @@ else
 				
 			_tmpDestinationPath=${gsiftpDestinationUrl#*\/}
 
-			if [[ "$_tmpDestinationUser" != "" ]]; then
+			if [[ "$_tmpDestinationUser" != "$_tmpDestinationAlias" ]]; then
 
 				_tmpDestinationAliasValue=${_tmpDestinationAliasValue/:\/\//:\/\/$_tmpDestinationUser@}
 				gsiftpDestinationUrl="${_tmpDestinationAliasValue}/${_tmpDestinationPath}"
