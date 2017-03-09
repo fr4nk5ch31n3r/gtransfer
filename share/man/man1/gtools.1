@@ -1,0 +1,65 @@
+.TH "GTOOLS" "1" "Mar 09, 2017" "gtools 0.3.0" "User Commands"
+.SH NAME
+.PP
+\f[B]gtools\f[]
+.SH SYNOPSIS
+.PP
+\f[B]gtools [function [arguments]...]\f[] or
+.PP
+\f[B]function [arguments]...\f[] if symlinked
+.SH DESCRIPTION
+.PP
+\f[B]gtools\f[] is a multi\-call shell script that combines various
+GridFTP functionality into a single executable.
+Most people will create a link to gtools for each function they wish to
+use and gtools will act like whatever is was invoked as.
+.SH COMMON OPTIONS
+.PP
+All \f[B]gtools\f[] functions provide a terse runtime description of
+their behavior when invoked without arguments.
+.SH FUNCTIONS
+.PP
+Currently defined functions:
+.PP
+(g)cat, (g)ls, (g)mkdir, (g)mv, (g)rm
+.PP
+All functions support host aliases and remote directory browsing via
+bash completion.
+Use functions without the \f[B]g\f[] prefix when using them via
+\f[B]gtools\f[], use functions with the \f[B]g\f[] prefix when using
+them directly via (sym)links.
+.SH FUNCTION DESCRIPTIONS
+.SS (g)cat
+.PP
+\f[B]gcat \f[I]url\f[]\f[]
+.PP
+Print to stdout the contents of the remote file given in \f[I]url\f[].
+.SS (g)ls
+.PP
+\f[B]gls \f[I]url\f[]\f[]
+.PP
+List the remote file or the contents of the remote directory given in
+\f[I]url\f[].
+.SS (g)mkdir
+.PP
+\f[B]gmkdir \f[I]url\f[]\f[]
+.PP
+Create the remote directory given in \f[I]url\f[].
+Creates non\-existing directories recursively but needs one GridFTP
+operation per directory.
+.SS (g)mv
+.PP
+\f[B]gmv \f[I]url1\f[] \f[I]url2\f[]\f[]
+.PP
+Move/rename the remote file or directory in \f[I]url1\f[] to the given
+path and/or name in \f[I]url2\f[].
+.SS (g)rm
+.PP
+\f[B]grm \f[I]url\f[]\f[]
+.PP
+Remove the remote file or empty directory given in \f[I]url\f[].
+.SH SEE ALSO
+.PP
+\f[B]uberftp(1c)\f[], \f[B]halias(1)\f[]
+.SH AUTHORS
+Frank Scheiner.

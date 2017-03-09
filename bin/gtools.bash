@@ -25,7 +25,7 @@ COPYRIGHT
 ################################################################################
 
 readonly _gtools_exit_usage=64
-readonly _gtools_version="0.2.0"
+readonly _gtools_version="0.3.0"
 readonly _program=$( basename $0 )
 
 ################################################################################
@@ -246,7 +246,7 @@ gtools/usageMsg()
 		       act like whatever is was invoked as.
 
 		Currently defined functions:
-		       gls, gmkdir, gmv, grm
+		       (g)cat, (g)ls, (g)mkdir, (g)mv, (g)rm
 	USAGE
 
 	return
