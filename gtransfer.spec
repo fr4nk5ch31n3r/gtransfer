@@ -1,5 +1,5 @@
 Name:		gtransfer
-Version:	0.7.1
+Version:	0.8.0
 Release:	1%{?dist}
 Summary:	Advanced data transfer tool for GridFTP
 Group:		base
@@ -32,7 +32,7 @@ mkdir -p %{buildroot}%{_bindir}
 # SLES does not have a "libexec" dir!
 %if 0%{?rhel}
 	mkdir -p %{buildroot}%{_libexecdir}/%{name}
-%endif	
+%endif
 mkdir -p %{buildroot}%{_datadir}/%{name}/pids
 mkdir -p %{buildroot}%{_mandir}/man1
 mkdir -p %{buildroot}%{_mandir}/man5
@@ -51,6 +51,7 @@ cp etc/gtransfer/pids/irodsMicroService_mappingFile %{buildroot}%{_sysconfdir}/%
 cp etc/gtransfer/aliases.conf %{buildroot}%{_sysconfdir}/%{name}/
 
 cp etc/bash_completion.d/gtransfer.sh %{buildroot}%{_sysconfdir}/bash_completion.d/
+cp etc/bash_completion.d/gtools.sh %{buildroot}%{_sysconfdir}/bash_completion.d/
 
 ################################################################################
 # * Bash libraries
@@ -63,6 +64,7 @@ cp lib/gtransfer/urlTransfer.bashlib %{buildroot}%{_datadir}/%{name}/
 cp lib/gtransfer/alias.bashlib %{buildroot}%{_datadir}/%{name}/
 cp lib/gtransfer/pids/irodsMicroService.bashlib %{buildroot}%{_datadir}/%{name}/pids/
 cp lib/gtransfer/multipathing.bashlib %{buildroot}%{_datadir}/%{name}/
+cp lib/gtransfer/gridftp.bashlib %{buildroot}%{_datadir}/%{name}/
 
 ################################################################################
 # * Tools and symlinks
@@ -72,12 +74,19 @@ cp bin/datapath.bash %{buildroot}%{_bindir}/
 cp bin/defaultparam.bash %{buildroot}%{_bindir}/
 cp bin/halias.bash %{buildroot}%{_bindir}/
 cp bin/gtransfer-version.bash %{buildroot}%{_bindir}/
+cp bin/gtools.bash %{buildroot}%{_bindir}/
 ln -s gtransfer.bash %{buildroot}%{_bindir}/gtransfer
 ln -s gtransfer.bash %{buildroot}%{_bindir}/gt
 ln -s datapath.bash %{buildroot}%{_bindir}/dpath
 ln -s defaultparam.bash %{buildroot}%{_bindir}/dparam
 ln -s halias.bash %{buildroot}%{_bindir}/halias
 ln -s gtransfer-version.bash %{buildroot}%{_bindir}/gt-version
+ln -s gtools.bash %{buildroot}%{_bindir}/gtools
+ln -s gtools.bash %{buildroot}%{_bindir}/gcat
+ln -s gtools.bash %{buildroot}%{_bindir}/gls
+ln -s gtools.bash %{buildroot}%{_bindir}/gmkdir
+ln -s gtools.bash %{buildroot}%{_bindir}/gmv
+ln -s gtools.bash %{buildroot}%{_bindir}/grm
 
 ################################################################################
 # * Additional (internal) tools
@@ -119,12 +128,14 @@ rm -rf %{buildroot}
 %config %{_sysconfdir}/%{name}/pids/irodsMicroService_mappingFile
 %config %{_sysconfdir}/%{name}/aliases.conf
 %config %{_sysconfdir}/bash_completion.d/gtransfer.sh
+%config %{_sysconfdir}/bash_completion.d/gtools.sh
 
-%doc README.md COPYING ChangeLog share/doc/dparam.1.md share/doc/dparam.5.md share/doc/dpath.1.md share/doc/dpath.5.md share/doc/gtransfer.1.md share/doc/halias.1.md share/doc/host-aliases.md share/doc/persistent-identifiers.md share/doc/images/multi-step-transfer.png share/doc/images/multipathing-transfer.png
+%doc README.md COPYING ChangeLog share/doc/dparam.1.md share/doc/dparam.5.md share/doc/dpath.1.md share/doc/dpath.5.md share/doc/gtransfer.1.md share/doc/halias.1.md share/doc/gtools.1.md share/doc/host-aliases.md share/doc/persistent-identifiers.md share/doc/images/multi-step-transfer.png share/doc/images/multipathing-transfer.png
 
 %{_sysconfdir}/%{name}
 %{_sysconfdir}/bash_completion.d
 %{_sysconfdir}/bash_completion.d/gtransfer.sh
+%{_sysconfdir}/bash_completion.d/gtools.sh
 
 %{_bindir}/gtransfer.bash
 %{_bindir}/gtransfer
@@ -137,6 +148,13 @@ rm -rf %{buildroot}
 %{_bindir}/halias
 %{_bindir}/gtransfer-version.bash
 %{_bindir}/gt-version
+%{_bindir}/gtools.bash
+%{_bindir}/gtools
+%{_bindir}/gcat
+%{_bindir}/gls
+%{_bindir}/gmkdir
+%{_bindir}/gmv
+%{_bindir}/grm
 
 %if 0%{?rhel}
 	%{_libexecdir}/%{name}
@@ -154,6 +172,7 @@ rm -rf %{buildroot}
 %{_datadir}/%{name}/alias.bashlib
 %{_datadir}/%{name}/pids/irodsMicroService.bashlib
 %{_datadir}/%{name}/multipathing.bashlib
+%{_datadir}/%{name}/gridftp.bashlib
 %if 0%{?suse_version}
 	%{_datadir}/%{name}
 	%{_datadir}/%{name}/getPidForUrl.r
@@ -168,8 +187,12 @@ rm -rf %{buildroot}
 %{_mandir}/man1/dparam.1.gz
 %{_mandir}/man5/dparam.5.gz
 %{_mandir}/man1/halias.1.gz
+%{_mandir}/man1/gtools.1.gz
 
 %changelog
+* Tue Mar 14 2017 Frank Scheiner <scheiner@hlrs.de> 0.8.0-1
+- Updated source package and version number to new release. Also added new gtools to the toolkit.
+
 * Thu Sep 08 2016 Frank Scheiner <scheiner@hlrs.de> 0.7.1-1
 - Updated source version number to new patch level.
 
@@ -250,4 +273,3 @@ rm -rf %{buildroot}
 
 * Fri Sep 21 2012 Frank Scheiner <scheiner@hlrs.de> 0.0.9-1
 - Initial RPM package build for OBS
-
