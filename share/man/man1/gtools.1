@@ -1,4 +1,4 @@
-.TH "GTOOLS" "1" "Mar 09, 2017" "gtools 0.3.0" "User Commands"
+.TH "GTOOLS" "1" "Mar 14, 2017" "gtools 0.3.0" "User Commands"
 .SH NAME
 .PP
 \f[B]gtools\f[]
@@ -10,7 +10,8 @@
 .SH DESCRIPTION
 .PP
 \f[B]gtools\f[] is a multi\-call shell script that combines various
-GridFTP functionality into a single executable.
+GridFTP functionality (provided by \f[B]uberftp(1c)\f[]) into a single
+executable.
 Most people will create a link to gtools for each function they wish to
 use and gtools will act like whatever is was invoked as.
 .SH COMMON OPTIONS
@@ -25,41 +26,49 @@ Currently defined functions:
 .PP
 All functions support host aliases and remote directory browsing via
 bash completion.
-Use functions without the \f[B]g\f[] prefix when using them via
-\f[B]gtools\f[], use functions with the \f[B]g\f[] prefix when using
-them directly via (sym)links.
+Function names are without the \f[B]g[...]\f[] prefix when used as
+arguments of \f[B]gtools\f[].
+When used drectly (via symlinks) the \f[B]g[...]\f[] prefix should be
+used to differentiate them from the similar OS tools (\f[B]cat(1)\f[],
+\f[B]ls(1)\f[], \f[B]mkdir(1)\f[], \f[B]mv(1)\f[] and \f[B]rm(1)\f[]).
 .SH FUNCTION DESCRIPTIONS
 .SS (g)cat
 .PP
 \f[B]gcat \f[I]url\f[]\f[]
 .PP
-Print to stdout the contents of the remote file given in \f[I]url\f[].
+Print to stdout the contents of the remote file given in \f[I]url\f[]
+(like \f[B]cat [...]\f[]).
 .SS (g)ls
 .PP
 \f[B]gls \f[I]url\f[]\f[]
 .PP
 List the remote file or the contents of the remote directory given in
 \f[I]url\f[].
+Output is similar to \f[B]ls \-la [...]\f[].
 .SS (g)mkdir
 .PP
 \f[B]gmkdir \f[I]url\f[]\f[]
 .PP
 Create the remote directory given in \f[I]url\f[].
-Creates non\-existing directories recursively but needs one GridFTP
-operation per directory.
+Creates non\-existing directories recursively (like \f[B]mkdir \-p
+[...]\f[]) but needs one GridFTP operation per directory!
 .SS (g)mv
 .PP
 \f[B]gmv \f[I]url1\f[] \f[I]url2\f[]\f[]
 .PP
 Move/rename the remote file or directory in \f[I]url1\f[] to the given
 path and/or name in \f[I]url2\f[].
+Only works when both \f[I]url1\f[] and \f[I]url2\f[] point to the same
+remote GridFTP service!
 .SS (g)rm
 .PP
 \f[B]grm \f[I]url\f[]\f[]
 .PP
-Remove the remote file or empty directory given in \f[I]url\f[].
+Remove the remote file (like \f[B]rm [...]\f[]) or empty directory (like
+\f[B]rmdir [...]\f[]) given in \f[I]url\f[].
 .SH SEE ALSO
 .PP
-\f[B]uberftp(1c)\f[], \f[B]halias(1)\f[]
+\f[B]uberftp(1c)\f[], \f[B]halias(1)\f[], \f[B]cat(1)\f[],
+\f[B]ls(1)\f[], \f[B]mkdir(1)\f[], \f[B]rm(1)\f[], \f[B]rmdir(1)\f[]
 .SH AUTHORS
 Frank Scheiner.
