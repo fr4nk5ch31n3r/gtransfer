@@ -4,7 +4,7 @@
 
 :<<COPYRIGHT
 
-Copyright (C) 2016 Frank Scheiner, HLRS, Universitaet Stuttgart
+Copyright (C) 2016-2017 Frank Scheiner, HLRS, Universitaet Stuttgart
 
 The program is distributed under the terms of the GNU General Public License
     This program is free software: you can redistribute it and/or modify
@@ -20,6 +20,7 @@ The program is distributed under the terms of the GNU General Public License
 
 COPYRIGHT
 
+
 ################################################################################
 # DEFINES
 ################################################################################
@@ -27,6 +28,7 @@ COPYRIGHT
 readonly _gtools_exit_usage=64
 readonly _gtools_version="0.3.0"
 readonly _program=$( basename $0 )
+
 
 ################################################################################
 # PATH CONFIGURATION
@@ -100,6 +102,7 @@ if [[ -e "$_GTRANSFER_LIBPATH/getPidForUrl.r" && \
 else
 	readonly _GTRANSFER_LIBEXECPATH="$gtransferLibexecPath"
 fi
+
 
 ################################################################################
 # INCLUDES
