@@ -654,6 +654,8 @@ use()
 	if [[ $requiredToolNotAvailable == 0 ]]; then
 
 		return 1
+	else
+		return 0
 	fi
 }
 
@@ -741,10 +743,6 @@ fi
 while [[ "$1" != "" ]]; do
 
 	# only valid params used?
-	#
-	#  NOTICE:
-	#  This was added to prevent high speed loops
-	#+ if parameters are mispositioned.
 	if [[   "$1" != "--help" && \
 		"$1" != "--version" && "$1" != "-V" && \
 		"$1" != "--create" && "$1" != "-c" && \
