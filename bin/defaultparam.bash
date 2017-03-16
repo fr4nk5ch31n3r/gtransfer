@@ -499,7 +499,10 @@ use()
 	done
 
 	if [[ $requiredToolNotAvailable == 0 ]]; then
+
 		return 1
+	else
+		return 0
 	fi
 }
 
