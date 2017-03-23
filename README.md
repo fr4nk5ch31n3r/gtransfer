@@ -77,7 +77,7 @@ $ gt -s host1:/file/* -d host3:/files/ -m all
 
 ![transfer using multipathing](/share/doc/images/multipathing-transfer.png)
 
-The host `host1` has connections to both the Internet and a private network. The 
+The host `host1` has connections to both the Internet and a private network. The
 bandwidth of the Internet connection is limited to 1 Gb/s, but the connection to
 the private network has a bandwidth of 10 Gb/s. The host `host2` has a bandwidth
 of 10 Gb/s on connections to both the Internet and the private network. In
@@ -134,7 +134,7 @@ can use `myGridFTP:` and `gsiftp://host1.domain.tld:2811` synonymically. See
 
 ### Persistent identifiers (PIDs) ###
 
-Gtransfer can use persistent identifiers (PIDs) as used by [EUDAT] and provided 
+Gtransfer can use persistent identifiers (PIDs) as used by [EUDAT] and provided
 by [EPIC] as source of a data transfer. See [persistent identifiers] for more
 details.
 
@@ -162,7 +162,7 @@ Additional examples will be made available occasionally.
 This is a list of HPC centers in Europe that use gtransfer in production:
 
 [![HLRS logo](https://raw.github.com/fscheiner/images/master/site_logos/hlrs_logo.png)](http://www.hlrs.de/)
-  
+
 [Höchstleistungsrechenzentrum Stuttgart (HLRS - Germany)](http://www.hlrs.de/)
 
 ****
@@ -203,7 +203,7 @@ This is a list of HPC centers in Europe that use gtransfer in production:
 
 ****
 
-[![IT4Inoovations logo](https://raw.github.com/fscheiner/images/master/site_logos/it4innovations_logo_h100.png)](http://www.it4i.cz/)
+[![IT4Innovations logo](https://raw.github.com/fscheiner/images/master/site_logos/it4innovations_logo_h100.png)](http://www.it4i.cz/)
 
 [IT4Innovations national supercomputing center (IT4Innovations - Czech republic)](http://www.it4i.cz/)
 
@@ -212,7 +212,7 @@ This is a list of HPC centers in Europe that use gtransfer in production:
 
 (GPLv3)
 
-Copyright (C) 2010, 2011, 2013-2015 Frank Scheiner, HLRS, Universitaet Stuttgart  
+Copyright (C) 2010, 2011, 2013-2017 Frank Scheiner, HLRS, Universitaet Stuttgart
 Copyright (C) 2011, 2012, 2013 Frank Scheiner
 
 The software is distributed under the terms of the GNU General Public License
@@ -231,4 +231,3 @@ You should have received a [copy] of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 [copy]: /COPYING
-
