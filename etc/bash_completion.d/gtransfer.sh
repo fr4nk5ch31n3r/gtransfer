@@ -1,6 +1,6 @@
 :<<COPYRIGHT
 
-Copyright (C) 2010, 2011, 2013-2016 Frank Scheiner, HLRS, Universitaet Stuttgart
+Copyright (C) 2010, 2011, 2013-2017 Frank Scheiner, HLRS, Universitaet Stuttgart
 Copyright (C) 2011, 2012, 2013 Frank Scheiner
 
 The program is distributed under the terms of the GNU General Public License
@@ -24,7 +24,7 @@ contract number RI-222919.
 
 COPYRIGHT
 
-_gtransfer() 
+_gtransfer()
 {
 	########################################################################
 	#  HELPER FUNCTIONS ####################################################
@@ -56,7 +56,7 @@ _gtransfer()
 		path=$(echo $tmp | grep -o '/.*/')
 		if [[ $path == "" ]]; then
 			path="/"
-		fi	
+		fi
 
 		echo "$path"
 	}
@@ -64,20 +64,20 @@ _gtransfer()
 	getPathFromAliasUrl()
 	{
 		local url="$1"
-		
+
 		# if there's currentl only the alias, assume "/"
 		if ! echo "$url" | grep "/" &>/dev/null; then
 			echo "/"
 			return
 		fi
-		
+
 		local path=${url#*/}
-		
+
 		#  strip any file portion from path
 		path=${path%/*}
 		#  strip any file portion from path
 		#path=$(echo $path | grep -o '/.*/')
-		
+
 		if [[ "$path" != "" ]]; then
 			echo "/$path/"
 		else
@@ -85,7 +85,7 @@ _gtransfer()
 		fi
 		#if [[ $path == "" ]]; then
 		#	path="/"
-		#fi	
+		#fi
 		#
 		#echo "$path"
 	}
@@ -102,12 +102,12 @@ _gtransfer()
 		#+ getURLWithoutPath "URL"
 
 		local URL="$1"
-	
+
 		#  TODO:
 		#+ support URLs not containing any port descriptions:
 		#
 		#  done!
-	
+
 		:<<-COMMENT
 		from: <http://wiki.linuxquestions.org/wiki/Regular_expression>
 		"
@@ -204,19 +204,19 @@ _gtransfer()
 	cur="${COMP_WORDS[COMP_CWORD]}"
 	prev="${COMP_WORDS[COMP_CWORD-1]}"
 
-	#  all available gtransfer options/switches/parameters	
-	opts="--source -s --destination -d --transfer-list -f --auto-optimize -o --recursive -r --checksum-data-channel -c --encrypt-data-channel -e --verbose -v --metric -m --logfile -l --auto-clean -a --configfile --guc-max-retries --gt-max-retries --gt-progress-indicator --help --version -V --"
+	#  all available gtransfer options/switches/parameters
+	opts="--source -s --destination -d --transfer-list -f --auto-optimize -o --recursive -r --checksum-data-channel -c --encrypt-data-channel -e --sync-level --no-sync --verbose -v --metric -m --logfile -l --auto-clean -a --configfile --guc-max-retries --gt-max-retries --gt-progress-indicator --help --version -V --"
 
 	#  parameter completion
 	case "${prev}" in
-	
+
 		--source|-s)
 			#  only complete remote paths if globus-url-copy is
 			#+ available
 			if hash globus-url-copy &>/dev/null; then
 				#  complete remote paths
 				if echo "$cur" | grep '^gsiftp://.*:.*' &>/dev/null; then
-			
+
 					userhost=$( getURLWithoutPath "${cur}" )
 					#echo -e "\n$userhost" 1>&2
 					userpath=$( getPathFromURL "${cur}" )
@@ -225,31 +225,31 @@ _gtransfer()
 					local remote_paths=( $( globus-url-copy -list "${userhost}${userpath}*" | sed -e 's/^\ *//' -e 1d ) )
 
 					local remote_urls=$( for path in "${remote_paths[@]}"; do echo ${userhost}${userpath}${path}; done )
-					
+
 					COMPREPLY=( $(compgen -W "${remote_urls}" -- ${cur}) )
 					return 0
-					
+
                 		elif echo "$cur" | grep '^ftp://.*:.*' &>/dev/null; then
-                		
+
 					userhost=$( getURLWithoutPath "${cur}" )
 					userpath=$( getPathFromURL "${cur}" )
-					
+
 					local remote_paths=( $( globus-url-copy -list "${userhost}${userpath}*" | sed -e 's/^\ *//' -e 1d ) )
-					
+
 					local remote_urls=$( for path in "${remote_paths[@]}"; do echo ${userhost}${userpath}${path}; done )
-					
+
 					COMPREPLY=( $(compgen -W "${remote_urls}" -- ${cur}) )
 					return 0
 				fi
-			
+
 				if hash halias &>/dev/null; then
-					
+
 					alias="${cur%%/*}" ## remove path
 					user="${alias%%@*}"
 					alias="${alias#*@}" ## remove "user@"
-					
-					if halias --is-alias "$alias" &>/dev/null; then						
-				
+
+					if halias --is-alias "$alias" &>/dev/null; then
+
 						userhost=$( halias --dealias "$alias" )
 
 						if [[ "$user" != "$alias" ]]; then
@@ -259,15 +259,15 @@ _gtransfer()
 						#echo -e "\n$userhost A$alias U$user" 1>&2
 						userpath=$( getPathFromAliasUrl "$cur" )
 						#echo "$userpath" 1>&2
-					
+
 						local remote_paths=( $( globus-url-copy -list "${userhost}${userpath}*" | sed -e 's/^\ *//' -e 1d ) )
-					
+
 						if [[ "$user" != "$alias" ]]; then
 							local remote_urls=$( for path in "${remote_paths[@]}"; do echo ${user}@${alias}${userpath}${path}; done )
 						else
 							local remote_urls=$( for path in "${remote_paths[@]}"; do echo ${alias}${userpath}${path}; done )
 						fi
-						
+
 						COMPREPLY=( $(compgen -W "${remote_urls}" -- ${cur}) )
 						return 0
 					fi
@@ -281,13 +281,13 @@ _gtransfer()
 			else
 				local sites=""
 			fi
-			
+
 			if hash halias &>/dev/null; then
 				local aliases=$( halias --list )
 			else
 				local aliases=""
 			fi
-			
+
 			if [[ "$sites" != "" && "$aliases" != "" ]]; then
 				COMPREPLY=( $(compgen -W "${sites} ${aliases}" -- ${cur}) )
 			elif [[ "$sites" != "" ]]; then
@@ -295,7 +295,7 @@ _gtransfer()
 			elif [[ "$aliases" != "" ]]; then
 				COMPREPLY=( $(compgen -W "${aliases}" -- ${cur}) )
 			fi
-			
+
 			return 0
 			;;
 
@@ -305,7 +305,7 @@ _gtransfer()
 			if hash globus-url-copy &>/dev/null; then
 				#  complete remote paths
 				if echo "$cur" | grep '^gsiftp://.*:.*' &>/dev/null; then
-			
+
 					userhost=$( getURLWithoutPath "${cur}" )
 					#echo -e "\n$userhost" 1>&2
 					userpath=$( getPathFromURL "${cur}" )
@@ -314,31 +314,31 @@ _gtransfer()
 					local remote_paths=( $( globus-url-copy -list "${userhost}${userpath}*" | sed -e 's/^\ *//' -e 1d ) )
 
 					local remote_urls=$( for path in "${remote_paths[@]}"; do echo ${userhost}${userpath}${path}; done )
-					
+
 					COMPREPLY=( $(compgen -W "${remote_urls}" -- ${cur}) )
 					return 0
-					
+
                 		elif echo "$cur" | grep '^ftp://.*:.*' &>/dev/null; then
-                		
+
 					userhost=$( getURLWithoutPath "${cur}" )
 					userpath=$( getPathFromURL "${cur}" )
-					
+
 					local remote_paths=( $( globus-url-copy -list "${userhost}${userpath}*" | sed -e 's/^\ *//' -e 1d ) )
-					
+
 					local remote_urls=$( for path in "${remote_paths[@]}"; do echo ${userhost}${userpath}${path}; done )
-					
+
 					COMPREPLY=( $(compgen -W "${remote_urls}" -- ${cur}) )
 					return 0
 				fi
-			
+
 				if hash halias &>/dev/null; then
 
 					alias="${cur%%/*}"
 					user="${alias%%@*}"
 					alias="${alias#*@}" ## remove "user@"
-					
+
 					if halias --is-alias "$alias" &>/dev/null; then
-				
+
 						userhost=$( halias --dealias "$alias" )
 
 						if [[ "$user" != "$alias" ]]; then
@@ -348,20 +348,20 @@ _gtransfer()
 						#echo -e "\n$userhost" 1>&2
 						userpath=$( getPathFromAliasUrl "$cur" )
 						#echo "$userpath" 1>&2
-					
+
 						local remote_paths=( $( globus-url-copy -list "${userhost}${userpath}*" | sed -e 's/^\ *//' -e 1d ) )
-					
+
 						if [[ "$user" != "$alias" ]]; then
 							local remote_urls=$( for path in "${remote_paths[@]}"; do echo ${user}@${alias}${userpath}${path}; done )
 						else
 							local remote_urls=$( for path in "${remote_paths[@]}"; do echo ${alias}${userpath}${path}; done )
 						fi
-						
+
 						COMPREPLY=( $(compgen -W "${remote_urls}" -- ${cur}) )
 						return 0
 					fi
 				fi
-			fi			
+			fi
 
 			#  only complete source URL host parts if dpath is available
 			if hash dpath &>/dev/null; then
@@ -370,13 +370,13 @@ _gtransfer()
 			else
 				local sites=""
 			fi
-			
+
 			if hash halias &>/dev/null; then
 				local aliases=$( halias --list )
 			else
 				local aliases=""
 			fi
-			
+
 			if [[ "$sites" != "" && "$aliases" != "" ]]; then
 				COMPREPLY=( $(compgen -W "${sites} ${aliases}" -- ${cur}) )
 			elif [[ "$sites" != "" ]]; then
@@ -384,14 +384,21 @@ _gtransfer()
 			elif [[ "$aliases" != "" ]]; then
 				COMPREPLY=( $(compgen -W "${aliases}" -- ${cur}) )
 			fi
-			
+
 			return 0
 			;;
 
 		--metric|-m)
 			#  propose metrics 0 to 3
-			local metrics=$(for x in 0 1 2 3; do echo $x; done )
-			COMPREPLY=( $(compgen -W "${metrics}" -- ${cur}) )
+			local metrics=$( for x in 0 1 2 3; do echo $x; done )
+			COMPREPLY=( $( compgen -W "${metrics}" -- ${cur} ) )
+			return 0
+			;;
+
+		--sync-level)
+			# propose sync levels 0 to 3
+			local syncLevels=$( for x in 0 1 2 3; do echo $x; done )
+			COMPREPLY=( $( compgen -W "${syncLevels}" -- ${cur} ) )
 			return 0
 			;;
 
@@ -405,4 +412,3 @@ _gtransfer()
 
 }
 complete -o nospace -F _gtransfer gtransfer gt
-
