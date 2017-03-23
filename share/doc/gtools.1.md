@@ -1,6 +1,6 @@
 % GTOOLS(1) gtools 0.3.0 | User Commands
 % Frank Scheiner
-% Mar 14, 2017
+% Mar 23, 2017
 
 
 # NAME #
@@ -36,7 +36,7 @@ Currently defined functions:
 
 All functions support host aliases and remote directory browsing via bash
 completion. Function names are without the **g[...]** prefix when used as
-arguments of **gtools**. When used drectly (via symlinks) the **g[...]** prefix
+arguments of **gtools**. When used directly (via symlinks) the **g[...]** prefix
 should be used to differentiate them from the similar OS tools (**cat(1)**,
 **ls(1)**, **mkdir(1)**, **mv(1)** and **rm(1)**).
 
