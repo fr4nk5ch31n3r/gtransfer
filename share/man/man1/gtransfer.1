@@ -5,18 +5,17 @@
 \f[B]gtransfer\f[] \- The GridFTP data transfer script
 .SH SYNOPSIS
 .PP
-\f[B]{gtransfer|gt} [\-\-source|\-s
-\f[I]sourceUrl\f[]][\-\-destination|\-d \f[I]destinationUrl\f[]]
-[\-\-transfer\-list|\-f \f[I]transferList\f[]][\-\-auto\-optimize|\-o
-\f[I]transferMode\f[]]
-[\-\-recursive|\-r][\-\-checksum\-data\-channel|\-c]
-[\-\-encrypt\-data\-channel|\-e][\-\-sync\-level syncLevel]
-[\-\-no\-sync][\-\-guc\-max\-retries \f[I]gucMaxRetries\f[]]
-[\-\-gt\-max\-retries \f[I]gtMaxRetries\f[]][\-\-gt\-progress\-indicator
-\f[I]indicatorCharacter\f[]] [\-\-verbose|\-v][\-\-metric|\-m
-\f[I]dataPathMetric\f[]] [\-\-logfile|\-l
-\f[I]logfile\f[]][\-\-auto\-clean|\-a] [\-\-configfile
-\f[I]configurationFile\f[]][\-\- \f[I]gucParameters\f[]]\f[]
+\f[B]{gtransfer|gt} [\-\-source|\-s \f[I]sourceUrl\f[]]
+[\-\-destination|\-d \f[I]destinationUrl\f[]] [\-\-transfer\-list|\-f
+\f[I]transferList\f[]] [\-\-auto\-optimize|\-o \f[I]transferMode\f[]]
+[\-\-recursive|\-r] [\-\-checksum\-data\-channel|\-c]
+[\-\-encrypt\-data\-channel|\-e] [\-\-sync\-level syncLevel]
+[\-\-no\-sync] [\-\-guc\-max\-retries \f[I]gucMaxRetries\f[]]
+[\-\-gt\-max\-retries \f[I]gtMaxRetries\f[]]
+[\-\-gt\-progress\-indicator \f[I]indicatorCharacter\f[]]
+[\-\-verbose|\-v] [\-\-metric|\-m \f[I]dataPathMetric\f[]]
+[\-\-logfile|\-l \f[I]logfile\f[]] [\-\-auto\-clean|\-a] [\-\-configfile
+\f[I]configurationFile\f[]] [\-\- \f[I]gucParameters\f[]]\f[]
 .SH DESCRIPTION
 .PP
 \f[B]gtransfer\f[] or short \f[B]gt\f[] is a wrapper script for the
@@ -188,15 +187,15 @@ Transfer files recursively.
 \f[B]NOTICE:\f[] \f[B]globus\-url\-copy(1)\f[] (even with option
 \f[B]\-cd\f[] and sync options) and therefore also \f[B]gt\f[] will not
 create directories on the destination side that are empty on the source
-side.
+side!
 .SS \f[B][\-c, \-\-checksum\-data\-channel]\f[]
 .PP
 Enable checksumming on the data channel.
-Cannot be used in conjunction with \f[B]\-e\f[]!
+The option \f[B]\-c\f[] cannot be used in conjunction with \f[B]\-e\f[]!
 .SS \f[B][\-e, \-\-encrypt\-data\-channel]\f[]
 .PP
 Enable encryption on the data channel.
-Cannot be used in conjunction with \f[B]\-c\f[]!
+The option \f[B]\-e\f[] cannot be used in conjunction with \f[B]\-c\f[]!
 .SS \f[B][\-\-sync\-level \f[I]syncLevel\f[]]\f[]
 .PP
 Set the sync level that should be used for the transfer.
@@ -214,17 +213,21 @@ older than the time stamp of the source.
 Level \f[I]3\f[] will perform a checksum of the source and destination
 and transfer if the checksums do not match.
 .PP
-By default gtransfer uses sync level \f[I]1\f[].
-Cannot be used in conjunction with \f[B]\-\-no\-sync\f[]!
+By default gt transfers files \f[B]conditionally\f[] and uses sync level
+\f[I]1\f[].
+The option \f[B]\-\-sync\-level\f[] cannot be used in conjunction with
+\f[B]\-\-no\-sync\f[]!
 .PP
 \f[B]NOTICE:\f[] \f[B]globus\-url\-copy(1)\f[] (even with option
 \f[B]\-cd\f[] and sync options) and therefore also \f[B]gt\f[] will not
 create directories on the destination side that are empty on the source
-side.
+side!
 .SS \f[B][\-\-no\-sync]\f[]
 .PP
 Disable sync(hronization) for the transfer.
-Cannot be used in conjunction with \f[B]\-\-sync\-level\f[]!
+Gt then transfers files \f[B]unconditionally\f[].
+The option \f[B]\-\-no\-sync\f[] cannot be used in conjunction with
+\f[B]\-\-sync\-level\f[]!
 .SS \f[B][\-\-guc\-max\-retries \f[I]gucMaxRetries\f[]]\f[]
 .PP
 This option sets the maximum number of retries

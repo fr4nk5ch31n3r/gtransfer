@@ -10,24 +10,14 @@
 
 # SYNOPSIS #
 
-**{gtransfer|gt} [\--source|-s _sourceUrl_]
-[\--destination|-d _destinationUrl_]
-[\--transfer-list|-f _transferList_]
-[\--auto-optimize|-o _transferMode_]
-[\--recursive|-r]
-[\--checksum-data-channel|-c]
-[\--encrypt-data-channel|-e]
-[\--sync-level syncLevel]
-[\--no-sync]
-[\--guc-max-retries _gucMaxRetries_]
-[\--gt-max-retries _gtMaxRetries_]
-[\--gt-progress-indicator _indicatorCharacter_]
-[\--verbose|-v]
-[\--metric|-m _dataPathMetric_]
-[\--logfile|-l _logfile_]
-[\--auto-clean|-a]
-[\--configfile _configurationFile_]
-[\-- _gucParameters_]**
+**{gtransfer|gt} [\--source|-s _sourceUrl_] [\--destination|-d 
+_destinationUrl_] [\--transfer-list|-f _transferList_] [\--auto-optimize|-o 
+_transferMode_] [\--recursive|-r] [\--checksum-data-channel|-c] 
+[\--encrypt-data-channel|-e] [\--sync-level syncLevel] [\--no-sync] 
+[\--guc-max-retries _gucMaxRetries_] [\--gt-max-retries _gtMaxRetries_] 
+[\--gt-progress-indicator _indicatorCharacter_] [\--verbose|-v] [\--metric|-m 
+_dataPathMetric_] [\--logfile|-l _logfile_] [\--auto-clean|-a] [\--configfile 
+_configurationFile_] [\-- _gucParameters_]**
 
 
 # DESCRIPTION #
@@ -157,19 +147,19 @@ Transfer files recursively.
 
 **NOTICE:** **globus-url-copy(1)** (even with option **-cd** and sync options)
 and therefore also **gt** will not create directories on the destination side
-that are empty on the source side.
+that are empty on the source side!
 
 
 ## **[-c, \--checksum-data-channel]** ##
 
-Enable checksumming on the data channel. Cannot be used in conjunction with
-**-e**!
+Enable checksumming on the data channel. The option **-c** cannot be used in
+conjunction with **-e**!
 
 
 ## **[-e, \--encrypt-data-channel]** ##
 
-Enable encryption on the data channel. Cannot be used in conjunction with
-**-c**!
+Enable encryption on the data channel. The option **-e** cannot be used in
+conjunction with **-c**!
 
 
 ## **[--sync-level _syncLevel_]** ##
@@ -185,20 +175,21 @@ Set the sync level that should be used for the transfer. This is a
 * Level _2_ will transfer if the time stamp of the destination is older than the
   time stamp of the source.
 
-* Level _3_ will perform a checksum of the source and destination and transfer if
-  the checksums do not match.
+* Level _3_ will perform a checksum of the source and destination and transfer
+  if the checksums do not match.
 
-By default gtransfer uses sync level _1_. Cannot be used in conjunction with
-**--no-sync**!
+By default gt transfers files **conditionally** and uses sync level _1_. The
+option **--sync-level** cannot be used in conjunction with **--no-sync**!
 
 **NOTICE:** **globus-url-copy(1)** (even with option **-cd** and sync options)
 and therefore also **gt** will not create directories on the destination side
-that are empty on the source side.
+that are empty on the source side!
 
 
 ## **[--no-sync]** ##
 
-Disable sync(hronization) for the transfer. Cannot be used in conjunction with
+Disable sync(hronization) for the transfer. Gt then transfers files
+**unconditionally**. The option **--no-sync** cannot be used in conjunction with
 **--sync-level**!
 
 
