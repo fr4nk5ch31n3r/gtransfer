@@ -113,6 +113,12 @@ cp share/man/man5/dpath.5 %{buildroot}%{_mandir}/man5/
 cp share/man/man1/dparam.1 %{buildroot}%{_mandir}/man1/
 cp share/man/man5/dparam.5 %{buildroot}%{_mandir}/man5/
 cp share/man/man1/halias.1 %{buildroot}%{_mandir}/man1/
+cp share/man/man1/gtools.1 %{buildroot}%{_mandir}/man1/
+cp share/man/man1/gcat.1 %{buildroot}%{_mandir}/man1/
+cp share/man/man1/gls.1 %{buildroot}%{_mandir}/man1/
+cp share/man/man1/gmkdir.1 %{buildroot}%{_mandir}/man1/
+cp share/man/man1/gmv.1 %{buildroot}%{_mandir}/man1/
+cp share/man/man1/grm.1 %{buildroot}%{_mandir}/man1/
 
 %clean
 rm -rf %{buildroot}
@@ -188,9 +194,14 @@ rm -rf %{buildroot}
 %{_mandir}/man5/dparam.5.gz
 %{_mandir}/man1/halias.1.gz
 %{_mandir}/man1/gtools.1.gz
+%{_mandir}/man1/gcat.1.gz
+%{_mandir}/man1/gls.1.gz
+%{_mandir}/man1/gmkdir.1.gz
+%{_mandir}/man1/gmv.1.gz
+%{_mandir}/man1/grm.1.gz
 
 %changelog
-* Tue Mar 14 2017 Frank Scheiner <scheiner@hlrs.de> 0.8.0-1
+* Tue Mar 23 2017 Frank Scheiner <scheiner@hlrs.de> 0.8.0-1
 - Updated source package and version number to new release. Also added new gtools to the toolkit.
 
 * Thu Sep 08 2016 Frank Scheiner <scheiner@hlrs.de> 0.7.1-1
