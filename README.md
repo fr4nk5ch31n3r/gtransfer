@@ -167,45 +167,51 @@ This is a list of HPC centers in Europe that use gtransfer in production:
 
 ****
 
-[![CSC logo](https://raw.github.com/fscheiner/images/master/site_logos/csc_logo_h100.png)](http://www.csc.fi/)
+[![CSC logo](https://raw.github.com/fscheiner/images/master/site_logos/csc_logo_h100.png)](https://www.csc.fi/)
 
-[CSC - IT Center for Science (CSC - Finland)](http://www.csc.fi/)
-
-****
-
-[![LRZ logo](https://raw.github.com/fscheiner/images/master/site_logos/lrz_logo_new_h100.png)](http://www.lrz.de/)
-
-[Leibniz-Rechenzentrum (LRZ) der Bayerischen Akademie der Wissenschaften (LRZ - Germany)](http://www.lrz.de/)
+[CSC - IT Center for Science (CSC - Finland)](https://www.csc.fi/)
 
 ****
 
-[![ICHEC logo](https://raw.github.com/fscheiner/images/master/site_logos/ichec_logo.png)](http://www.ichec.ie/)
+[![LRZ logo](https://raw.github.com/fscheiner/images/master/site_logos/lrz_logo_new_h100.png)](https://www.lrz.de/)
 
-[Irish Centre for High-End Computing (ICHEC - Ireland)](http://www.ichec.ie/)
-
-****
-
-[![CINECA logo](https://raw.github.com/fscheiner/images/master/site_logos/cineca_logo.png)](http://www.cineca.it/)
-
-[Centro di supercalcolo, Consorzio di università (CINECA - Italy)](http://www.cineca.it/)
+[Leibniz-Rechenzentrum (LRZ) der Bayerischen Akademie der Wissenschaften (LRZ - Germany)](https://www.lrz.de/)
 
 ****
 
-[![SURFSARA logo](https://raw.github.com/fscheiner/images/master/site_logos/surfsara_logo.png)](http://www.surfsara.nl/)
+[![ICHEC logo](https://raw.github.com/fscheiner/images/master/site_logos/ichec_logo.png)](https://www.ichec.ie/)
 
-[SURFsara (SURFsara - The Netherlands)](http://www.surfsara.nl/)
+[Irish Centre for High-End Computing (ICHEC - Ireland)](https://www.ichec.ie/)
 
 ****
 
-[![CINES logo](https://raw.github.com/fscheiner/images/master/site_logos/cines_logo.png)](http://www.cines.fr/)
+[![CINECA logo](https://raw.github.com/fscheiner/images/master/site_logos/cineca_logo.png)](https://www.cineca.it/)
 
-[Centre Informatique National de l’Enseignement Supérieur (CINES - France)](http://www.cines.fr/)
+[Centro di supercalcolo, Consorzio di università (CINECA - Italy)](https://www.cineca.it/)
+
+****
+
+[![SURFSARA logo](https://raw.github.com/fscheiner/images/master/site_logos/surfsara_logo.png)](https://www.surf.nl/en/about-surf/subsidiaries/surfsara/)
+
+[SURFsara (SURFsara - The Netherlands)](https://www.surf.nl/en/about-surf/subsidiaries/surfsara/)
+
+****
+
+[![CINES logo](https://raw.github.com/fscheiner/images/master/site_logos/cines_logo.png)](https://www.cines.fr/)
+
+[Centre Informatique National de l’Enseignement Supérieur (CINES - France)](https://www.cines.fr/)
 
 ****
 
 [![IT4Innovations logo](https://raw.github.com/fscheiner/images/master/site_logos/it4innovations_logo_h100.png)](http://www.it4i.cz/)
 
 [IT4Innovations national supercomputing center (IT4Innovations - Czech republic)](http://www.it4i.cz/)
+
+****
+
+[![KIT logo](https://raw.github.com/fscheiner/images/master/site_logos/kit_logo_h100.png)](https://www.kit.edu/)
+
+[Karlsruhe Institute of Technology (KIT - Germany)](https://www.kit.edu/)
 
 
 ## License ##
