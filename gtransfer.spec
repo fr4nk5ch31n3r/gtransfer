@@ -201,7 +201,7 @@ rm -rf %{buildroot}
 %{_mandir}/man1/grm.1.gz
 
 %changelog
-* Tue Mar 23 2017 Frank Scheiner <scheiner@hlrs.de> 0.8.0-1
+* Tue Mar 27 2017 Frank Scheiner <scheiner@hlrs.de> 0.8.0-1
 - Updated source package and version number to new release. Also added new gtools to the toolkit.
 
 * Thu Sep 08 2016 Frank Scheiner <scheiner@hlrs.de> 0.7.1-1

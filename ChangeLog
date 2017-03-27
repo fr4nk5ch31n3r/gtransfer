@@ -1,3 +1,20 @@
+2017-03-27  Frank Scheiner <scheiner@hlrs.de>
+
+* 0.8.0 (gtransfer toolkit):
+
+- New functionality
+
+The (guc) sync level used by gtransfer for transfers can now be selected by
+users. Syncing can also be disabled.
+
+The host aliases can now be retrieved and installed from a file provided
+locally or from a remote repository, just like dpaths and dparams.
+
+Wrappers for uberftp (called gtools) were added that provide shorthand
+functionality to users for common operations on remote GridFTP servers like
+(g)cat, (g)ls, (g)mkdir, (g)mv and (g)rm. All wrappers support host aliases and
+remote directory browsing just like gt.
+
 2016-09-08  Frank Scheiner <scheiner@hlrs.de>
 
 *0.7.1 (gtransfer toolkit):
@@ -413,4 +430,3 @@ configuration files in three different locations:
 - "/opt/gtransfer/etc/" (default for system install)
 - "/etc/opt/gtransfer/"
 - "$HOME/.gtransfer/" (default for user install)
-
