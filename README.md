@@ -77,7 +77,7 @@ $ gt -s host1:/file/* -d host3:/files/ -m all
 
 ![transfer using multipathing](/share/doc/images/multipathing-transfer.png)
 
-The host `host1` has connections to both the Internet and a private network. The 
+The host `host1` has connections to both the Internet and a private network. The
 bandwidth of the Internet connection is limited to 1 Gb/s, but the connection to
 the private network has a bandwidth of 10 Gb/s. The host `host2` has a bandwidth
 of 10 Gb/s on connections to both the Internet and the private network. In
@@ -134,7 +134,7 @@ can use `myGridFTP:` and `gsiftp://host1.domain.tld:2811` synonymically. See
 
 ### Persistent identifiers (PIDs) ###
 
-Gtransfer can use persistent identifiers (PIDs) as used by [EUDAT] and provided 
+Gtransfer can use persistent identifiers (PIDs) as used by [EUDAT] and provided
 by [EPIC] as source of a data transfer. See [persistent identifiers] for more
 details.
 
@@ -162,57 +162,63 @@ Additional examples will be made available occasionally.
 This is a list of HPC centers in Europe that use gtransfer in production:
 
 [![HLRS logo](https://raw.github.com/fscheiner/images/master/site_logos/hlrs_logo.png)](http://www.hlrs.de/)
-  
+
 [Höchstleistungsrechenzentrum Stuttgart (HLRS - Germany)](http://www.hlrs.de/)
 
 ****
 
-[![CSC logo](https://raw.github.com/fscheiner/images/master/site_logos/csc_logo_h100.png)](http://www.csc.fi/)
+[![CSC logo](https://raw.github.com/fscheiner/images/master/site_logos/csc_logo_h100.png)](https://www.csc.fi/)
 
-[CSC - IT Center for Science (CSC - Finland)](http://www.csc.fi/)
-
-****
-
-[![LRZ logo](https://raw.github.com/fscheiner/images/master/site_logos/lrz_logo_new_h100.png)](http://www.lrz.de/)
-
-[Leibniz-Rechenzentrum (LRZ) der Bayerischen Akademie der Wissenschaften (LRZ - Germany)](http://www.lrz.de/)
+[CSC - IT Center for Science (CSC - Finland)](https://www.csc.fi/)
 
 ****
 
-[![ICHEC logo](https://raw.github.com/fscheiner/images/master/site_logos/ichec_logo.png)](http://www.ichec.ie/)
+[![LRZ logo](https://raw.github.com/fscheiner/images/master/site_logos/lrz_logo_new_h100.png)](https://www.lrz.de/)
 
-[Irish Centre for High-End Computing (ICHEC - Ireland)](http://www.ichec.ie/)
-
-****
-
-[![CINECA logo](https://raw.github.com/fscheiner/images/master/site_logos/cineca_logo.png)](http://www.cineca.it/)
-
-[Centro di supercalcolo, Consorzio di università (CINECA - Italy)](http://www.cineca.it/)
+[Leibniz-Rechenzentrum (LRZ) der Bayerischen Akademie der Wissenschaften (LRZ - Germany)](https://www.lrz.de/)
 
 ****
 
-[![SURFSARA logo](https://raw.github.com/fscheiner/images/master/site_logos/surfsara_logo.png)](http://www.surfsara.nl/)
+[![ICHEC logo](https://raw.github.com/fscheiner/images/master/site_logos/ichec_logo.png)](https://www.ichec.ie/)
 
-[SURFsara (SURFsara - The Netherlands)](http://www.surfsara.nl/)
-
-****
-
-[![CINES logo](https://raw.github.com/fscheiner/images/master/site_logos/cines_logo.png)](http://www.cines.fr/)
-
-[Centre Informatique National de l’Enseignement Supérieur (CINES - France)](http://www.cines.fr/)
+[Irish Centre for High-End Computing (ICHEC - Ireland)](https://www.ichec.ie/)
 
 ****
 
-[![IT4Inoovations logo](https://raw.github.com/fscheiner/images/master/site_logos/it4innovations_logo_h100.png)](http://www.it4i.cz/)
+[![CINECA logo](https://raw.github.com/fscheiner/images/master/site_logos/cineca_logo.png)](https://www.cineca.it/)
+
+[Centro di supercalcolo, Consorzio di università (CINECA - Italy)](https://www.cineca.it/)
+
+****
+
+[![SURFSARA logo](https://raw.github.com/fscheiner/images/master/site_logos/surfsara_logo.png)](https://www.surf.nl/en/about-surf/subsidiaries/surfsara/)
+
+[SURFsara (SURFsara - The Netherlands)](https://www.surf.nl/en/about-surf/subsidiaries/surfsara/)
+
+****
+
+[![CINES logo](https://raw.github.com/fscheiner/images/master/site_logos/cines_logo.png)](https://www.cines.fr/)
+
+[Centre Informatique National de l’Enseignement Supérieur (CINES - France)](https://www.cines.fr/)
+
+****
+
+[![IT4Innovations logo](https://raw.github.com/fscheiner/images/master/site_logos/it4innovations_logo_h100.png)](http://www.it4i.cz/)
 
 [IT4Innovations national supercomputing center (IT4Innovations - Czech republic)](http://www.it4i.cz/)
+
+****
+
+[![KIT logo](https://raw.github.com/fscheiner/images/master/site_logos/kit_logo_h100.png)](https://www.kit.edu/)
+
+[Karlsruhe Institute of Technology (KIT - Germany)](https://www.kit.edu/)
 
 
 ## License ##
 
 (GPLv3)
 
-Copyright (C) 2010, 2011, 2013-2015 Frank Scheiner, HLRS, Universitaet Stuttgart  
+Copyright (C) 2010, 2011, 2013-2017 Frank Scheiner, HLRS, Universitaet Stuttgart  
 Copyright (C) 2011, 2012, 2013 Frank Scheiner
 
 The software is distributed under the terms of the GNU General Public License
@@ -231,4 +237,3 @@ You should have received a [copy] of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 [copy]: /COPYING
-

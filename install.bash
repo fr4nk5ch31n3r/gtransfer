@@ -61,7 +61,8 @@ if [[ "$(basename $0)" == "install.bash" ]]; then
 	cp ./bin/gtransfer.bash \
 	   ./bin/datapath.bash \
 	   ./bin/defaultparam.bash \
-	   ./bin/halias.bash "$binDir"
+	   ./bin/halias.bash \
+	   ./bin/gtools.bash "$binDir"
 
 	# ...reconfigure paths inside of the scripts and...
 	#        + reconfigure path to configuration files
@@ -71,17 +72,25 @@ if [[ "$(basename $0)" == "install.bash" ]]; then
 	sed -e "s|<GTRANSFER_BASE_PATH>|$prefixDir/gtransfer|g" -e 's/#sed#//g' -i "$binDir/datapath.bash"
 	sed -e "s|<GTRANSFER_BASE_PATH>|$prefixDir/gtransfer|g" -e 's/#sed#//g' -i "$binDir/defaultparam.bash"
 	sed -e "s|<GTRANSFER_BASE_PATH>|$prefixDir/gtransfer|g" -e 's/#sed#//g' -i "$binDir/halias.bash"
+	sed -e "s|<GTRANSFER_BASE_PATH>|$prefixDir/gtransfer|g" -e 's/#sed#//g' -i "$binDir/gtools.bash"
 
 	# ...make links and...
 	if [[ $userInstall -eq 1 ]]; then
 
 		linkPath="$HOME/bin"
-		
+
 		ln -s "$binDir/gtransfer.bash" "$linkPath/gtransfer"
 		ln -s "$binDir/gtransfer.bash" "$linkPath/gt"
 		ln -s "$binDir/datapath.bash" "$linkPath/dpath"
 		ln -s "$binDir/defaultparam.bash" "$linkPath/dparam"
 		ln -s "$binDir/halias.bash" "$linkPath/halias"
+		ln -s "$binDir/gtransfer-version.bash" "$linkPath/gt-version"
+		ln -s "$binDir/gtools.bash" "$linkPath/gtools"
+		ln -s "$binDir/gtools.bash" "$linkPath/gcat"
+		ln -s "$binDir/gtools.bash" "$linkPath/gls"
+		ln -s "$binDir/gtools.bash" "$linkPath/gmkdir"
+		ln -s "$binDir/gtools.bash" "$linkPath/gmv"
+		ln -s "$binDir/gtools.bash" "$linkPath/grm"
 	else
 		linkPath="$binDir"
 
@@ -91,6 +100,13 @@ if [[ "$(basename $0)" == "install.bash" ]]; then
 		ln -s "datapath.bash" "$linkPath/dpath"
 		ln -s "defaultparam.bash" "$linkPath/dparam"
 		ln -s "halias.bash" "$linkPath/halias"
+		ln -s "gtransfer-version.bash" "$linkPath/gt-version"
+		ln -s "gtools.bash" "$linkPath/gtools"
+		ln -s "gtools.bash" "$linkPath/gcat"
+		ln -s "gtools.bash" "$linkPath/gls"
+		ln -s "gtools.bash" "$linkPath/gmkdir"
+		ln -s "gtools.bash" "$linkPath/gmv"
+		ln -s "gtools.bash" "$linkPath/grm"
 	fi
 
 	# ...copy README and manpages.
@@ -132,9 +148,15 @@ elif [[ "$(basename $0)" == "uninstall.bash" ]]; then
 		rm "$HOME/bin/dpath"
 		rm "$HOME/bin/dparam"
 		rm "$HOME/bin/halias"
+		rm "$HOME/gt-version"
+		rm "$HOME/bin/gtools"
+		rm "$HOME/bin/gcat"
+		rm "$HOME/bin/gls"
+		rm "$HOME/bin/gmkdir"
+		rm "$HOME/bin/gmv"
+		rm "$HOME/bin/grm"
 
 		#  remove gtransfer dir
 		rm -r "$prefixDir/gtransfer"
 	fi
 fi
-

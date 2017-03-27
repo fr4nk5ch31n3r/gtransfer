@@ -1,0 +1,558 @@
+#!/bin/bash -x
+
+# gridftp.bashlib - Utilities for gsatellite jobs
+
+:<<COPYRIGHT
+
+Copyright (C) 2016-2017 Frank Scheiner, HLRS, Universitaet Stuttgart
+
+The program is distributed under the terms of the GNU General Public License
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+COPYRIGHT
+
+################################################################################
+# DEFINES
+################################################################################
+
+readonly _gridftp_Version="0.4.0"
+
+readonly _READY_MARKER="00_TRANSFER_READY"
+readonly _DEST_MARKER="00_TRANSFER_DESTINATION"
+
+
+################################################################################
+# FUNCTIONS
+################################################################################
+
+# Private: Try to expand the given GridFTP URL
+#
+# $1 (_gridftpURL) - GridFTP URL to expand
+#
+# Yields the possibly expanded GridFTP URL.
+#
+# Returns 0 on success, 1 otherwise.
+gridftp/expandUrl()
+{
+	local _gridftpUrl="$1"
+	local _expandedGridftpUrl=""
+
+	local _alias=""
+	local _user=""
+	local _host=""
+	local _path=""
+
+	if echo "$_gridftpUrl" | grep '^gsiftp://.*:.*' &>/dev/null; then
+
+		# no expansion needed
+		_expandedGridftpUrl="$_gridftpUrl"
+		echo "$_expandedGridftpUrl"
+		return 0
+
+	elif hash halias &>/dev/null; then
+
+		_alias="${_gridftpUrl%%/*}" ## remove path
+		_user="${_alias%%@*}"
+		_alias="${_alias#*@}" ## remove "user@"
+
+		#echo "A $_alias U $_user" 1>&2
+
+		if halias --is-alias "$_alias" &>/dev/null; then
+
+			_host=$( halias --dealias "$_alias" )
+
+			#echo "H $_host" 1>&2
+
+			if [[ "$_user" != "$_alias" ]]; then
+
+				_host=${_host/:\/\//:\/\/$_user@}
+				_expandedGridftpUrl="${_gridftpUrl/${_user}@${_alias}/$_host}"
+			else
+				_expandedGridftpUrl="${_gridftpUrl/$_alias/$_host}"
+			fi
+		else
+			_expandedGridftpUrl="$_gridftpUrl"
+		fi
+
+		echo "$_expandedGridftpUrl"
+		return 0
+	else
+		return 1
+	fi
+}
+
+
+# Private: Check if file/directory exists.
+#
+# $1 (_gridftpFileUrl) - GridFTP URL for the file/directory to check
+#
+# Returns 0 if file exists, 1 otherwise and 2 if there is another problem.
+gridftp/fileExists()
+{
+	local _gridftpFileUrl="$1"
+
+	local _expandedUrl=""
+	local _command=""
+	local _output=""
+
+	_expandedUrl=$( gridftp/expandUrl "$_gridftpFileUrl" )
+
+	if [[ $? -ne 0 ]]; then
+
+		return 2
+	fi
+
+	_command="uberftp -ls "$_expandedUrl""
+
+	_output=$( $_command 2>&1 )
+
+	_returnVal=$?
+
+	# File does exist
+	if [[ $_returnVal -eq 0 ]]; then
+
+		return 0
+
+	# File does not exist or other error
+	elif [[ $_returnVal -eq 1 ]]; then
+
+		# No GSI proxy credential available
+		if echo "$_output" | grep 'Failed to acquire credentials' &>/dev/null; then
+
+			return 2
+
+		# Wrong TCP port used or used TCP port is firewalled
+		elif echo "$_output" | grep 'Failed to read()' &>/dev/null; then
+
+			return 2
+
+		# File does not exist
+		else
+			return 1
+		fi
+
+	# Any other error
+	else
+		return 2
+	fi
+}
+
+
+# Private: List file or directory contents in GridFTP URL
+#
+# $1 (_gridftpFileUrl) - GridFTP URL for the file/directory
+#
+# Returns 0 if successful, 1 otherwise and 2 if there is another problem.
+gridftp/ls()
+{
+	local _gridftpFileUrl="$1"
+
+	local _expandedUrl=""
+	local _command=""
+	local _output=""
+
+	_expandedUrl=$( gridftp/expandUrl "$_gridftpFileUrl" )
+
+	if [[ $? -ne 0 ]]; then
+
+		return 2
+	fi
+
+	_command="uberftp -ls "$_expandedUrl""
+
+	_output=$( $_command 2>&1 )
+
+	_returnVal=$?
+
+	# File or dir does exist
+	if [[ $_returnVal -eq 0 ]]; then
+
+		echo "$_output"
+		return 0
+
+	# File does not exist or other error
+	elif [[ $_returnVal -eq 1 ]]; then
+
+		errorMsg "Couldn't list given URL." \
+		         "$_command" \
+		         "$_output"
+		return 1
+
+	# Any other error
+	else
+		return 2
+	fi
+}
+
+
+# Private: Cat contents of file given in GridFTP URL
+#
+# $1 (_gridftpFileUrl) - GridFTP URL for the file
+#
+# Returns 0 if successful, 1 otherwise and 2 if there is another problem.
+gridftp/cat()
+{
+	local _gridftpFileUrl="$1"
+
+	local _expandedUrl=""
+	local _command=""
+	local _output=""
+
+	_expandedUrl=$( gridftp/expandUrl "$_gridftpFileUrl" )
+
+	if [[ $? -ne 0 ]]; then
+
+		return 2
+	fi
+
+	_command="uberftp -cat "$_expandedUrl""
+
+	_output=$( $_command 2>&1 )
+
+	_returnVal=$?
+
+	# File or dir does exist
+	if [[ $_returnVal -eq 0 ]]; then
+
+		echo "$_output"
+		return 0
+
+	# File does not exist or other error
+	elif [[ $_returnVal -eq 1 ]]; then
+
+		errorMsg "Couldn't cat given URL." \
+		         "$_command" \
+		         "$_output"
+		return 1
+
+	# Any other error
+	else
+		return 2
+	fi
+}
+
+
+# Private: Emit error message for failed GridFTP actions (including
+#          failed command and its output)
+#
+# $1 (_msg)     - The error message to emit
+# $2 (_command) - The failed command
+# $3 (_output)  - The output of the failed command
+#
+# Returns 0 on success, 1 otherwise.
+errorMsg()
+{
+	local _msg="$1"
+	local _command="$2"
+	local _output="$3"
+
+	if [[ "$_command" == "" && \
+	      "$_output" == "" ]]; then
+
+		cat >&2 <<-EOM
+			E: $_msg
+		EOM
+	else
+		cat >&2 <<-EOM
+			E: $_msg
+			E: Failed command was: "$_command".
+			E: Output was: "
+			$( echo "$_output" | cat -v )
+			"
+		EOM
+	fi
+
+	if [[ $? -eq 0 ]]; then
+
+		return 0
+	else
+		return 1
+	fi
+}
+
+
+# Private: Create directory identified by GridFTP URL
+#
+# $1 (_gridftpFileUrl) - GridFTP URL for the directory
+#
+# Behaves like `mkdir -p [...]`, but requires one additional GridFTP action
+# (gridftp/mkdir()) for each directory component. Existing directories are
+# ignored by uberftp's mkdir command, which allows to avoid a prior check for
+# existence of a directory component.
+#
+# Returns 0 if successful, 1 otherwise and 2 if there is another problem.
+gridftp/mkdir()
+{
+	local _gridftpFileUrl="$1"
+
+	local _expandedUrl=""
+	local _index="4" ## index 4 includes the top dir in the remote URL
+	                 ## gsiftp://host.domain.tld:2811/<TOPDIR>/<SUBDIR1>[/...]
+	                 ##       12                    3        4
+	local _tmpUrl=""
+
+	local _command=""
+	local _output=""
+
+	_expandedUrl=$( gridftp/expandUrl "$_gridftpFileUrl" )
+
+	if [[ $? -ne 0 ]]; then
+
+		return 2
+	fi
+
+	# shortcut if last sub directory is already existing
+	if gridftp/fileExists "$_expandedUrl"; then
+
+		return 0
+	fi
+
+	while [[ 1 ]]; do
+
+		_tmpUrl=$( echo $_expandedUrl | cut -d '/' -f "1-${_index}" )
+
+		#echo "U $_tmpUrl" 1>&2
+
+		_command="uberftp -mkdir "$_tmpUrl""
+
+		_output=$( $_command 2>&1 )
+
+		_returnVal=$?
+
+		# Directory creation successful
+		if [[ $_returnVal -eq 0 ]]; then
+
+			:
+
+		# Directory couldn't be created or other error
+		elif [[ $_returnVal -eq 1 ]]; then
+
+			errorMsg "Couldn't create directory for given URL." \
+			         "$_command" \
+			         "$_output"
+			return 1
+
+		# Any other error
+		else
+			return 2
+		fi
+
+		if [[ "$_tmpUrl" == "$_expandedUrl" ]]; then
+
+			break
+		fi
+
+		_index=$(( $_index + 1 ))
+	done
+
+	return 0
+}
+
+
+# Private: Remove file given via GridFTP URL
+#
+# $1 (_gridftpUrl) - The GridFTP URL (=file)
+#
+# Returns 0 on success, 1 otherwise.
+gridftp/removeFile()
+{
+	local _gridftpUrl="$1"
+
+	local _expandedUrl=""
+
+	_expandedUrl=$( gridftp/expandUrl "$_gridftpUrl" )
+
+	if [[ $? -ne 0 ]]; then
+
+		return 1
+	fi
+
+	_command="uberftp -rm "$_expandedUrl""
+
+	_output=$( $_command )
+
+	if [[ $? -ne 0 ]]; then
+
+		errorMsg "Couldn't remove destination URL." \
+		         "$_command" \
+		         "$_output"
+                return 1
+        else
+            	return 0
+        fi
+}
+
+
+# Private: Rename file/directory given via GridFTP URL
+#
+# $1 (_GridftpUrlOld) - The old GridFTP URL (=file/directory)
+# $2 (_GridftpUrlNew) - The new GridFTP URL (=file/directory)
+#
+# Only works on the same remote system!
+#
+# Returns 0 on success, 1 otherwise, 2 if the remote GridFTP servers are
+# not the same.
+gridftp/rename()
+{
+       	local _gridftpUrlOld="$1"
+	local _gridftpUrlNew="$2"
+
+       	local _expandedUrlOld=""
+	local _expandedUrlNew=""
+
+	local _tmpUrlOld=""
+	local _tmpUrlNew=""
+
+        _expandedUrlOld=$( gridftp/expandUrl "$_gridftpUrlOld" )
+
+	if [[ $? -ne 0 ]]; then
+
+		return 1
+	fi
+
+	_expandedUrlNew=$( gridftp/expandUrl "$_gridftpUrlNew" )
+
+	if [[ $? -ne 0 ]]; then
+
+		return 1
+	fi
+
+	_tmpUrlOld=$( echo $_expandedUrlOld | cut -d '/' -f "1-3" )
+	_tmpUrlNew=$( echo $_expandedUrlNew | cut -d '/' -f "1-3" )
+
+	if [[ "$_tmpUrlOld" != "$_tmpUrlNew" ]]; then
+
+		echo "E: Remote GridFTP servers have to be identical for rename operation!" 1>&2
+		return 2
+	fi
+
+	# Now remove everything from the new URL so that only the file/directory and the path
+	# relative to the home directory is remaining
+	_expandedUrlNew=${_expandedUrlNew/*\/~\/}
+
+        _command="uberftp -rename "$_expandedUrlOld" "$_expandedUrlNew""
+
+        _output=$( $_command 2>&1 )
+
+        if [[ $? -ne 0 ]]; then
+
+		errorMsg "Couldn't rename to destination URL." \
+		         "$_command" \
+		         "$_output"
+               	return 1
+        else
+            	return 0
+        fi
+}
+
+
+# Public: Check if transfer is ready to start.
+#
+# $1 (_source) - The source URL (=dir) for the transfer
+#
+# Returns 0 on success (=transfer is ready), 1 otherwise.
+gridftp/transferReady()
+{
+	local _source="$1"
+
+	if gridftp/fileExists "${_source}/$_DEST_MARKER" && \
+	   gridftp/fileExists "${_source}/$_READY_MARKER"; then
+
+		return 0
+	else
+		return 1
+	fi
+}
+
+
+# Public: Start the transfer by creating and submitting a gt job to
+#         gsatellite.
+#
+# $1 (_source) - The source URL (=dir) for the transfer
+#
+# Prints the job's ID and returns 0 on success, 1 otherwise.
+gridftp/startTransfer()
+{
+	local _source="$1"
+
+	local _expandedUrl=""
+        _expandedUrl=$( gridftp/expandUrl "$_source" )
+
+	if [[ $? -ne 0 ]]; then
+
+		return 1
+	fi
+
+	local _uberftpOutput=""
+	local _destination=""
+
+	local _command=""
+	local _output=""
+
+	local _gtJobFile=""
+	local _gtJobId=""
+
+	# (1) Get destination directory #############################################
+	_command="uberftp -cat "${_expandedUrl}/${_DEST_MARKER}""
+	_output=$( $_command 2>&1 )
+
+	if [[ $? -ne 0 ]]; then
+
+		errorMsg "Couldn't determine destination URL. Cannot continue." \
+		         "$_command" \
+		         "$_output"
+		return 1
+	else
+		_destination="$_output"
+	fi
+
+	# (2) Remove marker files ###################################################
+	for _markerFile in $_READY_MARKER $_DEST_MARKER; do
+
+		gridftp/renameFile "${_expandedUrl}/${_markerFile}" "${_expandedUrl}/${_markerFile}__"
+		#gridftp/removeFile "${_expandedUrl}/${_markerFile}"
+	done
+
+	# (3) Create job file #######################################################
+	_gtJobFile=$( mktemp --tmpdir="/tmp" XXXXXXXX )
+
+	cat > "$_gtJobFile" <<-EOF
+	#!/bin/bash
+	#GSAT -T gtransfer
+	#
+	# Created by job #${GSAT_O_JOBID}
+	#
+
+	gt -s "${_source}*" -d "${_destination}" -e -r -v -o seq
+
+	EOF
+
+	# (4) Submit job ############################################################
+	_command="gqsub "$_gtJobFile""
+	_output=$( $_command )
+
+	if [[ $? -ne 0 ]]; then
+
+                errorMsg "Job submission failed. Cannot continue." \
+		         "$_command" \
+		         "$_output"
+		return 1
+	else
+		rm -f "$_gtJobFile"
+		_gtJobId="$_output"
+		echo "$_gtJobId"
+		return 0
+	fi
+}

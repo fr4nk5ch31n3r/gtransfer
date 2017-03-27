@@ -6,7 +6,7 @@
 
 :<<COPYRIGHT
 
-Copyright (C) 2010, 2011, 2013-2016 Frank Scheiner, HLRS, Universitaet Stuttgart
+Copyright (C) 2010, 2011, 2013-2017 Frank Scheiner, HLRS, Universitaet Stuttgart
 Copyright (C) 2011, 2012, 2013 Frank Scheiner
 
 The program is distributed under the terms of the GNU General Public License
@@ -26,7 +26,7 @@ The program is distributed under the terms of the GNU General Public License
 
 This product includes software developed by members of the DEISA project
 www.deisa.org. DEISA is an EU FP7 integrated infrastructure initiative under
-contract number RI-222919. 
+contract number RI-222919.
 
 COPYRIGHT
 
@@ -37,7 +37,7 @@ trap - SIGINT
 #set -f
 
 readonly _program=$( basename "$0" )
-readonly _gtransferVersion="0.7.1"
+readonly _gtransferVersion="0.8.0"
 
 version="$_gtransferVersion"
 
@@ -46,14 +46,16 @@ gsiftpUserParams=""
 #  path to configuration files (prefer git deploy!)
 #  For native OS packages:
 if [[ -e "/etc/gtransfer" ]]; then
-        gtransferConfigurationFilesPath="/etc/gtransfer"
-        #  gtransfer is installed in "/usr/bin", hence the base path is "/usr"
-        gtransferBasePath="/usr"
-        gtransferLibPath="$gtransferBasePath/share"
-        gtransferLibexecPath="$gtransferBasePath/libexec/gtransfer"
+
+	gtransferConfigurationFilesPath="/etc/gtransfer"
+	#  gtransfer is installed in "/usr/bin", hence the base path is "/usr"
+	gtransferBasePath="/usr"
+	gtransferLibPath="$gtransferBasePath/share"
+	gtransferLibexecPath="$gtransferBasePath/libexec/gtransfer"
 
 #  For installation with "install.sh".
 #sed#elif [[ -e "<GTRANSFER_BASE_PATH>/etc" ]]; then
+#sed#
 #sed#	gtransferConfigurationFilesPath="<GTRANSFER_BASE_PATH>/etc"
 #sed#	gtransferBasePath=<GTRANSFER_BASE_PATH>
 #sed#	gtransferLibPath="$gtransferBasePath/lib"
@@ -64,25 +66,29 @@ if [[ -e "/etc/gtransfer" ]]; then
 #+ gtransfer files, please also use the same provider super dir below
 #+ "/etc/opt").
 #elif [[ -e "/etc/opt/<PROVIDER>/gtransfer" ]]; then
+#
 #	gtransferConfigurationFilesPath="/etc/opt/<PROVIDER>/gtransfer"
 #	gtransferBasePath="/opt/<PROVIDER>/gtransfer"
 #	gtransferLibPath="$gtransferBasePath/lib"
 elif [[ -e "/etc/opt/gtransfer" ]]; then
-        gtransferConfigurationFilesPath="/etc/opt/gtransfer"
-        gtransferBasePath="/opt/gtransfer"
-        gtransferLibPath="$gtransferBasePath/lib"
-        gtransferLibexecPath="$gtransferBasePath/libexec"
+
+	gtransferConfigurationFilesPath="/etc/opt/gtransfer"
+	gtransferBasePath="/opt/gtransfer"
+	gtransferLibPath="$gtransferBasePath/lib"
+	gtransferLibexecPath="$gtransferBasePath/libexec"
 
 #  For user install in $HOME:
 #elif [[ -e "$HOME/.gtransfer" ]]; then
 elif [[ -e "$HOME/opt/gtransfer" ]]; then
-        gtransferConfigurationFilesPath="$HOME/.gtransfer"
-        gtransferBasePath="$HOME/opt/gtransfer"
-        gtransferLibPath="$gtransferBasePath/lib"
-        gtransferLibexecPath="$gtransferBasePath/libexec"
+
+	gtransferConfigurationFilesPath="$HOME/.gtransfer"
+	gtransferBasePath="$HOME/opt/gtransfer"
+	gtransferLibPath="$gtransferBasePath/lib"
+	gtransferLibexecPath="$gtransferBasePath/libexec"
 
 #  For git deploy, use $BASH_SOURCE
 elif [[ -e "$( dirname $BASH_SOURCE )/../etc" ]]; then
+
 	gtransferConfigurationFilesPath="$( dirname $BASH_SOURCE )/../etc/gtransfer"
 	gtransferBasePath="$( dirname $BASH_SOURCE )/../"
 	gtransferLibPath="$gtransferBasePath/lib"
@@ -144,7 +150,7 @@ done
 #USAGE##########################################################################
 usageMsg()
 {
-        cat <<USAGE
+	cat <<USAGE
 
 usage: $(basename $0) --source|-s sourceUrl --destination|-d destinationUrl [additional options]
        $(basename $0) --transfer-list|-f transferList [additional options]
@@ -161,7 +167,7 @@ USAGE
 #HELP###########################################################################
 helpMsg()
 {
-        cat <<HELP
+	cat <<HELP
 
 $(versionMsg)
 
@@ -186,7 +192,8 @@ key to see what's possible.
 
 The options are as follows:
 
-[--source|-s sourceUrl] Determine the source URL for the transfer.
+[-s, --source sourceUrl]
+			Determine the source URL for the transfer.
 
 			Possible URL examples:
 
@@ -195,7 +202,7 @@ The options are as follows:
 
 			"FQDN" is the fully qualified domain name.
 
-[--destination|-d destinationUrl]
+[-d, --destination destinationUrl]
 			Determine the destination URL for the transfer.
 
 			Possible URL examples:
@@ -205,31 +212,56 @@ The options are as follows:
 
 			"FQDN" is the fully qualified domain name.
 
-[--transfer-list|-f transferList]
+[-f, --transfer-list transferList]
 			As alternative to providing source and destination URLs
 			on the commandline one can also provide a list of source
 			and destination URLs. See the gt manual page for more
 			details.
 
-[--auto-optimize|-o transferMode]
+[-o, --auto-optimize transferMode]
 			Activates automatic optimization of transfers
 			depending on the size of files. The transferMode
 			controls how files of different size classes are
 			transferred. Currently only "seq[uential]" is possible.
-			
-[--recursive|-r]	Transfer files recursively.
 
-[--checksum-data-channel|-c]
+[-r, --recursive]	Transfer files recursively.
+
+[-c, --checksum-data-channel]
 			Enable checksumming on the data channel. Cannot be used
 			in conjunction with "-e"!
 
-[--encrypt-data-channel|-e]
+[-e, --encrypt-data-channel]
 			Enable encryption on the data channel. Cannot be used
 			in conjunction with "-c"!
 
-[--verbose|-v]		Be verbose.
+[--sync-level syncLevel]
+			Set the sync level that should be used for the transfer.
+			This is a globus-url-copy option and the following sync
+			levels are available:
 
-[--metric|-m dataPathMetric]
+			* Level 0 will only transfer if the destination does not
+			  exist.
+
+			* Level 1 will transfer if the size of the destination
+			  does not match the size of the source.
+
+			* Level 2 will transfer if the time stamp of the
+			  destination is older than the time stamp of the
+			  source.
+
+			* Level 3 will perform a checksum of the source and
+			  destination and transfer if the checksums do not
+			  match.
+
+			By default gtransfer uses sync level 1. Cannot be used
+			in conjunction with "--no-sync"!
+
+[--no-sync]		Disable sync(hronization) for the transfer. Cannot be
+			used in conjunction with "--sync-level"!
+
+[-v, --verbose]		Be verbose.
+
+[-m, --metric dataPathMetric]
 			Set the metric to select the corresponding data path. To
 			enable multipathing, use either the keyword "all" to
 			transfer data using all available paths or use a comma
@@ -237,14 +269,14 @@ The options are as follows:
 			should be used (e.g. "0,1,2"). You can also use metric
 			values multiple times (e.g. "0,0").
 
-[--logfile|-l logfile]	Determine the name for the logfile, tgftp will generate
+[-l, --logfile logfile]	Determine the name for the logfile, tgftp will generate
 			for each transfer. If specified with ".log" as
 			extension, gtransfer will insert a "__step_#" string to
 			the name of the logfile ("#" is the number of the
 			transfer step performed). If omitted gtransfer will
 			automatically generate a name for the logfile(s).
 
-[--auto-clean|-a]	Remove logfiles automatically after the transfer
+[-a, --auto-clean]	Remove logfiles automatically after the transfer
 			completed.
 
 [--configfile configurationFile]
@@ -297,7 +329,7 @@ The options are as follows:
 
 [--help]		Prints out a help message.
 
-[--version|-V]		Prints out version information.
+[-V, --version]		Prints out version information.
 
 HELP
 
@@ -328,7 +360,7 @@ echoDebug()
 		echo "$debugLevel: $debugString" 1>&2
 	else
 		echo "$debugLevel: $debugString" 1>$fd
-	fi		
+	fi
 
 	return
 }
@@ -377,8 +409,9 @@ helperFunctions/use cat grep sed cut sleep tgftp telnet uberftp || exit "$_gtran
 
 
 # Defaults #####################################################################
-gtMaxRetries="3"
-gucMaxRetries="1"
+__GLOBAL__gtMaxRetries="3"
+__GLOBAL__gucMaxRetries="1"
+__GLOBAL__syncLevel="1"
 gtProgressIndicator="."
 gtInstance="$gtProgressIndicator"
 
@@ -389,6 +422,8 @@ tgftpLogfileNameSet="1"
 recursiveTransferSet=1
 _checksumDataChannelSet=1
 _encryptDataChannelSet=1
+_syncLevelSet=1
+_noSyncSet=1
 ################################################################################
 
 
@@ -408,31 +443,29 @@ fi
 # read in all parameters
 while [[ "$1" != "" ]]; do
 
-	#  only valid params used?
-	#
-	#  NOTICE:
-	#  This was added to prevent high speed loops
-	#+ if parameters are mispositioned.
-	if [[   "$1" != "--help" && \
-		"$1" != "--version" && "$1" != "-V" && \
-		"$1" != "--source" && "$1" != "-s" && \
-		"$1" != "--destination" && "$1" != "-d" && \
-		"$1" != "--metric" && "$1" != "-m" && \
-		"$1" != "--verbose" && "$1" != "-v" && \
-		"$1" != "--auto-clean" && "$1" != "-a" && \
-		"$1" != "--logfile" && "$1" != "-l" && \
-		"$1" != "--configfile" && \
-                "$1" != "--guc-max-retries" && \
-                "$1" != "--gt-max-retries" && \
-                "$1" != "--transfer-list" && "$1" != "-f" && \
-                "$1" != "--gt-progress-indicator" && \
-                "$1" != "--auto-optimize" && "$1" != "-o" && \
-                "$1" != "--recursive" && "$1" != "-r" && \
-                "$1" != "--checksum-data-channel" && "$1" != "-c" && \
-                "$1" != "--encrypt-data-channel" && "$1" != "-e" && \
-		"$1" != "--" \
+	# only valid params used?
+	if [[ "$1" != "--help" && \
+	      "$1" != "--version" && "$1" != "-V" && \
+	      "$1" != "--source" && "$1" != "-s" && \
+	      "$1" != "--destination" && "$1" != "-d" && \
+	      "$1" != "--metric" && "$1" != "-m" && \
+	      "$1" != "--verbose" && "$1" != "-v" && \
+	      "$1" != "--auto-clean" && "$1" != "-a" && \
+	      "$1" != "--logfile" && "$1" != "-l" && \
+	      "$1" != "--configfile" && \
+	      "$1" != "--guc-max-retries" && \
+	      "$1" != "--gt-max-retries" && \
+	      "$1" != "--transfer-list" && "$1" != "-f" && \
+	      "$1" != "--gt-progress-indicator" && \
+	      "$1" != "--auto-optimize" && "$1" != "-o" && \
+	      "$1" != "--recursive" && "$1" != "-r" && \
+	      "$1" != "--checksum-data-channel" && "$1" != "-c" && \
+	      "$1" != "--encrypt-data-channel" && "$1" != "-e" && \
+	      "$1" != "--sync-level" && \
+	      "$1" != "--no-sync" && \
+	      "$1" != "--" \
 	]]; then
-		#  no, so output a usage message
+		# no, so output a usage message
 		usageMsg
 		exit $_gtransfer_exit_usage
 	fi
@@ -446,7 +479,7 @@ while [[ "$1" != "" ]]; do
 		gsiftpUserParams="$@"
 
 		#  exit the loop (this assumes that everything left in "$@" is
-		#+ a "globus-url-copy" param).		
+		#+ a "globus-url-copy" param).
 		break
 
 	#  "--help" ############################################################
@@ -497,24 +530,26 @@ while [[ "$1" != "" ]]; do
 		autoOptimizeSet="0"
 		shift 1
 
-        #  "--guc-max-retries gucMaxRetries" ###################################
+	#  "--guc-max-retries gucMaxRetries" ###################################
 	elif [[ "$1" == "--guc-max-retries" ]]; then
 
 		shift 1
 		gucMaxRetries="$1"
+		__GLOBAL__gucMaxRetries="$gucMaxRetries"
 		gucMaxRetriesSet="0"
 		shift 1
 
-        #  "--gt-max-retries gtMaxRetries" #####################################
+	#  "--gt-max-retries gtMaxRetries" #####################################
 	elif [[ "$1" == "--gt-max-retries" ]]; then
 
 		shift 1
 		gtMaxRetries="$1"
+		__GLOBAL__gtMaxRetries="$gtMaxRetries"
 		gtMaxRetriesSet="0"
 		shift 1
 
-        #  "--gt-progress-indicator indicatorCharacter" ########################
-        elif [[ "$1" == "--gt-progress-indicator" ]]; then
+	#  "--gt-progress-indicator indicatorCharacter" ########################
+	elif [[ "$1" == "--gt-progress-indicator" ]]; then
 
 		shift 1
 		gtProgressIndicator="$1"
@@ -534,7 +569,7 @@ while [[ "$1" != "" ]]; do
 
 		shift 1
 		verboseExecSet=0
-		
+
 	#  "--recursive|-r" ####################################################
 	elif [[ "$1" == "--recursive" || "$1" == "-r" ]]; then
 
@@ -549,8 +584,8 @@ while [[ "$1" != "" ]]; do
 			shift 1
 			_checksumDataChannelSet=0
 		else
-			echo "${_program}: The parameter \"--checksum-data-channel|-c\" cannot be used in conjunction with the parameter \"--encrypt-data-channel|-e\"!"
-			echo "Try \`${_program} --help' for more information."
+			echo "${_program}: The parameter \"--checksum-data-channel|-c\" cannot be used in conjunction with the parameter \"--encrypt-data-channel|-e\"!" 1>&2
+			echo "Try \`${_program} --help' for more information." 1>&2
 			exit $_gtransfer_exit_usage
 		fi
 
@@ -562,8 +597,57 @@ while [[ "$1" != "" ]]; do
 			shift 1
 			_encryptDataChannelSet=0
 		else
-			echo "${_program}: The parameter \"--encrypt-data-channel|-e\" cannot be used in conjunction with the parameter \"--checksum-data-channel|-c\"!"
-			echo "Try \`${_program} --help' for more information."
+			echo "${_program}: The parameter \"--encrypt-data-channel|-e\" cannot be used in conjunction with the parameter \"--checksum-data-channel|-c\"!" 1>&2
+			echo "Try \`${_program} --help' for more information." 1>&2
+			exit $_gtransfer_exit_usage
+		fi
+
+	# "--sync-level" #######################################################
+	elif [[ "$1" == "--sync-level" ]]; then
+
+		_option="$1"
+		shift 1
+
+		if [[ $_noSyncSet -ne 0 ]]; then
+
+			if [[ "${1:0:1}" != "-" && "$1" != "" ]]; then
+
+				if [[ "$1" =~ ^[0-3]$ && \
+				       $1 -ge 0 && \
+				       $1 -le 4 ]]; then
+
+					_syncLevel="$1"
+					shift 1
+					__GLOBAL__syncLevel="$_syncLevel"
+					_syncLevelSet=0
+				else
+					echo "${_program}: Sync level has to be either 0, 1, 2 or 3!" 1>&2
+					echo "Try \`${_program} --help' for more information." 1>&2
+					exit $_gtransfer_exit_usage
+				fi
+			else
+				echo "${_program}: Missing argument for option \"$_option\"!" 1>&2
+				usageMsg
+				exit $_gtransfer_exit_usage
+			fi
+		else
+			echo "${_program}: The option \`$_option' cannot be used in conjunction with the option \`--no-sync'!" 1>&2
+			echo "Try \`${_program} --help' for more information." 1>&2
+			exit $_gtransfer_exit_usage
+		fi
+
+	# "--no-sync" ##########################################################
+	elif [[ "$1" == "--no-sync" ]]; then
+
+		_option="$1"
+		shift 1
+
+		if [[ $_syncLevelSet -ne 0 ]]; then
+
+			_noSyncSet=0
+		else
+			echo "${_program}: The option \`$_option' cannot be used in conjunction with the option \`--sync-level'!" 1>&2
+			echo "Try \`${_program} --help' for more information." 1>&2
 			exit $_gtransfer_exit_usage
 		fi
 
@@ -647,7 +731,7 @@ if [[ "$gsiftpSourceUrl" == "" || \
 
 		#  create directory for temp files
 		mkdir -p "$__GLOBAL__gtTmpDir"
-		
+
 		gsiftpTransferListClean="$__GLOBAL__gtTmpDir/$$_transferList.${__GLOBAL__gtTmpSuffix}"
 		# do not remove commented lines, as guc stores directories in commented lines and if
 		# those are empty, meaning no other uncommented source or destination URL contains a
@@ -730,7 +814,7 @@ else
 	#  create directory for temp files
 	mkdir -p "$__GLOBAL__gtTmpDir"
 
-	# dealias URLs	
+	# dealias URLs
 	if hash halias &>/dev/null; then
 		# remove everything after and including the first "/". As an alias
 		# mustn't contain any forward slashes, if an alias is used in the URLs,
@@ -749,7 +833,7 @@ else
 
 		_originalGsiftpSourceUrl="$gsiftpSourceUrl"
 		_originalGsiftpDestinationUrl="$gsiftpDestinationUrl"
-	
+
 		_tmpSourceAliasValue=$( halias --dealias "$_tmpSourceAlias" )
 
 		if [[ $? != 0 ]]; then
@@ -768,7 +852,7 @@ else
 
 		# check if the alias value is different from the alias itself
 		if [[ "$_tmpSourceAlias" != "$_tmpSourceAliasValue" ]]; then
-	
+
 			_tmpSourcePath=${gsiftpSourceUrl#*\/}
 
 			if [[ "$_tmpSourceUser" != "$_tmpSourceAlias" ]]; then
@@ -779,9 +863,9 @@ else
 				gsiftpSourceUrl="${_tmpSourceAliasValue}/${_tmpSourcePath}"
 			fi
 		fi
-	
+
 		if [[ "$_tmpDestinationAlias" != "$_tmpDestinationAliasValue" ]]; then
-				
+
 			_tmpDestinationPath=${gsiftpDestinationUrl#*\/}
 
 			if [[ "$_tmpDestinationUser" != "$_tmpDestinationAlias" ]]; then
@@ -796,49 +880,49 @@ else
 
 	# Handle persistent identifiers (PIDs) as source
 	if [[ "$gsiftpSourceUrl" =~ 'pid://' ]]; then
-		
+
 		if hash irule &>/dev/null; then
 			_pid="${gsiftpSourceUrl/pid:\/\/}"
-		
+
 			# resolve PID
 			_resolvedUrl=$( pids/irodsMicroService/resolvePid "$_pid" )
-		
+
 			if [[ $? != 0 ]]; then
 				echo "${_program} [${gtInstance}]: Given PID \"$_pid\" could not be resolved. Exiting." 1>&2
 				exit $_gtransfer_exit_software
 			fi
-		
+
 			gsiftpSourceUrl="$_resolvedUrl"
 		else
 			echo "${_program} [${gtInstance}]: Cannot resolve PID without \"irule\" tool. Exiting" 1>&2
 			exit $_gtransfer_exit_software
 		fi
-	# Handle a list of persistent identifiers (PIDs) as source	
+	# Handle a list of persistent identifiers (PIDs) as source
 	elif [[ "$gsiftpSourceUrl" =~ 'pidfile://' ]]; then
-	
+
 		if hash irule &>/dev/null; then
 			_pidFile="${gsiftpSourceUrl/pidfile:\/\/}"
-			
+
 			if [[ ! -e "$_pidFile" ]]; then
 				echo "${_program} [${gtInstance}]: PID file \"$_pidFile\" cannot be found! Exiting." 1>&2
 				exit $_gtransfer_exit_usage
 			fi
-			
+
 			helperFunctions/echoIfVerbose "${_program} [${gtInstance}]: Resolving PID file..."
 			_resolvedPids=$( pids/irodsMicroService/resolvePidFile "$_pidFile" )
-			
+
 			if [[ $? -ne 0 ]]; then
 				echo "${_program} [${gtInstance}]: At least one PID could not be resolved."
 			fi
-			
+
 			if [[ -z "$_resolvedPids" ]]; then
 				echo "${_program} [${gtInstance}]: PIDs in PID file \"$_pidFile\" could not be resolved! Exiting." 1>&2
 				exit $_gtransfer_exit_software
 			fi
-			
+
 			helperFunctions/echoIfVerbose "${_program} [${gtInstance}]: Building transfer list..."
 			gsiftpTransferList=$( pids/irodsMicroService/buildTransferList "$_resolvedPids" "$gsiftpDestinationUrl" )
-			
+
 			# exchange source URL specification with transfer list
 			# spec
 			_modifiedGtCommandLine="${__GLOBAL__gtCommandLine/$gsiftpSourceUrl/ -f $gsiftpTransferList}"
@@ -851,14 +935,14 @@ else
 			# remove any destination option
 			_modifiedGtCommandLine="${_modifiedGtCommandLine/ -d }"
 			_modifiedGtCommandLine="${_modifiedGtCommandLine/ --destination }"
-			
+
 			# call new gt instance to perform a list transfer
 			$_modifiedGtCommandLine
 			exit $?
 		else
 			echo "${_program} [${gtInstance}]: Cannot resolve PIDs without \"irule\" tool. Exiting." 1>&2
 			exit $_gtransfer_exit_software
-		fi	
+		fi
 	fi
 
 	#                     automatically strips commend lines!
@@ -962,4 +1046,3 @@ if [[ $autoClean == 0 ]]; then
 fi
 
 exit $transferDataReturnValue
-

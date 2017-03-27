@@ -5,7 +5,7 @@
 
 :<<COPYRIGHT
 
-Copyright (C) 2014-2016 Frank Scheiner, HLRS, Universitaet Stuttgart
+Copyright (C) 2014-2017 Frank Scheiner, HLRS, Universitaet Stuttgart
 
 The program is distributed under the terms of the GNU General Public License
 
@@ -29,12 +29,13 @@ COPYRIGHT
 ################################################################################
 
 readonly _program=$( basename "$0" )
-readonly _gtransferToolkitVersion="0.7.1"
+readonly _gtransferToolkitVersion="0.8.0"
 
 readonly _gtransferTools=( "gtransfer"
 			   "dpath"
 			   "dparam"
-			   "halias" )
+			   "halias"
+			   "gtools" )
 
 readonly _gtv_exit_usage=64
 readonly _gtv_exit_ok=0
@@ -60,7 +61,7 @@ gtv/usageMsg()
 
 gtv/helpMsg()
 {
-    
+
 	cat <<-HELP
 	SYNOPSIS:
 
@@ -77,7 +78,7 @@ gtv/helpMsg()
 	                        tools.
 
 	[--help]		Display this help and exit.
-	
+
 	Without arguments gtransfer-version prints the version number of the
 	gtransfer toolkit.
 	HELP
@@ -89,7 +90,7 @@ gtv/helpMsg()
 gtv/printToolkitVersion()
 {
 	echo "gtransfer toolkit v$_gtransferToolkitVersion"
-	
+
 	return
 }
 
@@ -97,12 +98,12 @@ gtv/printToolkitVersion()
 gtv/printAllVersions()
 {
 	local _tool=""
-	
+
 	for _tool in "${_gtransferTools[@]}"; do
 
 		$_tool --version
 	done
-	
+
 	return
 }
 ################################################################################
@@ -126,7 +127,7 @@ while [[ "$1" != "" ]]; do
 		gtv/usageMsg
 		exit $_gtv_exit_usage
 	fi
-	
+
 	# "--help"
 	if [[ "$1" == "--help" ]]; then
 
@@ -154,4 +155,3 @@ else
 fi
 
 exit
-

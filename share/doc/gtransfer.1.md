@@ -1,6 +1,6 @@
-% GTRANSFER(1) gtransfer 0.5.0 | User Commands
+% GTRANSFER(1) gtransfer 0.8.0 | User Commands
 % Frank Scheiner
-% Apr 12, 2016
+% Mar 23, 2017
 
 
 # NAME #
@@ -10,22 +10,14 @@
 
 # SYNOPSIS #
 
-**{gtransfer|gt} [\--source|-s _sourceUrl_] 
-[\--destination|-d _destinationUrl_] 
-[\--transfer-list|-f _transferList_] 
-[\--auto-optimize|-o _transferMode_] 
-[\--recursive|-r]
-[\--checksum-data-channel|-c]
-[\--encrypt-data-channel|-e]
-[\--guc-max-retries _gucMaxRetries_] 
-[\--gt-max-retries _gtMaxRetries_] 
-[\--gt-progress-indicator _indicatorCharacter_] 
-[\--verbose|-v] 
-[\--metric|-m _dataPathMetric_] 
-[\--logfile|-l _logfile_] 
-[\--auto-clean|-a] 
-[\--configfile _configurationFile_] 
-[\-- _gucParameters_]**
+**{gtransfer|gt} [\--source|-s _sourceUrl_] [\--destination|-d 
+_destinationUrl_] [\--transfer-list|-f _transferList_] [\--auto-optimize|-o 
+_transferMode_] [\--recursive|-r] [\--checksum-data-channel|-c] 
+[\--encrypt-data-channel|-e] [\--sync-level syncLevel] [\--no-sync] 
+[\--guc-max-retries _gucMaxRetries_] [\--gt-max-retries _gtMaxRetries_] 
+[\--gt-progress-indicator _indicatorCharacter_] [\--verbose|-v] [\--metric|-m 
+_dataPathMetric_] [\--logfile|-l _logfile_] [\--auto-clean|-a] [\--configfile 
+_configurationFile_] [\-- _gucParameters_]**
 
 
 # DESCRIPTION #
@@ -120,6 +112,7 @@ reference:
 
 A full table is available on `http://www.w3schools.com/tags/ref_urlencode.asp`
 
+
 ## **[-f, \--transfer-list _transferList_]** ##
 
 As alternative to providing source and destination URLs on the command line,
@@ -129,7 +122,7 @@ list.
 The format of each line of the transfer list file is as follows (including
 the double quotes!):
 
-"\<PROTOCOL\>://\<FQDN1\>:\<PORT\>/path/to/file" 
+"\<PROTOCOL\>://\<FQDN1\>:\<PORT\>/path/to/file"
 "\<PROTOCOL\>://\<FQDN2\>:\<PORT\>/path/to/file[s/]"
 
 Throughout all lines the source URL host part (e.g.
@@ -144,7 +137,7 @@ size of files to be transferred. If less than 100 files are going to be
 transferred, gtransfer will fall back to list transfer. The _transferMode_
 controls how files of different size classes are transferred. Currently
 "seq[uential]" (different size classes are transferred sequentially) is
-possible. To define different file size classes use the file 
+possible. To define different file size classes use the file
 _[...]/chunkConfig_. See **FILES** section below for more details.
 
 
@@ -152,21 +145,52 @@ _[...]/chunkConfig_. See **FILES** section below for more details.
 
 Transfer files recursively.
 
-**NOTICE:** **globus-url-copy(1)** (even with option **-cd**) and therefore also
-**gt** will not create directories on the destination side that are empty on the
-source side.
+**NOTICE:** **globus-url-copy(1)** (even with option **-cd** and sync options)
+and therefore also **gt** will not create directories on the destination side
+that are empty on the source side!
 
 
 ## **[-c, \--checksum-data-channel]** ##
 
-Enable checksumming on the data channel. Cannot be used in conjunction with
-**-e**!
+Enable checksumming on the data channel. The option **-c** cannot be used in
+conjunction with **-e**!
 
 
 ## **[-e, \--encrypt-data-channel]** ##
 
-Enable encryption on the data channel. Cannot be used in conjunction with
-**-c**!
+Enable encryption on the data channel. The option **-e** cannot be used in
+conjunction with **-c**!
+
+
+## **[--sync-level _syncLevel_]** ##
+
+Set the sync level that should be used for the transfer. This is a
+**globus-url-copy(1)** option and the following sync levels are available:
+
+* Level _0_ will only transfer if the destination does not exist.
+
+* Level _1_ will transfer if the size of the destination does not match the size
+  of the source.
+
+* Level _2_ will transfer if the time stamp of the destination is older than the
+  time stamp of the source.
+
+* Level _3_ will perform a checksum of the source and destination and transfer
+  if the checksums do not match.
+
+By default gt transfers files **conditionally** and uses sync level _1_. The
+option **--sync-level** cannot be used in conjunction with **--no-sync**!
+
+**NOTICE:** **globus-url-copy(1)** (even with option **-cd** and sync options)
+and therefore also **gt** will not create directories on the destination side
+that are empty on the source side!
+
+
+## **[--no-sync]** ##
+
+Disable sync(hronization) for the transfer. Gt then transfers files
+**unconditionally**. The option **--no-sync** cannot be used in conjunction with
+**--sync-level**!
 
 
 ## **[\--guc-max-retries _gucMaxRetries_]** ##
@@ -230,8 +254,7 @@ Set the **globus-url-copy(1)** parameters that should be used for all transfer
 steps. Notice the space between "\--" and the actual parameters. This overwrites
 any available dparams and is not recommended for regular usage. There exists
 one exception for the **-len|-partial-length X** option. If this is provided, it
-will only be added to the transfer parameters from a dparam for a connection or
-- if no dparam is available - to the builtin default transfer parameters.
+will only be added to the transfer parameters from a dparam for a connection or, if no dparam is available, to the builtin default transfer parameters.
 
 **NOTICE:** If specified, this option must be the last one in a **gt**
 command line.
@@ -275,7 +298,7 @@ the beginning, when retried.
 
 
 # FILES #
-       
+
 ## _[...]/gtransfer.conf_ ##
 
 The **gt** configuration file.
@@ -329,6 +352,5 @@ This directory contains the user dparams usable by **gt**. Can be created with
 
 # SEE ALSO #
 
-**dparam(1)**, **dparam(5)**, **dpath(1)**, **dpath(5)**,
+**dparam(1)**, **dparam(5)**, **dpath(1)**, **dpath(5)**, **halias(1)**,
 **globus-url-copy(1)**, **tgftp(1)**, **uberftp(1C)**
-

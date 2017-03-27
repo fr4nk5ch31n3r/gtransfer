@@ -1,5 +1,5 @@
 .\"t
-.TH "GTRANSFER" "1" "Apr 12, 2016" "gtransfer 0.5.0" "User Commands"
+.TH "GTRANSFER" "1" "Mar 23, 2017" "gtransfer 0.8.0" "User Commands"
 .SH NAME
 .PP
 \f[B]gtransfer\f[] \- The GridFTP data transfer script
@@ -8,9 +8,10 @@
 \f[B]{gtransfer|gt} [\-\-source|\-s \f[I]sourceUrl\f[]]
 [\-\-destination|\-d \f[I]destinationUrl\f[]] [\-\-transfer\-list|\-f
 \f[I]transferList\f[]] [\-\-auto\-optimize|\-o \f[I]transferMode\f[]]
-[\-\-recursive|\-r][\-\-checksum\-data\-channel|\-c]
-[\-\-encrypt\-data\-channel|\-e][\-\-guc\-max\-retries
-\f[I]gucMaxRetries\f[]] [\-\-gt\-max\-retries \f[I]gtMaxRetries\f[]]
+[\-\-recursive|\-r] [\-\-checksum\-data\-channel|\-c]
+[\-\-encrypt\-data\-channel|\-e] [\-\-sync\-level syncLevel]
+[\-\-no\-sync] [\-\-guc\-max\-retries \f[I]gucMaxRetries\f[]]
+[\-\-gt\-max\-retries \f[I]gtMaxRetries\f[]]
 [\-\-gt\-progress\-indicator \f[I]indicatorCharacter\f[]]
 [\-\-verbose|\-v] [\-\-metric|\-m \f[I]dataPathMetric\f[]]
 [\-\-logfile|\-l \f[I]logfile\f[]] [\-\-auto\-clean|\-a] [\-\-configfile
@@ -184,16 +185,49 @@ See \f[B]FILES\f[] section below for more details.
 Transfer files recursively.
 .PP
 \f[B]NOTICE:\f[] \f[B]globus\-url\-copy(1)\f[] (even with option
-\f[B]\-cd\f[]) and therefore also \f[B]gt\f[] will not create
-directories on the destination side that are empty on the source side.
+\f[B]\-cd\f[] and sync options) and therefore also \f[B]gt\f[] will not
+create directories on the destination side that are empty on the source
+side!
 .SS \f[B][\-c, \-\-checksum\-data\-channel]\f[]
 .PP
 Enable checksumming on the data channel.
-Cannot be used in conjunction with \f[B]\-e\f[]!
+The option \f[B]\-c\f[] cannot be used in conjunction with \f[B]\-e\f[]!
 .SS \f[B][\-e, \-\-encrypt\-data\-channel]\f[]
 .PP
 Enable encryption on the data channel.
-Cannot be used in conjunction with \f[B]\-c\f[]!
+The option \f[B]\-e\f[] cannot be used in conjunction with \f[B]\-c\f[]!
+.SS \f[B][\-\-sync\-level \f[I]syncLevel\f[]]\f[]
+.PP
+Set the sync level that should be used for the transfer.
+This is a \f[B]globus\-url\-copy(1)\f[] option and the following sync
+levels are available:
+.IP \[bu] 2
+Level \f[I]0\f[] will only transfer if the destination does not exist.
+.IP \[bu] 2
+Level \f[I]1\f[] will transfer if the size of the destination does not
+match the size of the source.
+.IP \[bu] 2
+Level \f[I]2\f[] will transfer if the time stamp of the destination is
+older than the time stamp of the source.
+.IP \[bu] 2
+Level \f[I]3\f[] will perform a checksum of the source and destination
+and transfer if the checksums do not match.
+.PP
+By default gt transfers files \f[B]conditionally\f[] and uses sync level
+\f[I]1\f[].
+The option \f[B]\-\-sync\-level\f[] cannot be used in conjunction with
+\f[B]\-\-no\-sync\f[]!
+.PP
+\f[B]NOTICE:\f[] \f[B]globus\-url\-copy(1)\f[] (even with option
+\f[B]\-cd\f[] and sync options) and therefore also \f[B]gt\f[] will not
+create directories on the destination side that are empty on the source
+side!
+.SS \f[B][\-\-no\-sync]\f[]
+.PP
+Disable sync(hronization) for the transfer.
+Gt then transfers files \f[B]unconditionally\f[].
+The option \f[B]\-\-no\-sync\f[] cannot be used in conjunction with
+\f[B]\-\-sync\-level\f[]!
 .SS \f[B][\-\-guc\-max\-retries \f[I]gucMaxRetries\f[]]\f[]
 .PP
 This option sets the maximum number of retries
@@ -260,7 +294,7 @@ usage.
 There exists one exception for the \f[B]\-len|\-partial\-length X\f[]
 option.
 If this is provided, it will only be added to the transfer parameters
-from a dparam for a connection or \- if no dparam is available \- to the
+from a dparam for a connection or, if no dparam is available, to the
 builtin default transfer parameters.
 .PP
 \f[B]NOTICE:\f[] If specified, this option must be the last one in a
@@ -348,7 +382,7 @@ If existing, dparams in this directory have precedence.
 .SH SEE ALSO
 .PP
 \f[B]dparam(1)\f[], \f[B]dparam(5)\f[], \f[B]dpath(1)\f[],
-\f[B]dpath(5)\f[], \f[B]globus\-url\-copy(1)\f[], \f[B]tgftp(1)\f[],
-\f[B]uberftp(1C)\f[]
+\f[B]dpath(5)\f[], \f[B]halias(1)\f[], \f[B]globus\-url\-copy(1)\f[],
+\f[B]tgftp(1)\f[], \f[B]uberftp(1C)\f[]
 .SH AUTHORS
 Frank Scheiner.
