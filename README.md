@@ -218,7 +218,7 @@ This is a list of HPC centers in Europe that use gtransfer in production:
 
 (GPLv3)
 
-Copyright (C) 2010, 2011, 2013-2017 Frank Scheiner, HLRS, Universitaet Stuttgart
+Copyright (C) 2010, 2011, 2013-2017 Frank Scheiner, HLRS, Universitaet Stuttgart  
 Copyright (C) 2011, 2012, 2013 Frank Scheiner
 
 The software is distributed under the terms of the GNU General Public License
