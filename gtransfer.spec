@@ -1,5 +1,5 @@
 Name:		gtransfer
-Version:	0.8.0
+Version:	0.8.1
 Release:	1%{?dist}
 Summary:	Advanced data transfer tool for GridFTP
 Group:		base
@@ -201,7 +201,10 @@ rm -rf %{buildroot}
 %{_mandir}/man1/grm.1.gz
 
 %changelog
-* Tue Mar 27 2017 Frank Scheiner <scheiner@hlrs.de> 0.8.0-1
+* Thu Apr 20 2017 Frank Scheiner <scheiner@hlrs.de> 0.8.1-1
+- Updated source version number to new patch level.
+
+* Mon Mar 27 2017 Frank Scheiner <scheiner@hlrs.de> 0.8.0-1
 - Updated source package and version number to new release. Also added new gtools to the toolkit.
 
 * Thu Sep 08 2016 Frank Scheiner <scheiner@hlrs.de> 0.7.1-1
