@@ -1,6 +1,6 @@
 % HALIAS(1) halias 0.3.0 | User Commands
 % Frank Scheiner
-% Jan 17, 2017
+% Apr 20, 2017
 
 
 # NAME #
@@ -45,7 +45,7 @@ Check if a given string is a host alias. Returns 0 if yes, 1 otherwise.
 
 ## **-r, --retrieve [_/path/to/host-aliases_] [-q]** ##
 
-Retrieve host aliases from a repository configured in _[...]/halias.conf_ (see
+Retrieve host aliases from a repository configured in _[...]/aliases.conf_ (see
 below) and store them in the user-provided path or - if no additional path is
 given - in the user host aliases directory. If a "-q" is provided, then output
 is omitted and success/failure is only reported by the exit value.
@@ -67,7 +67,7 @@ Prints out version information.
 # FILES #
 
 
-## _[...]/halias.conf_ ##
+## _[...]/aliases.conf_ ##
 
 The halias configuration file. The paths to system and user aliases directories
 can be configured there.

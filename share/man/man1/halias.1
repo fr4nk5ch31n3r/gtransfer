@@ -1,4 +1,4 @@
-.TH "HALIAS" "1" "Jan 17, 2017" "halias 0.3.0" "User Commands"
+.TH "HALIAS" "1" "Apr 20, 2017" "halias 0.3.0" "User Commands"
 .SH NAME
 .PP
 \f[B]halias\f[] \- host alias helper utility
@@ -34,7 +34,7 @@ Returns 0 if yes, 1 otherwise.
 .SS \f[B]\-r, \-\-retrieve [\f[I]/path/to/host\-aliases\f[]] [\-q]\f[]
 .PP
 Retrieve host aliases from a repository configured in
-\f[I][...]/halias.conf\f[] (see below) and store them in the
+\f[I][...]/aliases.conf\f[] (see below) and store them in the
 user\-provided path or \- if no additional path is given \- in the user
 host aliases directory.
 If a "\-q" is provided, then output is omitted and success/failure is
@@ -48,7 +48,7 @@ Prints out a help message.
 .PP
 Prints out version information.
 .SH FILES
-.SS \f[I][...]/halias.conf\f[]
+.SS \f[I][...]/aliases.conf\f[]
 .PP
 The halias configuration file.
 The paths to system and user aliases directories can be configured

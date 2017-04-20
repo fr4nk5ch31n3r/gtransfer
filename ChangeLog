@@ -1,3 +1,12 @@
+2017-04-20  Frank Scheiner <scheiner@hlrs.de>
+
+* 0.8.1 (gtransfer toolkit):
+
+- Fixes
+
+The halias(1) manpage used a wrong name for the halias configuration file
+("halias.conf" instead of "aliases.conf"). This is now corrected.
+
 2017-03-27  Frank Scheiner <scheiner@hlrs.de>
 
 * 0.8.0 (gtransfer toolkit):
