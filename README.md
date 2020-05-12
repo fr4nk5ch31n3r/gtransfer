@@ -29,8 +29,8 @@ $ gt -s <SOURCE> -d <DESTINATION>
 ```
 
 [tgftp]: https://github.com/fr4nk5ch31n3r/tgftp/
-[globus-url-copy]: http://toolkit.globus.org/toolkit/docs/latest-stable/gridftp/user/#globus-url-copy
-[uberftp]: https://github.com/JasonAlt/UberFTP
+[globus-url-copy]: https://gridcf.org/gct-docs/latest/gridftp/user/index.html#globus-url-copy
+[uberftp]: https://github.com/gridcf/UberFTP
 
 ## Features ##
 
@@ -191,9 +191,9 @@ This is a list of HPC centers in Europe that use gtransfer in production:
 
 ****
 
-[![SURFSARA logo](https://raw.github.com/fscheiner/images/master/site_logos/surfsara_logo.png)](https://www.surf.nl/en/about-surf/subsidiaries/surfsara/)
+[![SURFSARA logo](https://raw.github.com/fscheiner/images/master/site_logos/surfsara_logo.png)](https://userinfo.surfsara.nl/)
 
-[SURFsara (SURFsara - The Netherlands)](https://www.surf.nl/en/about-surf/subsidiaries/surfsara/)
+[SURFsara (SURFsara - The Netherlands)](https://userinfo.surfsara.nl/)
 
 ****
 
